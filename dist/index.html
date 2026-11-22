@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="江苏七年级分科知识点练习，随做随看解析，自动整理错题。">
+<meta name="theme-color" content="#f8f8fc">
+<title>苏学 · 初一练习室</title>
+<link rel="stylesheet" href="styles.css">
+<script defer src="bank.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="#home"><span class="logo" data-icon="book"></span><span><strong>苏学练习室</strong><small>江苏初中学习</small></span></a>
+  <div class="nav-label">学习空间</div>
+  <nav aria-label="学习空间">
+    <a href="#home" data-nav="home"><i data-icon="home"></i>学习首页</a>
+    <a href="#bank" data-nav="bank"><i data-icon="layers"></i>学科题库</a>
+    <a href="#mistakes" data-nav="mistakes"><i data-icon="notebook"></i>错题本<span id="mistakeBadge"></span></a>
+    <a href="#stats" data-nav="stats"><i data-icon="chart"></i>学习记录</a>
+  </nav>
+  <div class="side-bottom"><div class="avatar">学</div><div><strong>我的学习空间</strong><small>七年级 · 江苏</small></div></div>
+</aside>
+<div class="shell">
+  <header class="topbar">
+    <div class="location"><span data-icon="pin"></span>江苏省<span class="separator"></span><strong>七年级</strong></div>
+    <button class="search" type="button" id="searchButton"><i data-icon="search"></i><span>搜索学科或知识点</span><kbd>Ctrl K</kbd></button>
+  </header>
+  <main id="app" tabindex="-1"></main>
+  <footer>苏学练习室 <span>·</span> 江苏七年级知识点练习</footer>
+</div>
+<dialog id="searchDialog" aria-labelledby="searchTitle">
+  <div class="dialog-top"><h2 id="searchTitle">搜索题库</h2><button class="icon-button" id="closeSearch" aria-label="关闭搜索"><i data-icon="close"></i></button></div>
+  <label class="search-field"><i data-icon="search"></i><input id="searchInput" placeholder="输入学科或知识点，例如「有理数」" autocomplete="off" aria-label="搜索学科或知识点"></label>
+  <div id="searchResults"></div>
+</dialog>
+</body>
+</html>
