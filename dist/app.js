@@ -76,12 +76,18 @@ const reviewCollections = new Map([
   ['geo-review', {
     subject:'geography', name:'地理', icon:'globe', tone:'teal',
     title:'第一次月考复习', keywords:'地理月考复习 第一次月考', subtitle:'根据你上传的第 1–7 页整理，涵盖资料中的考点 1–102。',
-    start:'geo-monthly', modules:geoReviewModules, byTopic:geoReviewByTopic
+    start:'geo-monthly', returnLabel:'月考复习', modules:geoReviewModules, byTopic:geoReviewByTopic
   }],
   ['history-review', {
     subject:'history', name:'历史', icon:'history', tone:'gold',
     title:'时间轴与默写', keywords:'时间轴 历史默写 七上历史 夏商周', subtitle:'按上传资料整理史前时期、夏商周与秦统一的时间轴和考点。',
-    start:'history-timeline', modules:historyReviewModules, byTopic:historyReviewByTopic
+    start:'history-timeline', returnLabel:'历史复习', modules:historyReviewModules, byTopic:historyReviewByTopic
+  }],
+  ['biology-review', {
+    subject:'biology', name:'生物学', icon:'leaf', tone:'green',
+    title:'苏科版期中复习', keywords:'生物期中复习 显微镜 苏科版期中复习',
+    subtitle:'按你上传的第 1–5、7–10 页可见内容整理，覆盖苏科版七年级上册第一、二单元的相关考点。',
+    start:'biology-midterm', returnLabel:'生物期中复习', modules:biologyReviewModules, byTopic:biologyReviewByTopic
   }]
 ]);
 const reviewRouteByTopic = new Map([...reviewCollections].flatMap(([route,collection])=>collection.modules.map(module=>[module.key,route])));
@@ -476,9 +482,16 @@ function answer(current,currentQuestion) {
   render();
   document.querySelector('#feedback')?.focus();
 }
+function materialTable(table) {
+  const columns = table.headers.map(header=>'<th scope="col">'+esc(header)+'</th>').join('');
+  const rows = table.rows.map(([first,...values])=>'<tr><th scope="row">'+esc(first)+'</th>'+values.map(value=>'<td>'+esc(value)+'</td>').join('')+'</tr>').join('');
+  return '<div class="material-table-scroll"><table><caption>'+esc(table.caption)+'</caption><thead><tr>'+columns+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
 function readingMaterial(question, expanded = false) {
-  const title = question.stage==='找规律' ? '查看图形与数据' : '阅读材料';
-  return question.material ? '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary><div>'+esc(question.material)+'</div></details>' : '';
+  if (!question.material && !question.table) return '';
+  const title = question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
+  return '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary>'+
+    (question.material?'<div>'+esc(question.material)+'</div>':'')+(question.table?materialTable(question.table):'')+'</details>';
 }
 const normalizeDictation = text => text.normalize('NFKC').replace(/[\p{P}\s]/gu,'');
 const fieldValues = (question, values) => (question.steps ?? question.blanks).map((_,index)=>Array.isArray(values)?(values[index]??''):'');
@@ -551,9 +564,9 @@ function stepReview(question, submitted) {
 function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
-  const backLabel = s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : s.back.startsWith('#geo-review') ? '月考复习' : s.back.startsWith('#history-review') ? '历史复习'
-    : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
+  const reviewBack = reviewCollections.get(s.back.slice(1).split('/')[0]);
+  const backLabel = reviewBack?.returnLabel ?? (s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
+    : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科'));
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;

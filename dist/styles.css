@@ -247,3 +247,10 @@ dialog::backdrop{background:#23193968}
 .history-timeline li:last-child{margin-bottom:0}
 .history-timeline li::before{content:"";width:8px;height:8px;border-radius:50%;background:#ad7626;position:absolute;left:-1.5rem;top:.4rem}
 .history-timeline li span{font-size:.83rem;color:#775016;font-weight:650}
+.biology-review-entry{background:#edf8ed;border-color:#d2e9d2}
+.biology-review-entry .pack-entry-label{color:#285c39}
+.material-table-scroll{overflow-x:auto}
+.material-table-scroll table{width:100%;min-width:17rem;max-width:580px;border-collapse:collapse;background:#fff;white-space:normal}
+.material-table-scroll caption{text-align:left;padding:0 0 5px;font-size:.86rem;color:var(--muted)}
+.material-table-scroll th,.material-table-scroll td{padding:6px 8px;text-align:left;border:1px solid #e1dbea}
+.material-table-scroll thead th{background:#eeebfa}
