@@ -238,3 +238,12 @@ dialog::backdrop{background:#23193968}
 .geo-references{margin-top:17px}
 .geo-references summary{color:var(--accent);cursor:pointer;font-size:.9rem;font-weight:700}
 @media(max-width:570px){.geo-review-head{align-items:flex-start;flex-wrap:wrap}}
+.history-review-entry{background:#fff7e5;border-color:#efddb3}
+.history-review-entry .pack-entry-label{color:#775016}
+.history-timeline{background:#fffaf0;border:1px solid #efdfbc;border-radius:13px;padding:15px 17px;margin:0 0 20px}
+.history-timeline h2{font-size:1.1rem}
+.history-timeline ol{list-style:none;padding:0 0 0 1.2rem;margin:10px 0 0;border-left:2px solid #e5c995}
+.history-timeline li{position:relative;display:grid;gap:3px;margin:0 0 12px;line-height:1.5}
+.history-timeline li:last-child{margin-bottom:0}
+.history-timeline li::before{content:"";width:8px;height:8px;border-radius:50%;background:#ad7626;position:absolute;left:-1.5rem;top:.4rem}
+.history-timeline li span{font-size:.83rem;color:#775016;font-weight:650}

@@ -72,10 +72,24 @@ const homeLink = '<a class="crumb" href="#home">学习首页</a>';
 const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn secondary" href="#mixed'+(subjectId ? '/'+subjectId : '')+'">'+icon('layers')+label+'</a>';
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
-const studyHref = key => geoReviewByTopic.has(key) ? '#geo-review/'+key : lessonByTopic.has(key) ? '#learn/'+key : '';
+const reviewCollections = new Map([
+  ['geo-review', {
+    subject:'geography', name:'地理', icon:'globe', tone:'teal',
+    title:'第一次月考复习', keywords:'地理月考复习 第一次月考', subtitle:'根据你上传的第 1–7 页整理，涵盖资料中的考点 1–102。',
+    start:'geo-monthly', modules:geoReviewModules, byTopic:geoReviewByTopic
+  }],
+  ['history-review', {
+    subject:'history', name:'历史', icon:'history', tone:'gold',
+    title:'时间轴与默写', keywords:'时间轴 历史默写 七上历史 夏商周', subtitle:'按上传资料整理史前时期、夏商周与秦统一的时间轴和考点。',
+    start:'history-timeline', modules:historyReviewModules, byTopic:historyReviewByTopic
+  }]
+]);
+const reviewRouteByTopic = new Map([...reviewCollections].flatMap(([route,collection])=>collection.modules.map(module=>[module.key,route])));
+const reviewRouteByStart = new Map([...reviewCollections].map(([route,collection])=>[collection.start,route]));
+const studyHref = key => reviewRouteByTopic.has(key) ? '#'+reviewRouteByTopic.get(key)+'/'+key : lessonByTopic.has(key) ? '#learn/'+key : '';
 function lessonLink(key, style = 'btn secondary') {
   const href = studyHref(key);
-  return href ? '<a class="'+style+'" href="'+href+'">'+(geoReviewByTopic.has(key)?'看复习卡':'看讲解')+'</a>' : '';
+  return href ? '<a class="'+style+'" href="'+href+'">'+(reviewRouteByTopic.has(key)?'看复习卡':'看讲解')+'</a>' : '';
 }
 const termTabs = () => '<div class="segmented" role="group" aria-label="选择册次">'+['上','下'].map(term => '<button type="button" data-term="'+term+'" aria-pressed="'+(state.term === term)+'">'+term+'册</button>').join('')+'</div>';
 function topicsIn(subject, term = state.term) { return subject.topics.filter(topic => topic.term === term); }
@@ -168,7 +182,7 @@ function subjectPage(subject) {
     const key = 'topic/'+topic.key+(level==='all'?'':'/'+level);
     return '<div class="row topic-row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+questions.length+' 题</p></div><div class="saved-actions">'+lessonLink(topic.key)+startButton(key,'做练习')+'</div></div>';
   }).join('');
-  const review = subject.id==='geography' && state.term==='上' ? geoReviewEntry() : '';
+  const review = state.term==='上' ? [...reviewCollections].filter(([,collection])=>collection.subject===subject.id).map(([route,collection])=>reviewEntry(route,collection)).join('') : '';
   return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+review+advancedEntry(subject)+'<section><div class="section-head"><h2 class="group-title">知识点</h2><div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div>'+filters+
     (rows ? '<div class="topic-list">'+rows+'</div>' : '<p class="empty" role="status">本册暂无这个难度的题。可以选择「不限难度」查看所有知识点。</p>')+'</section>';
 }
@@ -183,27 +197,30 @@ function advancedEntry(subject) {
   const link = '#advanced'+(subject?'/'+subject.id:'');
   return '<a class="pack-entry advanced-entry" href="'+link+'"><span class="subject-icon violet">'+icon('bolt')+'</span><span><strong>'+title+'</strong><small>训练多步推理、材料分析和方案判断</small></span><span class="pack-entry-label">挑战一组</span></a>';
 }
-function geoReviewEntry() {
-  const total = geoReviewModules.reduce((count,unit)=>count+unit.questions.length,0);
-  return '<a class="pack-entry geo-review-entry" href="#geo-review"><span class="subject-icon teal">'+icon('globe')+'</span>'+
-    '<span><strong>第一次月考复习</strong><small>'+geoReviewModules.length+' 个主题 · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
+function reviewEntry(route,collection) {
+  const total = collection.modules.reduce((count,unit)=>count+unit.questions.length,0);
+  return '<a class="pack-entry '+route+'-entry" href="#'+route+'"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span>'+
+    '<span><strong>'+collection.title+'</strong><small>'+collection.modules.length+' 个主题 · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
 }
-function geoReviewPage(key) {
-  const unit = geoReviewByTopic.get(key);
+function reviewPage(route,key) {
+  const collection = reviewCollections.get(route);
+  const base = '#'+route;
+  const unit = collection.byTopic.get(key);
   if (!unit) {
-    const total = geoReviewModules.reduce((count,module)=>count+module.questions.length,0);
-    const cards = geoReviewModules.map(module=>'<a class="pack-card geo-unit-link" href="#geo-review/'+module.key+'"><div class="subject-head"><span class="subject-icon teal">'+icon('globe')+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+' 张卡 · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
-    return pageHead('地理上册 · 第一次月考复习','根据你上传的第 1–7 页整理，涵盖资料中的考点 1–102。','<a class="crumb" href="#subject/geography">返回地理</a>')+
-      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>展开问答卡回忆要点，或做一组综合练习。</p></div>'+startButton('geo-monthly','练习全部 '+total+' 题')+'</div>'+
+    const total = collection.modules.reduce((count,module)=>count+module.questions.length,0);
+    const cards = collection.modules.map(module=>'<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+' 张卡 · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
+    return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
+      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>展开问答卡回忆要点，或做一组综合练习。</p></div>'+startButton(collection.start,'练习全部 '+total+' 题')+'</div>'+
       '<div class="pack-grid">'+cards+'</div>';
   }
   const notes = unit.notes.map(note=>'<details class="geo-note"><summary>'+esc(note.label)+'</summary><p>'+esc(note.text)+'</p></details>').join('');
   const refs = referenceItems(unit.sources);
+  const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
   const practice = state.session && !endOfSession(state.session) && questionById.get(state.session.ids[state.session.index])?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
-    : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil','#geo-review/'+unit.key);
-  return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="#geo-review">第一次月考复习</a>')+
-    '<div class="section-head"><h2>问答复习卡</h2>'+practice+'</div><div class="geo-notes">'+notes+'</div>'+
+    : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
+  return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="'+base+'">'+collection.title+'</a>')+
+    timeline+'<div class="section-head"><h2>问答复习卡</h2>'+practice+'</div><div class="geo-notes">'+notes+'</div>'+
     (refs?'<details class="geo-references"><summary>查阅参考来源</summary><ul class="reference-list">'+refs+'</ul></details>':'')+'</article>';
 }
 function advancedPage(selected) {
@@ -409,9 +426,11 @@ function start(key, backTarget) {
     const set = advancedSets.get(id+'/'+term);
     if (!set) return;
     ids = set.ids; label = set.name+' · '+term+'册综合提升'; back = '#advanced/'+id;
-  } else if (kind === 'geo-monthly') {
-    ids = geoReviewModules.flatMap(module=>module.questions.map(question=>question.id));
-    label = '地理上册 · 第一次月考复习'; back = '#geo-review';
+  } else if (reviewRouteByStart.has(kind)) {
+    const route = reviewRouteByStart.get(kind);
+    const collection = reviewCollections.get(route);
+    ids = collection.modules.flatMap(module=>module.questions.map(question=>question.id));
+    label = collection.name+'上册 · '+collection.title; back = '#'+route;
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -533,7 +552,7 @@ function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const backLabel = s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : s.back.startsWith('#geo-review') ? '月考复习'
+    : s.back.startsWith('#geo-review') ? '月考复习' : s.back.startsWith('#history-review') ? '历史复习'
     : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
@@ -566,7 +585,7 @@ function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',learn:'bank','geo-review':'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const view = reviewCollections.has(page) ? 'bank' : {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
@@ -576,12 +595,12 @@ function render(moveFocus = false) {
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='difficulty') app.innerHTML = difficultyPage();
   else if (page==='advanced') app.innerHTML = advancedPage(subject);
-  else if (page==='geo-review') {
+  else if (reviewCollections.has(page)) {
     if (state.term!=='上') {
       state.term='上';
       save();
     }
-    app.innerHTML = geoReviewPage(subjectId);
+    app.innerHTML = reviewPage(page,subjectId);
   }
   else if (page==='packs') app.innerHTML = packPage(subjectId);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
@@ -709,7 +728,7 @@ app.addEventListener('submit',event=>{
 });
 function search() {
   const query=searchInput.value.trim().toLowerCase();
-  const found = query ? allTopics.filter(t=>[t.subject.name,t.title,t.description,geoReviewByTopic.has(t.key)?'地理月考复习 第一次月考':''].some(s=>s.toLowerCase().includes(query))).slice(0,14) : [];
+  const found = query ? allTopics.filter(t=>[t.subject.name,t.title,t.description,reviewCollections.get(reviewRouteByTopic.get(t.key))?.keywords??''].some(s=>s.toLowerCase().includes(query))).slice(0,14) : [];
   results.innerHTML = found.map(t=>{
     const hasLesson = !!studyHref(t.key);
     const result = '<button class="search-result option" type="button" data-key="'+t.key+'" data-search-action="'+(hasLesson?'learn':'practice')+'"><div><strong>'+t.title+'</strong><small>'+t.subject.name+' · '+t.term+'册'+(hasLesson?' · 看讲解':'')+'</small></div></button>';
