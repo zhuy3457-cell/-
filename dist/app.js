@@ -11,6 +11,8 @@ const strokes = {
   target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
   bolt:'<path d="m13 2-8 12h6l-1 8 9-12h-6l1-8Z"/>',
   pencil:'<path d="m4 16-1 5 5-1L20 8l-4-4L4 16Zm9-9 4 4"/>',
+  bookmark:'<path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16l-6-4-6 4Z"/>',
+  download:'<path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/>',
   math:'<path d="M4 6h6M7 3v6m7-3h6m-15 8 5 5m0-5-5 5m9-4h6m-6 4h6"/>',
   letters:'<path d="m3 18 5-12 5 12m-8-4h6m10 4v-4a2.7 2.7 0 1 0-5.4 0v1.3a2.7 2.7 0 1 0 5.4 0"/>',
   shield:'<path d="M12 3 4 6v5c0 5 4 8 8 10 4-2 8-5 8-10V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
@@ -34,20 +36,26 @@ const allQuestions = allTopics.flatMap(topic => topic.questions);
 const topicByKey = new Map(allTopics.map(topic => [topic.key, topic]));
 const questionById = new Map(allQuestions.map(question => [question.id, question]));
 const storageKey = 'suxue-study-v1';
-let state = {term:'上', attempts:[], mistakes:{}, session:null};
+let state = {term:'上', attempts:[], mistakes:{}, favorites:[], session:null};
 try {
   const saved = JSON.parse(localStorage.getItem(storageKey));
   if (saved) state = {...state, ...saved};
 } catch {}
 if (!['上','下'].includes(state.term)) state.term = '上';
 let storageFailed = false;
+let backupNotice = '';
+const backupSchema = 'suxue-study-backup';
 function save() {
-  try { localStorage.setItem(storageKey, JSON.stringify(state)); }
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state));
+    storageFailed = false;
+  }
   catch { storageFailed = true; }
 }
 const esc = text => String(text).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const dateKey = (date = new Date()) => [date.getFullYear(), String(date.getMonth()+1).padStart(2,'0'), String(date.getDate()).padStart(2,'0')].join('-');
 const mistakeIds = () => Object.keys(state.mistakes).filter(id => questionById.has(id));
+const favoriteIds = () => state.favorites.filter(id => questionById.has(id));
 const endOfSession = s => s.index >= s.ids.length;
 const percent = (right,total) => total ? Math.round(right / total * 100) + '%' : '—';
 const termName = () => '七年级' + state.term + '册';
@@ -143,6 +151,94 @@ function mistakePage() {
     }).join('')+'</div>'
     : empty('还没有待复练的错题','开始练习后，可以回到这里复习。','notebook'));
 }
+function favoriteButton(id) {
+  const selected = state.favorites.includes(id);
+  return '<button class="btn secondary bookmark-button" type="button" data-favorite="'+id+'" aria-label="收藏题目" aria-pressed="'+selected+'">'+icon('bookmark')+'<span>'+(selected?'已收藏':'收藏')+'</span></button>';
+}
+function favoritePage() {
+  const ids = favoriteIds().reverse();
+  return pageHead('题目收藏','把想再练的题收藏起来，答对后也可以继续保留。',homeLink)+(ids.length
+    ? '<div class="section-head"><h2>已收藏 · '+ids.length+' 题</h2>'+startButton('favorites','练习全部收藏')+'</div><div class="topic-list">'+ids.map(id=>{
+      const question = questionById.get(id);
+      const topic = topicByKey.get(question.topic);
+      return '<article class="row saved-row"><div><h3>'+esc(question.prompt)+'</h3><p>'+topic.subject.name+' · '+topic.term+'册 · '+topic.title+'</p></div><div class="saved-actions">'+favoriteButton(id)+startButton('favorite-one/'+id,'练习这题','primary')+'</div></article>';
+    }).join('')+'</div>'
+    : empty('还没有收藏题目','做题或查看答题回顾时，可以收藏想复习的题。','bookmark'));
+}
+function attemptReferences(attempts) {
+  const legacyCounts = new Map();
+  return attempts.map(attempt=>{
+    if (attempt.ref && !attempt.ref.startsWith('legacy:')) return attempt;
+    const key = 'legacy:'+attempt.date+':'+attempt.id+':'+Number(attempt.ok);
+    const index = (legacyCounts.get(key) ?? 0) + 1;
+    legacyCounts.set(key,index);
+    return attempt.ref ? attempt : {...attempt, ref:key+':'+index};
+  });
+}
+function backupPayload() {
+  return {format:backupSchema, version:1, attempts:attemptReferences(state.attempts), favorites:favoriteIds()};
+}
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(backupPayload())], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = '苏学学习记录-'+dateKey()+'.json';
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function mergeBackup(data) {
+  if (data?.format !== backupSchema || data.version !== 1 || !Array.isArray(data.attempts) || !Array.isArray(data.favorites)) {
+    throw new Error('无法识别备份格式。请选择从苏学练习室导出的 JSON 文件。');
+  }
+  const valid = data.attempts.every(item=>item && typeof item.id==='string' &&
+    typeof item.ref==='string' && item.ref.length>0 && item.ref.length<=150 &&
+    typeof item.ok==='boolean' && typeof item.date==='string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date) &&
+    (item.time===undefined || Number.isSafeInteger(item.time) && item.time>=0));
+  if (!valid || data.favorites.some(id=>typeof id!=='string')) {
+    throw new Error('备份里的记录有误。请选择一份完整的备份文件。');
+  }
+  const attempts = attemptReferences(state.attempts);
+  const refs = new Set(attempts.map(attempt=>attempt.ref));
+  const bookmarks = new Set(favoriteIds());
+  const initialAttempts = attempts.length;
+  const initialBookmarks = bookmarks.size;
+  let unknown = 0;
+  for (const {id, ok, date, ref, time} of data.attempts) {
+    if (!questionById.has(id)) { unknown++; continue; }
+    if (refs.has(ref)) continue;
+    refs.add(ref);
+    attempts.push({id, ok, date, ref, time});
+  }
+  for (const id of data.favorites) {
+    if (questionById.has(id)) bookmarks.add(id);
+    else unknown++;
+  }
+  const added = attempts.length - initialAttempts;
+  if (added) {
+    attempts.sort((a,b)=>a.date.localeCompare(b.date) || (a.time??0)-(b.time??0));
+    state.attempts = attempts;
+    state.mistakes = {};
+    for (const item of attempts) {
+      if (item.ok) delete state.mistakes[item.id];
+      else state.mistakes[item.id] = {
+        count:(state.mistakes[item.id]?.count??0)+1,
+        time:item.time??Date.parse(item.date)
+      };
+    }
+  }
+  state.favorites = [...bookmarks];
+  save();
+  return '已合并 '+added+' 条答题记录、'+(bookmarks.size-initialBookmarks)+' 道收藏题。'+
+    (unknown ? '当前题库中找不到的 '+unknown+' 条记录已跳过。' : '');
+}
+function studyBackup() {
+  return '<section class="backup-panel"><div><h2>学习记录备份</h2><p>导出答题记录、错题和收藏。换设备时导入文件，会合并已有记录。</p></div>'+
+    '<div class="saved-actions"><button class="btn secondary" type="button" data-backup="export">'+icon('download')+'导出备份</button>'+
+    '<button class="btn secondary" type="button" data-backup="import">导入备份</button>'+
+    '<input type="file" id="studyBackupInput" accept=".json,application/json" aria-label="选择学习记录备份" hidden></div>'+
+    '<p class="backup-status" role="status">'+esc(backupNotice)+'</p></section>';
+}
 function priorityReview() {
   const grouped = new Map();
   for (const id of mistakeIds()) {
@@ -165,7 +261,7 @@ function statsPage() {
   const days = new Set(attempts.map(a => a.date));
   return pageHead('学习记录','做题后自动更新。记录保存在当前浏览器。',homeLink)+
     '<div class="metrics">'+metric('累计作答',attempts.length+' 题','violet','pencil')+metric('整体正确率',percent(right.length,attempts.length),'green','target')+metric('练习天数',days.size+' 天','orange','chart')+'</div>'+
-    priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+subjects.map(subject => {
+    studyBackup()+priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+subjects.map(subject => {
       const tried = attempts.filter(a=>questionById.get(a.id)?.subject===subject.id);
       const success = tried.filter(a=>a.ok);
       const distinct = new Set(success.map(a=>a.id)).size;
@@ -199,6 +295,9 @@ function start(key) {
   } else if (kind === 'topic') {
     const topic = topicByKey.get(id);
     ids = topic.questions.map(q=>q.id); label = topic.subject.name+' · '+topic.title; back = '#subject/'+topic.subject.id;
+  } else if (kind === 'favorites' || kind === 'favorite-one') {
+    ids = kind === 'favorite-one' ? [id] : favoriteIds();
+    label = '收藏题复练'; back = '#favorites';
   } else if (kind === 'topic-mistakes') {
     const topic = topicByKey.get(id);
     ids = mistakeIds().filter(qid=>questionById.get(qid).topic===id);
@@ -221,9 +320,12 @@ function answer(current,currentQuestion) {
   const numeric = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized);
   const ok = q.options ? raw === q.correct : numeric && Number(normalized) === Number(q.correct);
   current.answers[current.index] = {id:q.id,ok,raw};
-  state.attempts.push({id:q.id,ok,date:dateKey()});
+  const now = new Date();
+  const time = now.getTime();
+  const ref = Array.from(crypto.getRandomValues(new Uint32Array(4)), number=>number.toString(16).padStart(8,'0')).join('');
+  state.attempts.push({id:q.id,ok,date:dateKey(now),time,ref});
   if (ok) delete state.mistakes[q.id];
-  else state.mistakes[q.id] = {count:(state.mistakes[q.id]?.count??0)+1,time:Date.now()};
+  else state.mistakes[q.id] = {count:(state.mistakes[q.id]?.count??0)+1,time};
   save();
   render();
   document.querySelector('#feedback')?.focus();
@@ -232,7 +334,7 @@ function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const backLabel = s.back.startsWith('#mixed') ? '组卷设置'
-    : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录'}[s.back] ?? '学科');
+    : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
@@ -240,7 +342,7 @@ function quizPage() {
       : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary'));
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
-      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary><p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p></details></li>';
+      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary><p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p><div class="result-actions">'+favoriteButton(question.id)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':'<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>')+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
   }
@@ -255,13 +357,13 @@ function quizPage() {
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong><p><b>正确答案</b>　'+esc(q.correct)+'</p><p><b>解析</b>　'+esc(q.explanation)+'</p></div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions">'+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
-  const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats'})[state.session?.back] ?? 'bank';
-  const view = {bank:'bank',mixed:'bank',subject:'bank',mistakes:'mistakes',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
+  const view = {bank:'bank',mixed:'bank',subject:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
@@ -271,6 +373,7 @@ function render(moveFocus = false) {
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='mistakes') app.innerHTML = mistakePage();
+  else if (page==='favorites') app.innerHTML = favoritePage();
   else if (page==='stats') app.innerHTML = statsPage();
   else if (page==='quiz') app.innerHTML = quizPage();
   else app.innerHTML = home();
@@ -292,6 +395,22 @@ app.addEventListener('click',event => {
     app.querySelector('[data-term="'+state.term+'"]')?.focus({preventScroll:true});
   } else if (button.dataset.start) {
     start(button.dataset.start);
+  } else if (button.dataset.favorite) {
+    const id = button.dataset.favorite;
+    const wasSelected = state.favorites.includes(id);
+    state.favorites = wasSelected ? state.favorites.filter(key=>key!==id) : [...state.favorites,id];
+    save();
+    if (location.hash === '#favorites') {
+      render();
+      (app.querySelector('[data-favorite]') ?? app).focus({preventScroll:true});
+    } else {
+      button.setAttribute('aria-pressed',String(!wasSelected));
+      button.querySelector('span').textContent = wasSelected ? '收藏' : '已收藏';
+    }
+  } else if (button.dataset.backup === 'export') {
+    exportBackup();
+  } else if (button.dataset.backup === 'import') {
+    document.querySelector('#studyBackupInput').click();
   } else if (button.dataset.option !== undefined) {
     const s = state.session;
     const q = questionById.get(s.ids[s.index]);
@@ -312,7 +431,20 @@ app.addEventListener('input',event=>{
     save();
   }
 });
-app.addEventListener('change',event=>{
+app.addEventListener('change',async event=>{
+  if (event.target.id==='studyBackupInput') {
+    const file = event.target.files[0];
+    if (!file) return;
+    try { backupNotice = mergeBackup(JSON.parse(await file.text())); }
+    catch (error) {
+      backupNotice = error instanceof SyntaxError ? '无法读取这个 JSON 文件。请选择学习记录备份。' : error.message;
+    }
+    if (location.hash==='#stats') {
+      render();
+      app.querySelector('[data-backup="import"]')?.focus({preventScroll:true});
+    }
+    return;
+  }
   const form = event.target.closest('#mixedForm');
   if (!form || !['subject','term'].includes(event.target.name)) return;
   const {subject,term,count} = form.elements;

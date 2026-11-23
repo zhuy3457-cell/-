@@ -141,3 +141,15 @@ dialog::backdrop{background:#23193968}
 .is-correct{color:#145940;background:#e4f6ec}
 .is-wrong{color:#8f2634;background:#ffebee}
 @media(max-width:570px){.section-actions{gap:5px}.section-actions>.btn{min-height:33px}.quick-link{min-height:30px;font-size:.78rem}.mix-form{padding:14px}.mix-fields{grid-template-columns:1fr 1fr;gap:11px}.mix-fields label:first-child{grid-column:1 / -1}}
+.saved-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;flex:none}
+.quiz-actions .bookmark-button{margin-right:auto}
+.bookmark-button[aria-pressed=true]{color:#4e31ae;border-color:#cfc1ff;background:#ebe3ff}
+.bookmark-button[aria-pressed=true] svg{fill:#beaaff}
+.result-actions{margin:9px 0 0 14px}
+.backup-panel{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:11px;background:white;border:1px solid var(--line);border-radius:13px;padding:16px;margin-bottom:23px}
+.backup-panel h2{font-size:1.05rem}
+.backup-panel p{margin-top:4px;font-size:.85rem;color:var(--muted);line-height:1.55}
+.backup-panel .backup-status{flex-basis:100%;color:#5138a8}
+.backup-status:empty{display:none}
+@media(max-width:860px){.sidebar nav{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:570px){.saved-row{align-items:flex-start;flex-direction:column}.saved-row .saved-actions{align-self:flex-end}.backup-panel .saved-actions{justify-content:flex-start}}
