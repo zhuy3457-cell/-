@@ -142,7 +142,8 @@ function subjectCard(subject) {
   return '<a class="subject-card" href="#subject/'+subject.id+'"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><h3>'+subject.name+'</h3></div><div class="subject-topics">'+topics.map(t => t.title).join(' · ')+'</div><div class="subject-foot"><span>'+topics.length+' 个知识点 · '+topics.reduce((sum,t) => sum+t.questions.length,0)+' 题</span><strong>去学习</strong></div></a>';
 }
 function subjectGrid() {
-  return '<a class="pack-entry" href="#packs"><span class="subject-icon violet">'+icon('layers')+'</span><span><strong>江苏专项题组</strong><small>课堂同难度练习与期末应用题</small></span><span class="pack-entry-label">查看题组</span></a>'+
+  return '<div class="practice-entries">'+advancedEntry()+
+    '<a class="pack-entry" href="#packs"><span class="subject-icon violet">'+icon('layers')+'</span><span><strong>江苏专项题组</strong><small>课堂同难度练习与期末应用题</small></span><span class="pack-entry-label">查看题组</span></a></div>'+
     '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="#difficulty">出题难度与参考资料</a></p></section>';
 }
 function home() {
@@ -164,14 +165,32 @@ function subjectPage(subject) {
     const key = 'topic/'+topic.key+(level==='all'?'':'/'+level);
     return '<div class="row topic-row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+questions.length+' 题</p></div><div class="saved-actions">'+lessonLink(topic.key)+startButton(key,'做练习')+'</div></div>';
   }).join('');
-  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点</h2><div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div>'+filters+
+  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+advancedEntry(subject)+'<section><div class="section-head"><h2 class="group-title">知识点</h2><div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div>'+filters+
     (rows ? '<div class="topic-list">'+rows+'</div>' : '<p class="empty" role="status">本册暂无这个难度的题。可以选择「不限难度」查看所有知识点。</p>')+'</section>';
 }
 function difficultyPage() {
   const rubric = [...difficultyLevels].map(([level,[name,description]])=>'<div class="row"><div><h3><span class="chip level-'+level+'">'+name+'</span></h3><p>'+description+'</p></div></div>').join('');
   const sources = calibrationSources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
-  return pageHead('出题难度与参考资料','难度按做题时需要的推理和运用来划分。',bankLink)+
+  return pageHead('出题难度与参考资料','难度按做题时需要的推理和运用来划分。',bankLink)+advancedEntry()+
     '<section class="topic-list" aria-label="难度分级">'+rubric+'</section><section class="result-review"><h2 class="group-title">公开参考资料</h2><ul class="reference-list">'+sources+'</ul></section>';
+}
+function advancedEntry(subject) {
+  const title = subject ? subject.name+'综合提升' : '江苏各科综合提升';
+  const link = '#advanced'+(subject?'/'+subject.id:'');
+  return '<a class="pack-entry advanced-entry" href="'+link+'"><span class="subject-icon violet">'+icon('bolt')+'</span><span><strong>'+title+'</strong><small>训练多步推理、材料分析和方案判断</small></span><span class="pack-entry-label">挑战一组</span></a>';
+}
+function advancedPage(selected) {
+  const items = selected ? [selected] : subjects;
+  const cards = items.map(subject=>{
+    const set = advancedSets.get(subject.id+'/'+state.term);
+    const refs = referenceItems(set.sources);
+    return '<article class="pack-card advanced-card"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><div><h2>'+subject.name+'</h2><p>'+set.ids.length+' 道挑战题 · '+termName()+'</p></div></div>'+
+      '<p>'+esc(set.focus)+'</p><details><summary>参考资料与题型</summary><ul class="reference-list">'+refs+'</ul></details>'+
+      '<div class="actions">'+startButton('advanced/'+subject.id+'/'+state.term,'开始挑战')+'</div></article>';
+  }).join('');
+  const back = selected ? '<a class="crumb" href="#advanced">全部学科</a>' : bankLink;
+  return pageHead(selected?selected.name+'综合提升':'江苏各科综合提升','按江苏各地公开卷和课程任务编写原创练习。选一册开始。',back)+
+    '<div class="section-head"><h2 class="group-title">选择册次</h2>'+termTabs()+'</div><div class="pack-grid'+(selected?' pack-grid-single':'')+'">'+cards+'</div>';
 }
 function packPage(selectedId) {
   const selected = practicePacks.get(selectedId);
@@ -359,6 +378,10 @@ function start(key, backTarget) {
     const pack = practicePacks.get(id);
     if (!pack) return;
     ids = pack.ids; label = pack.title; back = pack.stages ? '#packs/'+id : '#packs';
+  } else if (kind === 'advanced') {
+    const set = advancedSets.get(id+'/'+term);
+    if (!set) return;
+    ids = set.ids; label = set.name+' · '+term+'册综合提升'; back = '#advanced/'+id;
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -385,17 +408,14 @@ function start(key, backTarget) {
 function answer(current,currentQuestion) {
   const q = currentQuestion;
   if (current.answers[current.index]) return;
-  const fields = q.blanks ? dictationValues(q,current.selected) : null;
+  const fields = q.steps || q.blanks ? fieldValues(q,current.selected) : null;
   const raw = fields ? fields.join(' / ') : q.options ? current.selected : document.querySelector('#answerInput').value.trim();
   if (!fields && !raw) return;
   let ok;
-  if (fields) ok = q.blanks.every((expected,index)=>normalizeDictation(fields[index]) === normalizeDictation(expected));
+  if (q.steps) ok = q.steps.every((step,index)=>matchesNumber(fields[index],step.answer));
+  else if (q.blanks) ok = q.blanks.every((expected,index)=>normalizeDictation(fields[index]) === normalizeDictation(expected));
   else if (q.options) ok = raw === q.correct;
-  else {
-    const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').trim();
-    const numeric = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized);
-    ok = numeric && Number(normalized) === Number(q.correct);
-  }
+  else ok = matchesNumber(raw,q.correct);
   current.answers[current.index] = {id:q.id,ok,raw,...(fields?{fields}:{})};
   const now = new Date();
   const time = now.getTime();
@@ -412,14 +432,18 @@ function readingMaterial(question, expanded = false) {
   return question.material ? '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary><div>'+esc(question.material)+'</div></details>' : '';
 }
 const normalizeDictation = text => text.normalize('NFKC').replace(/[\p{P}\s]/gu,'');
-const dictationValues = (question, values) => question.blanks.map((_,index)=>Array.isArray(values)?(values[index]??''):'');
+const fieldValues = (question, values) => (question.steps ?? question.blanks).map((_,index)=>Array.isArray(values)?(values[index]??''):'');
+function matchesNumber(raw, expected) {
+  const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').trim();
+  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized) && Number(normalized) === Number(expected);
+}
 const blankName = index => index === 0 ? '第一空' : '第二空';
 function dictationInputs(question, selected, submitted) {
-  const values = dictationValues(question,submitted?.fields ?? selected);
+  const values = fieldValues(question,submitted?.fields ?? selected);
   const inputs = question.blanks.map((expected,index)=>{
     const invalid = submitted && normalizeDictation(expected)!==normalizeDictation(values[index]);
     const id = 'dictation-blank-'+index;
-    return '<label for="'+id+'"><span>'+blankName(index)+'</span><input class="answer-input" id="'+id+'" data-dictation="'+index+'" type="text" autocomplete="off" spellcheck="false" maxlength="80" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'></label>';
+    return '<label for="'+id+'"><span>'+blankName(index)+'</span><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" spellcheck="false" maxlength="80" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'></label>';
   }).join('');
   return '<div class="dictation-fields">'+inputs+(submitted?'':'<p>标点和空格不计分。想不起来的空可以留空提交。</p>')+'</div>';
 }
@@ -446,7 +470,7 @@ function dictationDifference(typed, answer) {
   return {typedMarkup,answerMarkup};
 }
 function dictationReview(question, submitted) {
-  const values = dictationValues(question,submitted.fields);
+  const values = fieldValues(question,submitted.fields);
   const rows = question.blanks.map((expected,index)=>{
     const typed = values[index];
     if (normalizeDictation(typed)===normalizeDictation(expected)) {
@@ -457,11 +481,29 @@ function dictationReview(question, submitted) {
   }).join('');
   return '<ul class="dictation-review">'+rows+'</ul>';
 }
+function stepInputs(question, selected, submitted) {
+  const values = fieldValues(question,submitted?.fields ?? selected);
+  return '<div class="step-fields">'+question.steps.map((step,index)=>{
+    const id = 'step-'+index;
+    const invalid = submitted && !matchesNumber(values[index],step.answer);
+    const unit = step.unit ? '<span class="step-unit">'+esc(step.unit)+'</span>' : '';
+    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" maxlength="32" placeholder="只填数字" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
+  }).join('')+'</div>';
+}
+function stepReview(question, submitted) {
+  const values = fieldValues(question,submitted.fields);
+  return '<ul class="dictation-review">'+question.steps.map((step,index)=>{
+    const value = values[index];
+    const ok = matchesNumber(value,step.answer);
+    return '<li><strong>'+esc(step.label)+' · '+(ok?'正确':value.trim()?'有误':'未填')+'</strong>'+
+      (ok?'':'<span>你的答案　'+(esc(value.trim())||'（空白）')+'</span>')+'<span>正确结果　'+esc(step.answer)+(step.unit?' '+esc(step.unit):'')+'</span></li>';
+  }).join('')+'</ul>';
+}
 function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const backLabel = s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
+    : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
@@ -469,7 +511,7 @@ function quizPage() {
       : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
-      const comparison = question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
+      const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
       return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+'<p>'+esc(question.explanation)+'</p><div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':'<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>')+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
@@ -479,21 +521,21 @@ function quizPage() {
   const level = questionLevel(q);
   const submitted = s.answers[s.index];
   const value = submitted?.raw ?? s.selected;
-  const options = q.blanks ? dictationInputs(q,s.selected,submitted) : q.options
+  const options = q.steps ? stepInputs(q,s.selected,submitted) : q.blanks ? dictationInputs(q,s.selected,submitted) : q.options
     ? '<div class="options">'+q.options.map((option,i)=>{
       const status = submitted ? option===q.correct?' correct':option===value?' wrong':'' : '';
       return '<button class="option'+status+'" type="button" data-option="'+i+'" aria-pressed="'+(option===value)+'" '+(submitted?'disabled':'')+'><span>'+String.fromCharCode(65+i)+'</span><span>'+esc(option)+'</span></button>';
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
-  const comparison = submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
+  const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+'<p><b>解析</b>　'+esc(q.explanation)+'</p>'+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = {bank:'bank',mixed:'bank',difficulty:'bank',packs:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const view = {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
@@ -502,6 +544,7 @@ function render(moveFocus = false) {
   if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='difficulty') app.innerHTML = difficultyPage();
+  else if (page==='advanced') app.innerHTML = advancedPage(subject);
   else if (page==='packs') app.innerHTML = packPage(subjectId);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='learn') {
@@ -565,11 +608,11 @@ app.addEventListener('click',event => {
   }
 });
 app.addEventListener('input',event=>{
-  const index = event.target.dataset.dictation;
+  const index = event.target.dataset.answerField;
   if (index !== undefined) {
     const current = state.session;
     const question = questionById.get(current.ids[current.index]);
-    const values = dictationValues(question,current.selected);
+    const values = fieldValues(question,current.selected);
     values[Number(index)] = event.target.value;
     current.selected = values;
     save();

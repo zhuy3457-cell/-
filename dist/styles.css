@@ -216,3 +216,15 @@ dialog::backdrop{background:#23193968}
 .dictation-review mark{border-radius:3px;padding:0 1px}
 .dictation-extra{background:#ffe1e4;color:#9c2932;text-decoration:underline}
 .dictation-missing{background:#dff5e7;color:#145940;text-decoration:underline}
+.practice-entries{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.practice-entries .pack-entry{margin:0}
+.advanced-entry{background:#eae3fa;border-color:#d8caf6}
+.advanced-entry .subject-icon{background:var(--accent);color:#fff}
+.advanced-card .reference-list{background:#fbfaff}
+@media(max-width:690px){.practice-entries{grid-template-columns:1fr;margin-bottom:17px}}
+.step-fields{display:grid;gap:11px}
+.step-fields label{display:block;margin-bottom:4px;font-size:.93rem;font-weight:700}
+.step-input{display:flex;align-items:center;gap:9px}
+.step-input input{max-width:460px}
+.step-input input[aria-invalid=true]{background:#fff6f6;border-color:#daa7ac}
+.step-unit{color:var(--muted);font-size:.85rem}
