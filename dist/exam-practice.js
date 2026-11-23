@@ -249,3 +249,176 @@ const practicePacks = new Map(Object.entries({
     ]
   }
 }));
+
+const worksheetQuestions = [
+  {
+    "id": "match-equation-formula-fence",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "劳动课要给一块长方形花圃围上围栏。花圃的长比宽多 6 米，四周留出一个宽 3 米的入口，其余部分共用围栏 57 米。设花圃的宽为 x 米，下面哪个方程正确？",
+    "correct": "2(x＋x＋6)－3＝57",
+    "options": [
+      "2(x＋x＋6)＋3＝57",
+      "2(x＋x＋6)－3＝57",
+      "2(x＋x＋6)－6＝57",
+      "x＋x＋6－3＝57"
+    ],
+    "explanation": "设宽为 x 米，则长为 (x＋6) 米。长方形周长是 2(x＋x＋6) 米，减去入口的 3 米才是围栏长度，因此列式 2(x＋x＋6)－3＝57。解得 x＝12，长为 18 米。验算得 2×(12＋18)－3＝57。",
+    "stage": "用公式"
+  },
+  {
+    "id": "match-equation-formula-trapezoid",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "美术课上，小林用卡纸剪出一个梯形。梯形的面积是 150 平方厘米，高为 10 厘米，下底比上底长 6 厘米。这个梯形的下底是多少厘米？只填数字。",
+    "correct": "18",
+    "options": null,
+    "explanation": "设上底为 x 厘米，则下底为 (x＋6) 厘米。按梯形面积公式列式：(x＋x＋6)×10÷2＝150。化简得 2x＋6＝30，解得 x＝12，所以所求的下底是 18 厘米。验算：(12＋18)×10÷2＝150。",
+    "stage": "用公式"
+  },
+  {
+    "id": "match-equation-display-width",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "一个长方形展板的长比宽多 4 分米。给四条边贴一圈边框，边框总长 36 分米。展板宽多少分米？只填数字。",
+    "correct": "7",
+    "options": null,
+    "explanation": "设宽为 x 分米，则长为 x＋4 分米。按长方形周长公式列 2(x＋x＋4)＝36。解得 4x＝28，x＝7。检验：宽 7、长 11，周长 2×(7＋11)＝36 分米。",
+    "stage": "用公式"
+  },
+  {
+    "id": "match-equation-walkway-time",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "一条步道全长 1020 米。小乐先以 75 米/分走了 8 分钟，再以 60 米/分走到终点。后一段用了几分钟？只填数字。",
+    "correct": "7",
+    "options": null,
+    "explanation": "设后一段用了 x 分钟。根据「两段路程相加等于总路程」列 75×8＋60x＝1020。解得 x＝7。检验：两段共走 600＋420＝1020 米。",
+    "stage": "用公式"
+  },
+  {
+    "id": "match-equation-property-exterior",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "三角形 ABC 中，把边 BC 沿原方向延长到点 D，得到外角 ∠ACD＝108°。已知 ∠A 的度数是 ∠B 的 3 倍。设 ∠B 的度数为 x，下面哪个方程正确？",
+    "correct": "3x＋x＝108",
+    "options": [
+      "3x＋x＋108＝180",
+      "3x－x＝108",
+      "3x＋x＝108",
+      "3x＋x＝90"
+    ],
+    "explanation": "设 ∠B＝x°，则 ∠A＝3x°。三角形的外角等于与它不相邻的两个内角之和，所以 3x＋x＝108。解得 ∠B＝27°、∠A＝81°，两角之和恰为 108°。",
+    "stage": "用性质"
+  },
+  {
+    "id": "match-equation-property-supplementary",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "直线 AB 上有一点 O，射线 OC 从 O 出发且不在直线 AB 上。∠AOC 比 ∠COB 的 2 倍少 15°。求 ∠AOC 的度数。只填数字。",
+    "correct": "115",
+    "options": null,
+    "explanation": "设 ∠COB＝x°，由题意 ∠AOC＝(2x－15)°。射线 OC 把平角 ∠AOB 分成两部分，因此列式 x＋(2x－15)＝180。解得 x＝65，所求的 ∠AOC 为 115°。验算：115＋65＝180，且 2×65－15＝115。",
+    "stage": "用性质"
+  },
+  {
+    "id": "match-equation-angle-ratio",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "一个三角形的三个内角度数之比为 3∶4∶5。按角分类，它是什么三角形？",
+    "correct": "锐角三角形",
+    "options": [
+      "直角三角形",
+      "锐角三角形",
+      "钝角三角形",
+      "条件不足，无法确定"
+    ],
+    "explanation": "设每一份为 x°。根据三角形内角和列 3x＋4x＋5x＝180，解得 x＝15。三个角分别为 45°、60°、75°，和为 180°，且都小于 90°。",
+    "stage": "用性质"
+  },
+  {
+    "id": "match-equation-isosceles-apex",
+    "topic": "equation",
+    "level": "standard",
+    "prompt": "一个等腰三角形的顶角比一个底角的 2 倍多 12°。它的顶角是多少度？只填数字。",
+    "correct": "96",
+    "options": null,
+    "explanation": "设一个底角为 x°，另一个底角也是 x°，顶角为 (2x＋12)°。列 x＋x＋2x＋12＝180，解得 x＝42。顶角为 96°。检验：两个 42° 加 96° 正好是 180°。",
+    "stage": "用性质"
+  },
+  {
+    "id": "match-equation-pattern-bead-formula",
+    "topic": "equation",
+    "level": "standard",
+    "material": "图例　○ 表示白珠，● 表示蓝珠\n第 1 图　○○｜●●●\n第 2 图　○○｜●●●｜●●●\n第 3 图　○○｜●●●｜●●●｜●●●",
+    "prompt": "照这个规律排下去，左端始终保留 2 颗白珠，每增加一组就增加 3 颗蓝珠。若用 n 表示图号（n＝1，2，3，…），第 n 图的珠子总数可用哪个式子表示？",
+    "correct": "3n＋2",
+    "options": [
+      "2n＋3",
+      "3n＋2",
+      "5n",
+      "3n－1"
+    ],
+    "explanation": "设图号为 n，第 n 图有 n 组蓝珠，共 3n 颗，再加固定的 2 颗白珠，所以总数是 3n＋2。这道题只需列出式子。把 n＝1 和 n＝2 分别代入，得到 5 和 8，与图形计数相符。",
+    "stage": "找规律"
+  },
+  {
+    "id": "match-equation-pattern-ladder-levels",
+    "topic": "equation",
+    "level": "standard",
+    "material": "顶端和底端各有 1 根横杆。每增加一层，就在左、右两侧各接 1 根短竖杆，并多加 1 根横杆；横杆总数等于层数加 1。",
+    "prompt": "科技小组用短杆做梯架模型。第 n 个模型有 n 层，两侧分别用 n 根短竖杆拼接，横杆装在每层交界和模型的上下两端。第几个模型恰好用 34 根短杆？只填数字。",
+    "correct": "11",
+    "options": null,
+    "explanation": "设第 n 个模型恰好用 34 根短杆。两侧共有 2n 根短竖杆，横杆有 n＋1 根，列式 2n＋n＋1＝34。解得 3n＝33，n＝11。11 是正整数，代入可得 22＋12＝34，所以是第 11 个模型。",
+    "stage": "找规律"
+  },
+  {
+    "id": "match-equation-pattern-pentagon-boundary",
+    "topic": "equation",
+    "level": "challenge",
+    "material": "每张正五边形纸片有 5 条等长的边。纸片排成一列，每对相邻纸片恰好共用 1 条完整边，其他边不重合。共用边位于内部，外缘按纸片的一条边算 1 段。",
+    "prompt": "第 n 图用 n 张纸片拼成，图号从 1 开始。有没有一个图形的外缘恰好由 49 段组成？",
+    "correct": "没有。由 3n＋2＝49 解得 n＝47/3，图号必须是正整数",
+    "options": [
+      "有，是第 15 图。47/3 的整数部分是 15",
+      "有，是第 16 图。47/3 四舍五入等于 16",
+      "没有。由 3n＋2＝49 解得 n＝47/3，图号必须是正整数",
+      "有，是第 12 图。由 4n＋1＝49 解得 n＝12"
+    ],
+    "explanation": "设第 n 图恰有 49 段外缘。分开数有 5n 条边，共用边有 n－1 条，每条共用边原来被两张纸片各数了 1 次，应减 2(n－1)，所以列 5n－2(n－1)＝49，解得 n＝47/3。这个值不是整数，也不能四舍五入成图号。检验相邻图形，第 15 图有 47 段，第 16 图有 50 段，均不是 49 段。",
+    "stage": "找规律"
+  },
+  {
+    "id": "match-equation-pattern-positive-index",
+    "topic": "equation",
+    "level": "challenge",
+    "material": "第 1 图：9 盏灯。第 2 图：13 盏灯。第 3 图：17 盏灯。第 1 图是一块完整灯牌，从第 2 图起，每次都在两侧各加 2 盏灯。",
+    "prompt": "做灯牌时只允许选择第 1 图、第 2 图、第 3 图……中的一个，必须刚好用完手头的灯。现有 5 盏、9 盏、29 盏三批灯，哪几批各自能拼出符合规则的灯牌？",
+    "correct": "9 盏和 29 盏，分别对应第 1 图和第 6 图",
+    "options": [
+      "只有 29 盏，对应第 6 图",
+      "5 盏和 9 盏，分别对应第 0 图和第 1 图",
+      "9 盏和 29 盏，分别对应第 1 图和第 6 图",
+      "三批都能拼，分别对应第 0 图、第 1 图和第 6 图"
+    ],
+    "explanation": "设图号为 n。从第 1 图到第 n 图共增加 n－1 次，每次增加 4 盏，因此列式 9＋4(n－1)＝灯数。依次代入 5、9、29，解得 n＝0、1、6。图号必须是正整数，0 虽符合等式但不符合题意。检验第 1 图用 9 盏，第 6 图用 9＋4×5＝29 盏。",
+    "stage": "找规律"
+  }
+];
+
+for (const question of worksheetQuestions) {
+  const target = calibratedTopics.get(question.topic);
+  target.topic.questions.push({...question, subject:target.subject});
+}
+
+const equationWorksheetPack = {
+  title:'一元一次方程 · 同难度练习',
+  icon:'math',
+  tone:'violet',
+  term:'上',
+  description:'按课堂学案的三类题练习。先从公式或几何性质找等量关系，再找图形规律，并检验方程的解能否作为图号。',
+  ids:worksheetQuestions.map(question=>question.id),
+  stages:['用公式 · 4 题','用性质 · 4 题','找规律 · 4 题']
+};
+practicePacks.set('equation-modeling', equationWorksheetPack);

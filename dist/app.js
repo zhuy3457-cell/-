@@ -141,7 +141,7 @@ function subjectCard(subject) {
   return '<a class="subject-card" href="#subject/'+subject.id+'"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><h3>'+subject.name+'</h3></div><div class="subject-topics">'+topics.map(t => t.title).join(' · ')+'</div><div class="subject-foot"><span>'+topics.length+' 个知识点 · '+topics.reduce((sum,t) => sum+t.questions.length,0)+' 题</span><strong>去学习</strong></div></a>';
 }
 function subjectGrid() {
-  return '<a class="pack-entry" href="#packs"><span class="subject-icon violet">'+icon('layers')+'</span><span><strong>江苏期末题型专项</strong><small>练数学应用、语文阅读、英语语篇和材料推断</small></span><span class="pack-entry-label">查看题组</span></a>'+
+  return '<a class="pack-entry" href="#packs"><span class="subject-icon violet">'+icon('layers')+'</span><span><strong>江苏专项题组</strong><small>课堂同难度练习与期末应用题</small></span><span class="pack-entry-label">查看题组</span></a>'+
     '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="#difficulty">出题难度与参考资料</a></p></section>';
 }
 function home() {
@@ -155,7 +155,8 @@ function subjectPage(subject) {
   const level = state.difficulty;
   const topics = topicsIn(subject).map(topic=>({topic, questions:questionsAt(topic,level)})).filter(item=>item.questions.length);
   const done = new Set(state.attempts.filter(a=>a.ok).map(a=>a.id));
-  const filters = '<div class="difficulty-filter"><label for="topicDifficulty">练习难度</label><select id="topicDifficulty">'+difficultyOptions(level)+'</select><a class="crumb" href="#difficulty">难度说明</a></div>';
+  const matched = subject.id==='math' && state.term==='上' ? '<a class="crumb" href="#packs/equation-modeling">一元一次方程同难度练习</a>' : '';
+  const filters = '<div class="difficulty-filter"><label for="topicDifficulty">练习难度</label><select id="topicDifficulty">'+difficultyOptions(level)+'</select><a class="crumb" href="#difficulty">难度说明</a>'+matched+'</div>';
   const rows = topics.map(({topic,questions})=>{
     const mastered = questions.filter(q=>done.has(q.id)).length;
     const key = 'topic/'+topic.key+(level==='all'?'':'/'+level);
@@ -170,13 +171,18 @@ function difficultyPage() {
   return pageHead('出题难度与参考资料','难度按做题时需要的推理和运用来划分。',bankLink)+
     '<section class="topic-list" aria-label="难度分级">'+rubric+'</section><section class="result-review"><h2 class="group-title">公开参考资料</h2><ul class="reference-list">'+sources+'</ul></section>';
 }
-function packPage() {
-  const cards = [...practicePacks].map(([id,pack])=>{
-    const refs = pack.sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
-    return '<article class="pack-card"><div class="subject-head"><span class="subject-icon '+pack.tone+'">'+icon(pack.icon)+'</span><div><h2>'+esc(pack.title)+'</h2><p>七年级下册 · '+pack.ids.length+' 题 · 进阶与挑战</p></div></div>'+
-      '<p>'+esc(pack.description)+'</p><details><summary>查看参考卷面</summary><ul class="reference-list">'+refs+'</ul></details><div class="actions">'+startButton('pack/'+id,'开始这组')+'</div></article>';
+function packPage(selectedId) {
+  const selected = practicePacks.get(selectedId);
+  const entries = selected ? [[selectedId,selected]] : [...practicePacks].reverse();
+  const cards = entries.map(([id,pack])=>{
+    const refs = pack.sources?.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
+    const stages = pack.stages ? '<ul class="pack-stages">'+pack.stages.map(stage=>'<li class="chip">'+esc(stage)+'</li>').join('')+'</ul>' : '';
+    return '<article class="pack-card"><div class="subject-head"><span class="subject-icon '+pack.tone+'">'+icon(pack.icon)+'</span><div><h2>'+esc(pack.title)+'</h2><p>七年级'+(pack.term ?? '下')+'册 · '+pack.ids.length+' 题</p></div></div>'+
+      '<p>'+esc(pack.description)+'</p>'+stages+(refs?'<details><summary>查看参考卷面</summary><ul class="reference-list">'+refs+'</ul></details>':'')+
+      '<div class="actions">'+startButton('pack/'+id,'开始这组')+'</div></article>';
   }).join('');
-  return pageHead('江苏期末题型专项','参考公开试卷的设问方式编写原创练习。每组做完可逐题核对答案和思路。',bankLink)+'<div class="pack-grid">'+cards+'</div>';
+  return pageHead(selected?'课堂同难度练习':'江苏专项题组','做完后可以逐题核对答案和思路。',selected?'<a class="crumb" href="#packs">全部专项题组</a>':bankLink)+
+    '<div class="pack-grid'+(selected?' pack-grid-single':'')+'">'+cards+'</div>';
 }
 function lessonPage(topic) {
   const lesson = lessonByTopic.get(topic.key);
@@ -348,7 +354,8 @@ function start(key, backTarget) {
     label = name+' · '+term+'册组卷'+(level==='all'?'':' · '+difficultyName(level)); back = '#mixed'+(id==='all'?'':'/'+id);
   } else if (kind === 'pack') {
     const pack = practicePacks.get(id);
-    ids = pack.ids; label = pack.title; back = '#packs';
+    if (!pack) return;
+    ids = pack.ids; label = pack.title; back = pack.stages ? '#packs/'+id : '#packs';
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -391,13 +398,14 @@ function answer(current,currentQuestion) {
   document.querySelector('#feedback')?.focus();
 }
 function readingMaterial(question, expanded = false) {
-  return question.material ? '<details class="reading-material" '+(expanded?'open':'')+'><summary>阅读材料</summary><div>'+esc(question.material)+'</div></details>' : '';
+  const title = question.stage==='找规律' ? '查看图形与数据' : '阅读材料';
+  return question.material ? '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary><div>'+esc(question.material)+'</div></details>' : '';
 }
 function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const backLabel = s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏','#packs':'专项题组'}[s.back] ?? '学科');
+    : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
@@ -421,7 +429,7 @@ function quizPage() {
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong><p><b>正确答案</b>　'+esc(q.correct)+'</p><p><b>解析</b>　'+esc(q.explanation)+'</p>'+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span></div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
@@ -436,7 +444,7 @@ function render(moveFocus = false) {
   if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='difficulty') app.innerHTML = difficultyPage();
-  else if (page==='packs') app.innerHTML = packPage();
+  else if (page==='packs') app.innerHTML = packPage(subjectId);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='learn') {
     const topic = topicByKey.get(subjectId);

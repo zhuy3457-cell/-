@@ -204,3 +204,5 @@ dialog::backdrop{background:#23193968}
 .result-review .reading-material{margin:8px 0 0 14px}
 @media(max-width:690px){.pack-grid{grid-template-columns:1fr}}
 @media(max-width:570px){.pack-entry{padding:9px 10px;gap:8px;margin-bottom:17px}.pack-entry .subject-icon{width:34px;height:34px}.pack-entry strong{font-size:.88rem}.pack-entry small,.pack-entry-label{font-size:.73rem}}
+.pack-grid-single{grid-template-columns:minmax(0,740px)}
+.pack-stages{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0;padding:0;list-style:none}
