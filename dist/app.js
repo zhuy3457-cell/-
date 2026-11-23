@@ -141,7 +141,8 @@ function subjectCard(subject) {
   return '<a class="subject-card" href="#subject/'+subject.id+'"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><h3>'+subject.name+'</h3></div><div class="subject-topics">'+topics.map(t => t.title).join(' · ')+'</div><div class="subject-foot"><span>'+topics.length+' 个知识点 · '+topics.reduce((sum,t) => sum+t.questions.length,0)+' 题</span><strong>去学习</strong></div></a>';
 }
 function subjectGrid() {
-  return '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="#difficulty">出题难度与参考资料</a></p></section>';
+  return '<a class="pack-entry" href="#packs"><span class="subject-icon violet">'+icon('layers')+'</span><span><strong>江苏期末题型专项</strong><small>练数学应用、语文阅读、英语语篇和材料推断</small></span><span class="pack-entry-label">查看题组</span></a>'+
+    '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="#difficulty">出题难度与参考资料</a></p></section>';
 }
 function home() {
   const daily = state.attempts.filter(item => item.date === dateKey());
@@ -168,6 +169,14 @@ function difficultyPage() {
   const sources = calibrationSources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
   return pageHead('出题难度与参考资料','难度按做题时需要的推理和运用来划分。',bankLink)+
     '<section class="topic-list" aria-label="难度分级">'+rubric+'</section><section class="result-review"><h2 class="group-title">公开参考资料</h2><ul class="reference-list">'+sources+'</ul></section>';
+}
+function packPage() {
+  const cards = [...practicePacks].map(([id,pack])=>{
+    const refs = pack.sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
+    return '<article class="pack-card"><div class="subject-head"><span class="subject-icon '+pack.tone+'">'+icon(pack.icon)+'</span><div><h2>'+esc(pack.title)+'</h2><p>七年级下册 · '+pack.ids.length+' 题 · 进阶与挑战</p></div></div>'+
+      '<p>'+esc(pack.description)+'</p><details><summary>查看参考卷面</summary><ul class="reference-list">'+refs+'</ul></details><div class="actions">'+startButton('pack/'+id,'开始这组')+'</div></article>';
+  }).join('');
+  return pageHead('江苏期末题型专项','参考公开试卷的设问方式编写原创练习。每组做完可逐题核对答案和思路。',bankLink)+'<div class="pack-grid">'+cards+'</div>';
 }
 function lessonPage(topic) {
   const lesson = lessonByTopic.get(topic.key);
@@ -337,6 +346,9 @@ function start(key, backTarget) {
     ids = mixedQuestions(id,term,Number(count),level);
     const name = id === 'all' ? '核心学科混合' : subjects.find(subject=>subject.id===id).name;
     label = name+' · '+term+'册组卷'+(level==='all'?'':' · '+difficultyName(level)); back = '#mixed'+(id==='all'?'':'/'+id);
+  } else if (kind === 'pack') {
+    const pack = practicePacks.get(id);
+    ids = pack.ids; label = pack.title; back = '#packs';
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -378,11 +390,14 @@ function answer(current,currentQuestion) {
   render();
   document.querySelector('#feedback')?.focus();
 }
+function readingMaterial(question, expanded = false) {
+  return question.material ? '<details class="reading-material" '+(expanded?'open':'')+'><summary>阅读材料</summary><div>'+esc(question.material)+'</div></details>' : '';
+}
 function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const backLabel = s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
+    : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏','#packs':'专项题组'}[s.back] ?? '学科');
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
@@ -390,7 +405,7 @@ function quizPage() {
       : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
-      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary><p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p><div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+'<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p><div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':'<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>')+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
   }
@@ -406,13 +421,13 @@ function quizPage() {
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong><p><b>正确答案</b>　'+esc(q.correct)+'</p><p><b>解析</b>　'+esc(q.explanation)+'</p>'+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span></div><h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span></div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = {bank:'bank',mixed:'bank',difficulty:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const view = {bank:'bank',mixed:'bank',difficulty:'bank',packs:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
@@ -421,6 +436,7 @@ function render(moveFocus = false) {
   if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='difficulty') app.innerHTML = difficultyPage();
+  else if (page==='packs') app.innerHTML = packPage();
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='learn') {
     const topic = topicByKey.get(subjectId);
