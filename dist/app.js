@@ -88,6 +88,12 @@ const reviewCollections = new Map([
     title:'苏科版期中复习', keywords:'生物期中复习 显微镜 苏科版期中复习',
     subtitle:'按你上传的第 1–5、7–10 页可见内容整理，覆盖苏科版七年级上册第一、二单元的相关考点。',
     start:'biology-midterm', returnLabel:'生物期中复习', modules:biologyReviewModules, byTopic:biologyReviewByTopic
+  }],
+  ['civics-review', {
+    subject:'civics', name:'道德与法治', icon:'shield', tone:'teal',
+    title:'课课贴复习', keywords:'七上道法 道法课课贴 道德与法治课课贴',
+    subtitle:'根据你上传的第 3、4、6、8、10 页整理，覆盖资料中的 40 个考点。',
+    start:'civics-cards', returnLabel:'道法课课贴', modules:civicsReviewModules, byTopic:civicsReviewByTopic
   }]
 ]);
 const reviewRouteByTopic = new Map([...reviewCollections].flatMap(([route,collection])=>collection.modules.map(module=>[module.key,route])));
@@ -215,18 +221,22 @@ function reviewPage(route,key) {
   if (!unit) {
     const total = collection.modules.reduce((count,module)=>count+module.questions.length,0);
     const cards = collection.modules.map(module=>'<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+' 张卡 · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
+    const practiceName = collection.modules.some(module=>module.shortAnswer) ? '练习 '+total+' 道选择和填空' : '练习全部 '+total+' 题';
     return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
-      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>展开问答卡回忆要点，或做一组综合练习。</p></div>'+startButton(collection.start,'练习全部 '+total+' 题')+'</div>'+
+      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>展开问答卡回忆要点，或做一组综合练习。</p></div>'+startButton(collection.start,practiceName)+'</div>'+
       '<div class="pack-grid">'+cards+'</div>';
   }
   const notes = unit.notes.map(note=>'<details class="geo-note"><summary>'+esc(note.label)+'</summary><p>'+esc(note.text)+'</p></details>').join('');
   const refs = referenceItems(unit.sources);
   const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
+  const task = unit.shortAnswer;
+  const shortAnswer = task ? '<section class="short-answer"><h2 class="group-title">材料简答</h2><p>'+esc(task.material)+'</p><p>'+esc(task.prompt)+'</p>'+
+    '<details class="geo-note"><summary>核对作答要点</summary><ol>'+task.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ol></details></section>' : '';
   const practice = state.session && !endOfSession(state.session) && questionById.get(state.session.ids[state.session.index])?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
   return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="'+base+'">'+collection.title+'</a>')+
-    timeline+'<div class="section-head"><h2>问答复习卡</h2>'+practice+'</div><div class="geo-notes">'+notes+'</div>'+
+    timeline+'<div class="section-head"><h2>问答复习卡</h2>'+practice+'</div><div class="geo-notes">'+notes+'</div>'+shortAnswer+
     (refs?'<details class="geo-references"><summary>查阅参考来源</summary><ul class="reference-list">'+refs+'</ul></details>':'')+'</article>';
 }
 function advancedPage(selected) {

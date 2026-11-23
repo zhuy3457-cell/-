@@ -249,6 +249,13 @@ dialog::backdrop{background:#23193968}
 .history-timeline li span{font-size:.83rem;color:#775016;font-weight:650}
 .biology-review-entry{background:#edf8ed;border-color:#d2e9d2}
 .biology-review-entry .pack-entry-label{color:#285c39}
+.civics-review-entry{background:#edf8f5;border-color:#cce7dd}
+.civics-review-entry .pack-entry-label{color:#226b56}
+.short-answer{margin-top:24px}
+.short-answer p{margin:8px 0;color:var(--muted);line-height:1.65}
+.short-answer details{margin-top:12px}
+.short-answer ol{margin:10px 0 0;padding-left:1.4em;line-height:1.65}
+.short-answer li+li{margin-top:6px}
 .material-table-scroll{overflow-x:auto}
 .material-table-scroll table{width:100%;min-width:17rem;max-width:580px;border-collapse:collapse;background:#fff;white-space:normal}
 .material-table-scroll caption{text-align:left;padding:0 0 5px;font-size:.86rem;color:var(--muted)}
