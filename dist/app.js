@@ -54,9 +54,59 @@ const termName = () => '七年级' + state.term + '册';
 const startButton = (key, label, style = 'primary', symbol = '') => '<button type="button" class="btn '+style+'" data-start="'+key+'">'+(symbol ? icon(symbol) : '')+label+'</button>';
 const pageHead = (title, sub, back = '') => '<div class="page-head">'+back+'<h1>'+title+'</h1><p>'+sub+'</p></div>';
 const homeLink = '<a class="crumb" href="#home">学习首页</a>';
+const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn secondary" href="#mixed'+(subjectId ? '/'+subjectId : '')+'">'+icon('layers')+label+'</a>';
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const termTabs = () => '<div class="segmented" role="group" aria-label="选择册次">'+['上','下'].map(term => '<button type="button" data-term="'+term+'" aria-pressed="'+(state.term === term)+'">'+term+'册</button>').join('')+'</div>';
-function topicsIn(subject) { return subject.topics.filter(topic => topic.term === state.term); }
+function topicsIn(subject, term = state.term) { return subject.topics.filter(topic => topic.term === term); }
+function mixedTopics(id, term) {
+  return id === 'all'
+    ? subjects.filter(subject => !subject.extra).flatMap(subject => topicsIn(subject, term))
+    : topicsIn(subjects.find(subject => subject.id === id), term);
+}
+function shuffled(items) {
+  const result = items.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+function mixedQuestions(id, term, count) {
+  const selectedSubjects = id === 'all' ? shuffled(subjects.filter(subject => !subject.extra)) : [subjects.find(subject => subject.id === id)];
+  const queues = selectedSubjects.map(subject => shuffled(topicsIn(subject, term)).map(topic => shuffled(topic.questions)));
+  const selected = [];
+  while (selected.length < count && queues.length) {
+    const topics = queues.shift();
+    const questions = topics.shift();
+    selected.push(questions.pop().id);
+    if (questions.length) topics.push(questions);
+    if (topics.length) queues.push(topics);
+  }
+  return selected;
+}
+function mixedCounts(id, term) {
+  const total = mixedTopics(id, term).reduce((sum, topic) => sum + topic.questions.length, 0);
+  const sizes = [5, 10, 15].filter(size => size < Math.min(total, 20));
+  return {total, sizes: [...sizes, Math.min(total, 20)]};
+}
+function mixedOptions(id, term, desired = 10) {
+  const {total, sizes} = mixedCounts(id, term);
+  const selected = sizes.includes(desired) ? desired : sizes.includes(10) ? 10 : sizes.at(-1);
+  return {
+    options: sizes.map(size => '<option value="'+size+'" '+(size===selected?'selected':'')+'>'+size+' 题</option>').join(''),
+    description: '当前范围有 '+total+' 道题，组卷时会优先覆盖不同知识点。'
+  };
+}
+function mixedPage(subject) {
+  const id = subject?.id ?? 'all';
+  const {options, description} = mixedOptions(id, state.term);
+  return pageHead('自选组卷','选择范围和题量，练习后查看每道题的结果。',bankLink)+
+    '<form class="mix-form" id="mixedForm"><div class="mix-fields">'+
+    '<label>学科<select name="subject"><option value="all">核心学科混合</option>'+subjects.map(item=>'<option value="'+item.id+'" '+(item.id===id?'selected':'')+'>'+item.name+'</option>').join('')+'</select></label>'+
+    '<label>册次<select name="term">'+['上','下'].map(term=>'<option value="'+term+'" '+(term===state.term?'selected':'')+'>七年级'+term+'册</option>').join('')+'</select></label>'+
+    '<label>题量<select name="count">'+options+'</select></label></div>'+
+    '<p id="mixDescription" class="scope" aria-live="polite">'+description+'</p><div class="actions"><button class="btn primary" type="submit">'+icon('pencil')+'开始做题</button></div></form>';
+}
 function metric(title, value, tone, glyph) {
   return '<div class="metric"><span class="metric-icon '+tone+'">'+icon(glyph)+'</span><div class="metric-text"><small>'+title+'</small><strong>'+value+'</strong></div></div>';
 }
@@ -71,13 +121,13 @@ function home() {
   const daily = state.attempts.filter(item => item.date === dateKey());
   const continuation = state.session && !endOfSession(state.session)
     ? '<a class="btn secondary" href="#quiz">'+icon('book')+'继续上次练习</a>'
-    : '<a class="btn secondary" href="#bank">'+icon('layers')+'浏览题库</a>';
-  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+continuation+'</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+subjectGrid();
+    : mixedLink();
+  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+continuation+(state.session && !endOfSession(state.session) ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+'</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+subjectGrid();
 }
 function subjectPage(subject) {
   const topics = topicsIn(subject);
-  return pageHead(subject.name, termName()+' · 选择知识点开始练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点练习</h2>'+termTabs()+'</div><div class="topic-list">'+topics.map(topic=>{
-    const done = new Set(state.attempts.filter(a=>a.ok).map(a=>a.id));
+  const done = new Set(state.attempts.filter(a=>a.ok).map(a=>a.id));
+  return pageHead(subject.name, termName()+' · 选择知识点开始练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点练习</h2>'+'<div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div><div class="topic-list">'+topics.map(topic=>{
     const mastered = topic.questions.filter(q=>done.has(q.id)).length;
     return '<div class="row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+topic.questions.length+' 题</p></div>'+startButton('topic/'+topic.key,'开始练习')+'</div>';
   }).join('')+'</div></section>';
@@ -93,13 +143,29 @@ function mistakePage() {
     }).join('')+'</div>'
     : empty('还没有待复练的错题','开始练习后，可以回到这里复习。','notebook'));
 }
+function priorityReview() {
+  const grouped = new Map();
+  for (const id of mistakeIds()) {
+    const question = questionById.get(id);
+    const current = grouped.get(question.topic) ?? {pending:0, wrongAttempts:0};
+    current.pending++;
+    current.wrongAttempts += state.mistakes[id].count;
+    grouped.set(question.topic, current);
+  }
+  const priority = [...grouped].sort(([,a],[,b])=>b.pending-a.pending || b.wrongAttempts-a.wrongAttempts).slice(0,4);
+  if (!priority.length) return '';
+  return '<section class="priority"><div class="section-head"><div><h2>优先复练</h2><p>按当前待复练题量排序</p></div></div><div class="topic-list">'+priority.map(([key, summary])=>{
+    const topic = topicByKey.get(key);
+    return '<div class="row"><div><h3>'+topic.title+'</h3><p>'+topic.subject.name+' · '+topic.term+'册 · '+summary.pending+' 道错题</p></div>'+startButton('topic-mistakes/'+key,'复练此知识点','secondary')+'</div>';
+  }).join('')+'</div></section>';
+}
 function statsPage() {
   const attempts = state.attempts;
   const right = attempts.filter(a => a.ok);
   const days = new Set(attempts.map(a => a.date));
   return pageHead('学习记录','做题后自动更新。记录保存在当前浏览器。',homeLink)+
     '<div class="metrics">'+metric('累计作答',attempts.length+' 题','violet','pencil')+metric('整体正确率',percent(right.length,attempts.length),'green','target')+metric('练习天数',days.size+' 天','orange','chart')+'</div>'+
-    '<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+subjects.map(subject => {
+    priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+subjects.map(subject => {
       const tried = attempts.filter(a=>questionById.get(a.id)?.subject===subject.id);
       const success = tried.filter(a=>a.ok);
       const distinct = new Set(success.map(a=>a.id)).size;
@@ -119,12 +185,24 @@ function dailyQuestions() {
 }
 function start(key) {
   let ids, label, back;
-  const [kind, id] = key.split('/');
-  if (kind === 'daily') {
+  const [kind, id, term, count] = key.split('/');
+  if (state.session?.key === key && !endOfSession(state.session)) {
+    location.hash = 'quiz';
+    return;
+  }
+  if (kind === 'mixed') {
+    ids = mixedQuestions(id, term, Number(count));
+    const name = id === 'all' ? '核心学科混合' : subjects.find(subject=>subject.id===id).name;
+    label = name+' · '+term+'册组卷'; back = '#mixed'+(id==='all'?'':'/'+id);
+  } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
     const topic = topicByKey.get(id);
     ids = topic.questions.map(q=>q.id); label = topic.subject.name+' · '+topic.title; back = '#subject/'+topic.subject.id;
+  } else if (kind === 'topic-mistakes') {
+    const topic = topicByKey.get(id);
+    ids = mistakeIds().filter(qid=>questionById.get(qid).topic===id);
+    label = topic.title+' · 错题复练'; back = '#stats';
   } else {
     ids = kind === 'one' ? [id] : mistakeIds();
     label = '错题复练'; back = '#mistakes';
@@ -153,10 +231,18 @@ function answer(current,currentQuestion) {
 function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
-  const back = '<a class="crumb" href="'+s.back+'">返回'+(s.back==='#mistakes'?'错题本':s.back==='#home'?'首页':'学科')+'</a>';
+  const backLabel = s.back.startsWith('#mixed') ? '组卷设置'
+    : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录'}[s.back] ?? '学科');
+  const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
-    return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions"><a class="btn secondary" href="'+s.back+'">返回学习</a>'+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':startButton(s.key,'再练一遍'))+'</div></section>';
+    const retry = s.key.startsWith('mixed/') ? startButton(s.key,'再出一组','secondary')
+      : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary'));
+    const overview = s.answers.map((answer, index)=>{
+      const question = questionById.get(answer.id);
+      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary><p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p></details></li>';
+    }).join('');
+    return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':'<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>')+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
   }
   const q = questionById.get(s.ids[s.index]);
   const topic = topicByKey.get(q.topic);
@@ -174,13 +260,15 @@ function quizPage() {
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
-  const view = {bank:'bank',subject:'bank',mistakes:'mistakes',stats:'stats',quiz:state.session?.back==='#mistakes'?'mistakes':'bank'}[page] ?? 'home';
+  const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats'})[state.session?.back] ?? 'bank';
+  const view = {bank:'bank',mixed:'bank',subject:'bank',mistakes:'mistakes',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
   }
   document.querySelector('#mistakeBadge').textContent = mistakeIds().length || '';
-  if (page==='bank') app.innerHTML = pageHead('学科题库','按学科、册次和知识点选择练习。',homeLink)+subjectGrid();
+  if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科、册次和知识点选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
+  else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='mistakes') app.innerHTML = mistakePage();
   else if (page==='stats') app.innerHTML = statsPage();
@@ -224,7 +312,22 @@ app.addEventListener('input',event=>{
     save();
   }
 });
+app.addEventListener('change',event=>{
+  const form = event.target.closest('#mixedForm');
+  if (!form || !['subject','term'].includes(event.target.name)) return;
+  const {subject,term,count} = form.elements;
+  const {options,description} = mixedOptions(subject.value,term.value,Number(count.value));
+  count.innerHTML = options;
+  document.querySelector('#mixDescription').textContent = description;
+});
 app.addEventListener('submit',event=>{
+  if (event.target.id==='mixedForm') {
+    event.preventDefault();
+    const {subject,term,count} = event.target.elements;
+    state.term = term.value;
+    start('mixed/'+subject.value+'/'+term.value+'/'+count.value);
+    return;
+  }
   if (event.target.id!=='questionForm') return;
   event.preventDefault();
   const s=state.session;
