@@ -36,12 +36,19 @@ const allQuestions = allTopics.flatMap(topic => topic.questions);
 const topicByKey = new Map(allTopics.map(topic => [topic.key, topic]));
 const questionById = new Map(allQuestions.map(question => [question.id, question]));
 const storageKey = 'suxue-study-v1';
-let state = {term:'上', attempts:[], mistakes:{}, favorites:[], session:null};
+const difficultyLevels = new Map([
+  ['basic', ['基础','识记概念、直接代入或做一步运算。']],
+  ['standard', ['进阶','在新情境中提取有用信息，并运用一个知识点得出答案。']],
+  ['challenge', ['挑战','综合多个条件、比较方案，或完成两步及以上的推理。']]
+]);
+const cleanLevel = value => difficultyLevels.has(value) ? value : 'all';
+let state = {term:'上', difficulty:'all', attempts:[], mistakes:{}, favorites:[], session:null};
 try {
   const saved = JSON.parse(localStorage.getItem(storageKey));
   if (saved) state = {...state, ...saved};
 } catch {}
 if (!['上','下'].includes(state.term)) state.term = '上';
+state.difficulty = cleanLevel(state.difficulty);
 let storageFailed = false;
 let backupNotice = '';
 const backupSchema = 'suxue-study-backup';
@@ -68,6 +75,12 @@ const lessonLink = (key, style = 'btn secondary') => lessonByTopic.has(key)
   ? '<a class="'+style+'" href="#learn/'+key+'">看讲解</a>' : '';
 const termTabs = () => '<div class="segmented" role="group" aria-label="选择册次">'+['上','下'].map(term => '<button type="button" data-term="'+term+'" aria-pressed="'+(state.term === term)+'">'+term+'册</button>').join('')+'</div>';
 function topicsIn(subject, term = state.term) { return subject.topics.filter(topic => topic.term === term); }
+const questionLevel = question => question.level ?? 'basic';
+const difficultyName = level => difficultyLevels.get(level)?.[0] ?? '不限难度';
+const questionsAt = (topic, level) => level === 'all' ? topic.questions : topic.questions.filter(question=>questionLevel(question)===level);
+const difficultyOptions = selected => ['all', ...difficultyLevels.keys()].map(level=>
+  '<option value="'+level+'" '+(selected===level?'selected':'')+'>'+difficultyName(level)+'</option>'
+).join('');
 function mixedTopics(id, term) {
   return id === 'all'
     ? subjects.filter(subject => !subject.extra).flatMap(subject => topicsIn(subject, term))
@@ -81,9 +94,9 @@ function shuffled(items) {
   }
   return result;
 }
-function mixedQuestions(id, term, count) {
+function mixedQuestions(id, term, count, level = 'all') {
   const selectedSubjects = id === 'all' ? shuffled(subjects.filter(subject => !subject.extra)) : [subjects.find(subject => subject.id === id)];
-  const queues = selectedSubjects.map(subject => shuffled(topicsIn(subject, term)).map(topic => shuffled(topic.questions)));
+  const queues = selectedSubjects.map(subject => shuffled(topicsIn(subject, term).map(topic=>questionsAt(topic,level)).filter(items=>items.length)).map(shuffled)).filter(items=>items.length);
   const selected = [];
   while (selected.length < count && queues.length) {
     const topics = queues.shift();
@@ -94,28 +107,31 @@ function mixedQuestions(id, term, count) {
   }
   return selected;
 }
-function mixedCounts(id, term) {
-  const total = mixedTopics(id, term).reduce((sum, topic) => sum + topic.questions.length, 0);
-  const sizes = [5, 10, 15].filter(size => size < Math.min(total, 20));
-  return {total, sizes: [...sizes, Math.min(total, 20)]};
+function mixedCounts(id, term, level = 'all') {
+  const total = mixedTopics(id, term).reduce((sum, topic) => sum + questionsAt(topic,level).length, 0);
+  const max = Math.min(total, 20);
+  const sizes = total ? [...[5, 10, 15].filter(size=>size<max),max] : [];
+  return {total, sizes};
 }
-function mixedOptions(id, term, desired = 10) {
-  const {total, sizes} = mixedCounts(id, term);
+function mixedOptions(id, term, desired = 10, level = 'all') {
+  const {total, sizes} = mixedCounts(id, term, level);
   const selected = sizes.includes(desired) ? desired : sizes.includes(10) ? 10 : sizes.at(-1);
   return {
-    options: sizes.map(size => '<option value="'+size+'" '+(size===selected?'selected':'')+'>'+size+' 题</option>').join(''),
-    description: '当前范围有 '+total+' 道题，组卷时会优先覆盖不同知识点。'
+    total,
+    options: sizes.map(size => '<option value="'+size+'" '+(size===selected?'selected':'')+'>'+size+' 题</option>').join('') || '<option value="">无可选题目</option>',
+    description: total ? '当前范围有 '+total+' 道题，优先从不同知识点抽取。' : '当前范围没有这个难度的题，可以调整学科、册次或难度。'
   };
 }
 function mixedPage(subject) {
   const id = subject?.id ?? 'all';
-  const {options, description} = mixedOptions(id, state.term);
-  return pageHead('自选组卷','选择范围和题量，练习后查看每道题的结果。',bankLink)+
+  const {total, options, description} = mixedOptions(id,state.term,10,state.difficulty);
+  return pageHead('自选组卷','选择学科、册次、难度和题量。',bankLink)+
     '<form class="mix-form" id="mixedForm"><div class="mix-fields">'+
     '<label>学科<select name="subject"><option value="all">核心学科混合</option>'+subjects.map(item=>'<option value="'+item.id+'" '+(item.id===id?'selected':'')+'>'+item.name+'</option>').join('')+'</select></label>'+
     '<label>册次<select name="term">'+['上','下'].map(term=>'<option value="'+term+'" '+(term===state.term?'selected':'')+'>七年级'+term+'册</option>').join('')+'</select></label>'+
-    '<label>题量<select name="count">'+options+'</select></label></div>'+
-    '<p id="mixDescription" class="scope" aria-live="polite">'+description+'</p><div class="actions"><button class="btn primary" type="submit">'+icon('pencil')+'开始做题</button></div></form>';
+    '<label>难度<select name="difficulty">'+difficultyOptions(state.difficulty)+'</select></label>'+
+    '<label>题量<select name="count" '+(total?'':'disabled')+'>'+options+'</select></label></div>'+
+    '<p id="mixDescription" class="scope" aria-live="polite">'+description+'</p><div class="actions"><a class="crumb mix-guide" href="#difficulty">难度说明</a><button class="btn primary" type="submit" '+(total?'':'disabled')+'>'+icon('pencil')+'开始做题</button></div></form>';
 }
 function metric(title, value, tone, glyph) {
   return '<div class="metric"><span class="metric-icon '+tone+'">'+icon(glyph)+'</span><div class="metric-text"><small>'+title+'</small><strong>'+value+'</strong></div></div>';
@@ -125,7 +141,7 @@ function subjectCard(subject) {
   return '<a class="subject-card" href="#subject/'+subject.id+'"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><h3>'+subject.name+'</h3></div><div class="subject-topics">'+topics.map(t => t.title).join(' · ')+'</div><div class="subject-foot"><span>'+topics.length+' 个知识点 · '+topics.reduce((sum,t) => sum+t.questions.length,0)+' 题</span><strong>去学习</strong></div></a>';
 }
 function subjectGrid() {
-  return '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="https://jyt.jiangsu.gov.cn/art/2024/1/18/art_88010_11138172.html" target="_blank" rel="noopener">江苏省教材选用说明</a></p></section>';
+  return '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="#difficulty">出题难度与参考资料</a></p></section>';
 }
 function home() {
   const daily = state.attempts.filter(item => item.date === dateKey());
@@ -135,12 +151,23 @@ function home() {
   return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+continuation+(state.session && !endOfSession(state.session) ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+'</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+subjectGrid();
 }
 function subjectPage(subject) {
-  const topics = topicsIn(subject);
+  const level = state.difficulty;
+  const topics = topicsIn(subject).map(topic=>({topic, questions:questionsAt(topic,level)})).filter(item=>item.questions.length);
   const done = new Set(state.attempts.filter(a=>a.ok).map(a=>a.id));
-  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点</h2>'+'<div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div><div class="topic-list">'+topics.map(topic=>{
-    const mastered = topic.questions.filter(q=>done.has(q.id)).length;
-    return '<div class="row topic-row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+topic.questions.length+' 题</p></div><div class="saved-actions">'+lessonLink(topic.key)+startButton('topic/'+topic.key,'做练习')+'</div></div>';
-  }).join('')+'</div></section>';
+  const filters = '<div class="difficulty-filter"><label for="topicDifficulty">练习难度</label><select id="topicDifficulty">'+difficultyOptions(level)+'</select><a class="crumb" href="#difficulty">难度说明</a></div>';
+  const rows = topics.map(({topic,questions})=>{
+    const mastered = questions.filter(q=>done.has(q.id)).length;
+    const key = 'topic/'+topic.key+(level==='all'?'':'/'+level);
+    return '<div class="row topic-row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+questions.length+' 题</p></div><div class="saved-actions">'+lessonLink(topic.key)+startButton(key,'做练习')+'</div></div>';
+  }).join('');
+  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点</h2><div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div>'+filters+
+    (rows ? '<div class="topic-list">'+rows+'</div>' : '<p class="empty" role="status">本册暂无这个难度的题。可以选择「不限难度」查看所有知识点。</p>')+'</section>';
+}
+function difficultyPage() {
+  const rubric = [...difficultyLevels].map(([level,[name,description]])=>'<div class="row"><div><h3><span class="chip level-'+level+'">'+name+'</span></h3><p>'+description+'</p></div></div>').join('');
+  const sources = calibrationSources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
+  return pageHead('出题难度与参考资料','难度按做题时需要的推理和运用来划分。',bankLink)+
+    '<section class="topic-list" aria-label="难度分级">'+rubric+'</section><section class="result-review"><h2 class="group-title">公开参考资料</h2><ul class="reference-list">'+sources+'</ul></section>';
 }
 function lessonPage(topic) {
   const lesson = lessonByTopic.get(topic.key);
@@ -300,20 +327,22 @@ function dailyQuestions() {
 }
 function start(key, backTarget) {
   let ids, label, back;
-  const [kind, id, term, count] = key.split('/');
+  const [kind, id, term, count, difficulty] = key.split('/');
   if (state.session?.key === key && !endOfSession(state.session)) {
     location.hash = 'quiz';
     return;
   }
   if (kind === 'mixed') {
-    ids = mixedQuestions(id, term, Number(count));
+    const level = cleanLevel(difficulty);
+    ids = mixedQuestions(id,term,Number(count),level);
     const name = id === 'all' ? '核心学科混合' : subjects.find(subject=>subject.id===id).name;
-    label = name+' · '+term+'册组卷'; back = '#mixed'+(id==='all'?'':'/'+id);
+    label = name+' · '+term+'册组卷'+(level==='all'?'':' · '+difficultyName(level)); back = '#mixed'+(id==='all'?'':'/'+id);
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
     const topic = topicByKey.get(id);
-    ids = topic.questions.map(q=>q.id); label = topic.subject.name+' · '+topic.title; back = backTarget || '#subject/'+topic.subject.id;
+    const level = cleanLevel(term);
+    ids = questionsAt(topic,level).map(q=>q.id); label = topic.subject.name+' · '+topic.title+(level==='all'?'':' · '+difficultyName(level)); back = backTarget || '#subject/'+topic.subject.id;
   } else if (kind === 'favorites' || kind === 'favorite-one') {
     ids = kind === 'favorite-one' ? [id] : favoriteIds();
     label = '收藏题复练'; back = '#favorites';
@@ -367,6 +396,7 @@ function quizPage() {
   }
   const q = questionById.get(s.ids[s.index]);
   const topic = topicByKey.get(q.topic);
+  const level = questionLevel(q);
   const submitted = s.answers[s.index];
   const value = submitted?.raw ?? s.selected;
   const options = q.options
@@ -376,13 +406,13 @@ function quizPage() {
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong><p><b>正确答案</b>　'+esc(q.correct)+'</p><p><b>解析</b>　'+esc(q.explanation)+'</p>'+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span></div><h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = {bank:'bank',mixed:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const view = {bank:'bank',mixed:'bank',difficulty:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
@@ -390,6 +420,7 @@ function render(moveFocus = false) {
   document.querySelector('#mistakeBadge').textContent = mistakeIds().length || '';
   if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
+  else if (page==='difficulty') app.innerHTML = difficultyPage();
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='learn') {
     const topic = topicByKey.get(subjectId);
@@ -459,6 +490,13 @@ app.addEventListener('input',event=>{
   }
 });
 app.addEventListener('change',async event=>{
+  if (event.target.id==='topicDifficulty') {
+    state.difficulty = cleanLevel(event.target.value);
+    save();
+    render();
+    document.querySelector('#topicDifficulty')?.focus({preventScroll:true});
+    return;
+  }
   if (event.target.id==='studyBackupInput') {
     const file = event.target.files[0];
     if (!file) return;
@@ -473,18 +511,22 @@ app.addEventListener('change',async event=>{
     return;
   }
   const form = event.target.closest('#mixedForm');
-  if (!form || !['subject','term'].includes(event.target.name)) return;
-  const {subject,term,count} = form.elements;
-  const {options,description} = mixedOptions(subject.value,term.value,Number(count.value));
+  if (!form || !['subject','term','difficulty'].includes(event.target.name)) return;
+  const {subject,term,count,difficulty} = form.elements;
+  const {total,options,description} = mixedOptions(subject.value,term.value,Number(count.value),cleanLevel(difficulty.value));
   count.innerHTML = options;
+  count.disabled = !total;
+  form.querySelector('button[type=submit]').disabled = !total;
   document.querySelector('#mixDescription').textContent = description;
 });
 app.addEventListener('submit',event=>{
   if (event.target.id==='mixedForm') {
     event.preventDefault();
-    const {subject,term,count} = event.target.elements;
+    const {subject,term,count,difficulty} = event.target.elements;
+    if (!count.value) return;
     state.term = term.value;
-    start('mixed/'+subject.value+'/'+term.value+'/'+count.value);
+    state.difficulty = cleanLevel(difficulty.value);
+    start('mixed/'+subject.value+'/'+term.value+'/'+count.value+(state.difficulty==='all'?'':'/'+state.difficulty));
     return;
   }
   if (event.target.id!=='questionForm') return;

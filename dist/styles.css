@@ -174,3 +174,16 @@ dialog::backdrop{background:#23193968}
 @media(max-width:570px){.topic-row{align-items:flex-start;flex-direction:column}.topic-row .saved-actions{align-self:flex-end}.lesson-facts{grid-template-columns:1fr;gap:9px}.lesson-facts section,.lesson-example{padding:14px}.lesson-example{margin-top:10px}}
 .search-entry{display:flex;align-items:center;gap:7px}
 .search-entry .search-result{flex:1;min-width:0;overflow-wrap:anywhere}
+.difficulty-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 13px;color:var(--muted);font-size:.9rem}
+.difficulty-filter select{font:inherit;appearance:none;color:var(--ink);border:1px solid #ded8ee;border-radius:8px;padding:7px 30px 7px 10px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath d='m3 5 4 4 4-4' fill='none' stroke='%236247d4' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center}
+.difficulty-filter select:focus-visible{outline:3px solid #977dff;outline-offset:2px}
+.quiz-chips{display:flex;gap:6px;flex-wrap:wrap}
+.level-basic{color:#195d46;background:#e6f7ed}
+.level-standard{color:#5141a4;background:#ebe6fd}
+.level-challenge{color:#824117;background:#ffefdf}
+.mix-guide{align-self:center;margin-right:auto}
+.reference-list{border:1px solid var(--line);background:white;border-radius:11px;list-style:none;margin:10px 0 0;padding:6px 15px}
+.reference-list li{padding:10px 0;line-height:1.55}
+.reference-list li+li{border-top:1px solid var(--line)}
+.reference-list p{font-size:.87rem;color:var(--muted);margin-top:3px}
+@media(min-width:571px){.mix-fields{grid-template-columns:1.5fr 1fr .9fr .75fr}}
