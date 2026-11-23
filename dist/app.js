@@ -59,11 +59,13 @@ const favoriteIds = () => state.favorites.filter(id => questionById.has(id));
 const endOfSession = s => s.index >= s.ids.length;
 const percent = (right,total) => total ? Math.round(right / total * 100) + '%' : '—';
 const termName = () => '七年级' + state.term + '册';
-const startButton = (key, label, style = 'primary', symbol = '') => '<button type="button" class="btn '+style+'" data-start="'+key+'">'+(symbol ? icon(symbol) : '')+label+'</button>';
+const startButton = (key, label, style = 'primary', symbol = '', back = '') => '<button type="button" class="btn '+style+'" data-start="'+key+'"'+(back?' data-back="'+back+'"':'')+'>'+(symbol ? icon(symbol) : '')+label+'</button>';
 const pageHead = (title, sub, back = '') => '<div class="page-head">'+back+'<h1>'+title+'</h1><p>'+sub+'</p></div>';
 const homeLink = '<a class="crumb" href="#home">学习首页</a>';
 const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn secondary" href="#mixed'+(subjectId ? '/'+subjectId : '')+'">'+icon('layers')+label+'</a>';
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
+const lessonLink = (key, style = 'btn secondary') => lessonByTopic.has(key)
+  ? '<a class="'+style+'" href="#learn/'+key+'">看讲解</a>' : '';
 const termTabs = () => '<div class="segmented" role="group" aria-label="选择册次">'+['上','下'].map(term => '<button type="button" data-term="'+term+'" aria-pressed="'+(state.term === term)+'">'+term+'册</button>').join('')+'</div>';
 function topicsIn(subject, term = state.term) { return subject.topics.filter(topic => topic.term === term); }
 function mixedTopics(id, term) {
@@ -120,7 +122,7 @@ function metric(title, value, tone, glyph) {
 }
 function subjectCard(subject) {
   const topics = topicsIn(subject);
-  return '<a class="subject-card" href="#subject/'+subject.id+'"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><h3>'+subject.name+'</h3></div><div class="subject-topics">'+topics.map(t => t.title).join(' · ')+'</div><div class="subject-foot"><span>'+topics.length+' 个知识点 · '+topics.reduce((sum,t) => sum+t.questions.length,0)+' 题</span><strong>开始练习</strong></div></a>';
+  return '<a class="subject-card" href="#subject/'+subject.id+'"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><h3>'+subject.name+'</h3></div><div class="subject-topics">'+topics.map(t => t.title).join(' · ')+'</div><div class="subject-foot"><span>'+topics.length+' 个知识点 · '+topics.reduce((sum,t) => sum+t.questions.length,0)+' 题</span><strong>去学习</strong></div></a>';
 }
 function subjectGrid() {
   return '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="https://jyt.jiangsu.gov.cn/art/2024/1/18/art_88010_11138172.html" target="_blank" rel="noopener">江苏省教材选用说明</a></p></section>';
@@ -135,10 +137,27 @@ function home() {
 function subjectPage(subject) {
   const topics = topicsIn(subject);
   const done = new Set(state.attempts.filter(a=>a.ok).map(a=>a.id));
-  return pageHead(subject.name, termName()+' · 选择知识点开始练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点练习</h2>'+'<div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div><div class="topic-list">'+topics.map(topic=>{
+  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+'<section><div class="section-head"><h2 class="group-title">知识点</h2>'+'<div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div><div class="topic-list">'+topics.map(topic=>{
     const mastered = topic.questions.filter(q=>done.has(q.id)).length;
-    return '<div class="row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+topic.questions.length+' 题</p></div>'+startButton('topic/'+topic.key,'开始练习')+'</div>';
+    return '<div class="row topic-row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+topic.questions.length+' 题</p></div><div class="saved-actions">'+lessonLink(topic.key)+startButton('topic/'+topic.key,'做练习')+'</div></div>';
   }).join('')+'</div></section>';
+}
+function lessonPage(topic) {
+  const lesson = lessonByTopic.get(topic.key);
+  if (!lesson) return empty('暂无这项讲解', '可以在学科题库中选择对应的练习。', 'book');
+  const [concept, caution, prompt, solution, reasoning] = lesson;
+  const s = state.session;
+  const activeQuestion = s && !endOfSession(s) ? questionById.get(s.ids[s.index]) : null;
+  const practice = activeQuestion?.topic === topic.key
+    ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
+    : startButton('topic/'+topic.key,'做专项练习 · '+topic.questions.length+' 题','primary','pencil','#learn/'+topic.key);
+  const back = '<a class="crumb" href="#subject/'+topic.subject.id+'">返回'+topic.subject.name+'</a>';
+  return '<article class="lesson-page">'+pageHead(topic.title,topic.subject.name+' · 七年级'+topic.term+'册',back)+
+    '<div class="lesson-facts"><section><h2>'+icon('book')+'核心要点</h2><p>'+esc(concept)+'</p></section>'+
+    '<section class="lesson-caution"><h2>'+icon('target')+'易错提醒</h2><p>'+esc(caution)+'</p></section></div>'+
+    '<section class="lesson-example"><h2>试做例题</h2><p class="example-prompt">'+esc(prompt)+'</p>'+
+    '<details><summary>展开答案与思路</summary><p><strong>答案</strong>　'+esc(solution)+'</p><p><strong>思路</strong>　'+esc(reasoning)+'</p></details>'+
+    '</section><div class="actions">'+practice+'</div></article>';
 }
 const empty = (heading, copy, glyph) => '<div class="empty"><span class="metric-icon">'+icon(glyph)+'</span><h2>'+heading+'</h2><p>'+copy+'</p><a class="btn primary" href="#bank">去学科题库</a></div>';
 function mistakePage() {
@@ -279,7 +298,7 @@ function dailyQuestions() {
     return topic.questions[Math.floor(day*(i+3)/7)%topic.questions.length].id;
   });
 }
-function start(key) {
+function start(key, backTarget) {
   let ids, label, back;
   const [kind, id, term, count] = key.split('/');
   if (state.session?.key === key && !endOfSession(state.session)) {
@@ -294,7 +313,7 @@ function start(key) {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
     const topic = topicByKey.get(id);
-    ids = topic.questions.map(q=>q.id); label = topic.subject.name+' · '+topic.title; back = '#subject/'+topic.subject.id;
+    ids = topic.questions.map(q=>q.id); label = topic.subject.name+' · '+topic.title; back = backTarget || '#subject/'+topic.subject.id;
   } else if (kind === 'favorites' || kind === 'favorite-one') {
     ids = kind === 'favorite-one' ? [id] : favoriteIds();
     label = '收藏题复练'; back = '#favorites';
@@ -333,16 +352,16 @@ function answer(current,currentQuestion) {
 function quizPage() {
   const s = state.session;
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
-  const backLabel = s.back.startsWith('#mixed') ? '组卷设置'
+  const backLabel = s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
     : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科');
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
     const retry = s.key.startsWith('mixed/') ? startButton(s.key,'再出一组','secondary')
-      : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary'));
+      : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
-      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary><p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p><div class="result-actions">'+favoriteButton(question.id)+'</div></details></li>';
+      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary><p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p><p>'+esc(question.explanation)+'</p><div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':'<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>')+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
   }
@@ -356,22 +375,30 @@ function quizPage() {
       return '<button class="option'+status+'" type="button" data-option="'+i+'" aria-pressed="'+(option===value)+'" '+(submitted?'disabled':'')+'><span>'+String.fromCharCode(65+i)+'</span><span>'+esc(option)+'</span></button>';
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
-  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong><p><b>正确答案</b>　'+esc(q.correct)+'</p><p><b>解析</b>　'+esc(q.explanation)+'</p></div>' : '';
+  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong><p><b>正确答案</b>　'+esc(q.correct)+'</p><p><b>解析</b>　'+esc(q.explanation)+'</p>'+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.options?'单选题':'填空题')+'</span><h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = {bank:'bank',mixed:'bank',subject:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const view = {bank:'bank',mixed:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
   }
   document.querySelector('#mistakeBadge').textContent = mistakeIds().length || '';
-  if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科、册次和知识点选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
+  if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
+  else if (page==='learn') {
+    const topic = topicByKey.get(subjectId);
+    if (topic && state.term !== topic.term) {
+      state.term = topic.term;
+      save();
+    }
+    app.innerHTML = topic ? lessonPage(topic) : empty('找不到这个知识点','可以重新搜索或按学科浏览。','book');
+  }
   else if (page==='mistakes') app.innerHTML = mistakePage();
   else if (page==='favorites') app.innerHTML = favoritePage();
   else if (page==='stats') app.innerHTML = statsPage();
@@ -394,7 +421,7 @@ app.addEventListener('click',event => {
     if (extraOpen && details) details.open = true;
     app.querySelector('[data-term="'+state.term+'"]')?.focus({preventScroll:true});
   } else if (button.dataset.start) {
-    start(button.dataset.start);
+    start(button.dataset.start,button.dataset.back);
   } else if (button.dataset.favorite) {
     const id = button.dataset.favorite;
     const wasSelected = state.favorites.includes(id);
@@ -468,7 +495,12 @@ app.addEventListener('submit',event=>{
 function search() {
   const query=searchInput.value.trim().toLowerCase();
   const found = query ? allTopics.filter(t=>[t.subject.name,t.title,t.description].some(s=>s.toLowerCase().includes(query))).slice(0,14) : [];
-  results.innerHTML = found.map(t=>'<button class="search-result option" type="button" data-key="'+t.key+'"><div><strong>'+t.title+'</strong><small>'+t.subject.name+' · '+t.term+'册 · '+t.questions.length+' 题</small></div></button>').join('') ||
+  results.innerHTML = found.map(t=>{
+    const hasLesson = lessonByTopic.has(t.key);
+    const result = '<button class="search-result option" type="button" data-key="'+t.key+'" data-search-action="'+(hasLesson?'learn':'practice')+'"><div><strong>'+t.title+'</strong><small>'+t.subject.name+' · '+t.term+'册'+(hasLesson?' · 看讲解':'')+'</small></div></button>';
+    const practice = hasLesson ? '<button class="btn secondary" type="button" data-key="'+t.key+'" data-search-action="practice" aria-label="练习'+esc(t.title)+'">做练习</button>' : '';
+    return '<div class="search-entry">'+result+practice+'</div>';
+  }).join('') ||
     '<p class="scope" role="status">'+(query?'没有找到匹配的知识点。':'输入「数学」「古诗」或「细胞」试试。')+'</p>';
 }
 function openSearch() {
@@ -489,8 +521,12 @@ dialog.addEventListener('click',event=>{
   const button = event.target.closest('[data-key]');
   if (!button) return;
   dialog.close();
-  state.term = topicByKey.get(button.dataset.key).term;
-  start('topic/'+button.dataset.key);
+  const key = button.dataset.key;
+  if (button.dataset.searchAction === 'learn') location.hash = 'learn/'+key;
+  else {
+    state.term = topicByKey.get(key).term;
+    start('topic/'+key);
+  }
 });
 window.addEventListener('keydown',event=>{
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase()==='k') {
