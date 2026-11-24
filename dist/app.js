@@ -278,12 +278,21 @@ function subjectGrid() {
     '<a class="pack-entry" href="#packs"><span class="subject-icon violet">'+icon('layers')+'</span><span><strong>江苏专项题组</strong><small>课堂同难度练习与期末应用题</small></span><span class="pack-entry-label">查看题组</span></a></div>'+
     '<section id="subjectList" aria-labelledby="subjectTitle"><div class="section-head"><div><h2 id="subjectTitle">选择学科</h2><p>'+termName()+' · 按知识点专项练习</p></div>'+termTabs()+'</div><div class="subject-grid">'+subjects.filter(s => !s.extra).map(subjectCard).join('')+'</div><details class="extras" id="extraSubjects"><summary>体育、艺术与实践课程</summary><div class="subject-grid">'+subjects.filter(s => s.extra).map(subjectCard).join('')+'</div></details><p class="scope">题目按江苏七年级常见知识点编排，册次安排以各校教材为准。<a href="#difficulty">出题难度与参考资料</a></p></section>';
 }
+function publicStudyShortcuts() {
+  const links = ['chinese','math','english'].map(subject=>{
+    const route = subject+'-public-study';
+    const collection = reviewCollections.get(route);
+    const count = collection.modules.reduce((total,module)=>total+module.questions.length,0);
+    return '<a class="btn secondary" href="#'+route+'">'+icon(collection.icon)+collection.name+' · '+count+' 题</a>';
+  }).join('');
+  return '<section class="public-study-shortcuts" aria-labelledby="publicStudyTitle"><h2 class="group-title" id="publicStudyTitle">七上公开资料拓展</h2><div class="public-study-links">'+links+'</div></section>';
+}
 function home() {
   const daily = state.attempts.filter(item => item.date === dateKey());
   const continuation = state.session && !endOfSession(state.session)
     ? '<a class="btn secondary" href="#quiz">'+icon('book')+'继续上次练习</a>'
     : mixedLink();
-  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+continuation+(state.session && !endOfSession(state.session) ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+'</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+subjectGrid();
+  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+continuation+(state.session && !endOfSession(state.session) ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+'</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+publicStudyShortcuts()+subjectGrid();
 }
 function subjectPage(subject) {
   const level = state.difficulty;
@@ -642,6 +651,7 @@ function answer(current,currentQuestion) {
   state.attempts.push({id:q.id,ok,date:dateKey(now),time,ref});
   if (ok) delete state.mistakes[q.id];
   else state.mistakes[q.id] = {count:(state.mistakes[q.id]?.count??0)+1,time};
+  rememberReadingView(current);
   save();
   render();
   document.querySelector('#feedback')?.focus();
@@ -660,13 +670,35 @@ function numberLineFigure(line) {
     (label?'<span class="number-line-below">'+esc(label)+'</span>':'')+'</span>').join('');
   return '<figure class="number-line" role="img" aria-label="'+esc(line.description)+'"><span class="number-line-axis" aria-hidden="true">'+marks+'</span></figure>';
 }
-function readingMaterial(question, expanded = false) {
+function readingBlock(session, question) {
+  const hasTextOnly = item => item?.material && !item.table && !item.numberLine && !item.diagram;
+  if (!hasTextOnly(question)) return null;
+  const sameText = id => {
+    const item = questionById.get(id);
+    return hasTextOnly(item) && item.topic===question.topic && item.material===question.material;
+  };
+  let first = session.index;
+  let last = session.index;
+  while (first>0 && sameText(session.ids[first-1])) first--;
+  while (last+1<session.ids.length && sameText(session.ids[last+1])) last++;
+  return first===last ? null : {key:session.ids[first],number:session.index-first+1,total:last-first+1};
+}
+function rememberReadingView(session, panel = app.querySelector('[data-reading-block]')) {
+  const key = panel?.dataset?.readingBlock;
+  if (!session || !key || typeof panel.open!=='boolean') return false;
+  if (session.readingView?.key===key && session.readingView.open===panel.open) return false;
+  session.readingView = {key,open:panel.open};
+  return true;
+}
+function readingMaterial(question, expanded = false, block = null) {
   const diagram = question.diagram;
   const line = question.numberLine;
   if (!question.material && !question.table && !diagram && !line) return '';
   const title = line ? '查看数轴' : diagram ? '查看示意图' : question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
   const figure = line ? numberLineFigure(line) : diagram ? '<img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'" width="720" height="360">' : '';
-  return '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary>'+
+  const key = block ? ' data-reading-block="'+esc(block.key)+'"' : '';
+  const progress = block ? '<span class="reading-progress">本篇 '+block.number+' / '+block.total+' 题</span>' : '';
+  return '<details class="reading-material" '+(expanded?'open':'')+key+'><summary>'+title+progress+'</summary>'+
     (question.material?'<div>'+esc(question.material)+'</div>':'')+figure+(question.table?materialTable(question.table):'')+'</details>';
 }
 const normalizeDictation = text => text.normalize('NFKC').replace(/[\p{P}\s]/gu,'');
@@ -805,6 +837,8 @@ function quizPage() {
   const topic = topicByKey.get(q.topic);
   const level = questionLevel(q);
   const submitted = s.answers[s.index];
+  const block = readingBlock(s,q);
+  const expanded = block ? s.readingView?.key!==block.key || s.readingView.open : !submitted;
   const value = submitted?.raw ?? s.selected;
   const options = q.steps ? stepInputs(q,s.selected,submitted) : q.blanks ? dictationInputs(q,s.selected,submitted) : q.options
     ? '<div class="options">'+q.options.map((option,i)=>{
@@ -815,7 +849,7 @@ function quizPage() {
   const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
   const explanation = q.explanation ? '<p><b>解析</b>　'+esc(q.explanation)+'</p>' : '';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+explanation+workedSolution(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   const [page,subjectId] = location.hash.slice(1).split('/');
@@ -903,11 +937,16 @@ app.addEventListener('click',event => {
     app.querySelectorAll('[data-option]').forEach(el=>el.setAttribute('aria-pressed',String(el===button)));
     document.querySelector('#submitAnswer').disabled = false;
   } else if (button.id==='nextQuestion') {
+    rememberReadingView(state.session);
     state.session.index++;
     state.session.selected='';
     save(); render(true);
   }
 });
+app.addEventListener('toggle',event=>{
+  const panel = event.target;
+  if (panel.dataset?.readingBlock && app.contains(panel) && rememberReadingView(state.session,panel)) save();
+},true);
 app.addEventListener('input',event=>{
   const index = event.target.dataset.answerField;
   if (index !== undefined) {

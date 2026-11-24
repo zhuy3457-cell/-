@@ -48,6 +48,8 @@ kbd{border:1px solid #e8e5ef;border-radius:4px;background:white;padding:2px 5px;
 .secondary:hover{background:#f4efff}
 .btn:disabled{opacity:.48;cursor:default}
 .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:19px 0 29px}
+.public-study-shortcuts{margin:0 0 24px}
+.public-study-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .metric{background:#fff;border:1px solid var(--line);border-radius:13px;min-height:81px;display:flex;align-items:center;gap:13px;padding:15px 16px}
 .metric-icon,.subject-icon{display:grid;place-items:center;width:43px;height:43px;border-radius:12px;background:var(--soft,#eee9ff);color:var(--tone,#6647c9);flex:none}
 .metric-icon svg,.subject-icon svg{width:23px;height:23px}
@@ -211,6 +213,7 @@ dialog::backdrop{background:#23193968}
 .pack-card>details summary,.reading-material summary{color:#543ba5;cursor:pointer;font-size:.89rem;font-weight:700}
 .pack-card .actions{margin-top:auto}
 .reading-material{margin-top:13px;background:#f7f4ff;border-radius:9px;padding:11px 13px}
+.reading-progress{margin-inline-start:10px;color:var(--muted);font-size:.84rem;font-weight:600;font-variant-numeric:tabular-nums}
 .reading-material>div{margin-top:7px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 .material-diagram{display:block;width:100%;max-width:540px;height:auto;margin-top:9px;border:1px solid var(--line);border-radius:8px}
 .number-line{box-sizing:border-box;max-width:520px;margin:9px 0 0;padding:30px 12px;height:76px;color:#283343}
