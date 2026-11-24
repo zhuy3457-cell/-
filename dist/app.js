@@ -82,6 +82,12 @@ const reviewCollections = new Map([
     subtitle:'按上传资料的专题三至十二整理。先找等量关系，再作答，提交后可查看列式和检验。',
     start:'equation-application', returnLabel:'一元一次方程应用', modules:equationApplicationModules, byTopic:equationApplicationByTopic
   }],
+  ['english-phrases', {
+    subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'个单元',
+    title:'Unit 2–8 重点词组', keywords:'英语重点词组 短语默写 中译英 中英对照',
+    subtitle:'按上传资料的单元和原编号整理。可先查看中英对照，再按单元或编号范围练习。',
+    start:'english-phrases', returnLabel:'英语重点词组', modules:englishPhraseModules, byTopic:englishPhraseByTopic
+  }],
   ['english-grammar-daily', {
     subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'天',
     title:'语法每日一练 Day 3–11', keywords:'七上英语语法 每日一练',
@@ -753,7 +759,8 @@ function quizPage() {
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
-      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+'<p>'+esc(question.explanation)+'</p>'+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      const explanation = question.explanation ? '<p>'+esc(question.explanation)+'</p>' : '';
+      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+explanation+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div>'+
       '<section class="result-review" id="answerReview" data-result-view="'+view+'"><div class="section-head result-review-head"><h2 class="group-title">本组答题回顾</h2>'+filter+'</div><ul id="answerReviewList">'+overview+'</ul></section></section>';
@@ -770,7 +777,8 @@ function quizPage() {
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="整数、小数或分数（如 1/2）" autocomplete="off" maxlength="32" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
-  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+'<p><b>解析</b>　'+esc(q.explanation)+'</p>'+workedSolution(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
+  const explanation = q.explanation ? '<p><b>解析</b>　'+esc(q.explanation)+'</p>' : '';
+  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+explanation+workedSolution(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
