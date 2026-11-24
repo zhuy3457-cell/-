@@ -140,6 +140,52 @@ test('continuing a chat practice only draws unseen questions and reports exhaust
   assert.deepEqual(exhausted.questions,[]);
   assert.equal((await call('draw_questions',{query,exclude_question_ids:'bad'})).isError,true);
 });
+test('uploaded English worksheets and both book units work through the chat tools',async ()=>{
+  const courses = [
+    ['英语问候与自我介绍学案','course:classroom-u1-intro',30],
+    ['英语1.3 Grammar','course:classroom-u1-grammar',43],
+    ['英语Grammar Integration 默写','course:classroom-u2-integration',31],
+    ['英语柳林风声','course:english-wind-willows',8],
+    ['英语快乐王子','course:english-happy-prince',8]
+  ];
+  for (const [query,scopeId,count] of courses) {
+    const result = await good('explain_topic',{query});
+    assert.equal(result.scope_id,scopeId);
+    assert.equal(result.term,'上');
+    assert.equal(result.question_count,count);
+    assert.equal(result.practice_groups.reduce((sum,group)=>sum+group.question_count,0),count);
+  }
+  const grammar = await good('special_practice',{query:'英语1.3 Grammar',group_id:'classroom-u1-grammar-cloze',count:10});
+  assert.equal(grammar.questions.length,10);
+  assert.equal(new Set(grammar.questions.map(question=>question.material)).size,1);
+  assert.ok(grammar.questions.every(question=>!Object.hasOwn(question,'correct')));
+  assert.deepEqual(grammar.questions.map(question=>Number(question.prompt.split('.')[0])).sort((a,b)=>a-b),
+    [29,30,31,32,33,34,35,36,37,38]);
+  const dialogue = await good('draw_questions',{query:'英语1.3 Grammar',group_id:'classroom-u1-grammar-dialogue',count:5});
+  assert.ok(dialogue.questions.every(question=>question.options.length===6));
+  const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:'classroom-u1-intro-8',answer:'C'},
+    {question_id:'classroom-u1-intro-15',answer:'to listen'},
+    {question_id:'classroom-u1-grammar-9',answer:"isn't"},
+    {question_id:'classroom-u1-grammar-17',answer:['Is','is difficult']},
+    {question_id:'classroom-u1-grammar-26',answer:'D'},
+    {question_id:'classroom-u1-grammar-42',answer:'E'},
+    {question_id:'classroom-u2-integration-23',answer:'would like to'},
+    {question_id:'classroom-u2-integration-31',answer:'I often visit museums in my free time.'}
+  ]});
+  assert.equal(graded.correct,graded.count);
+  const unitOne = await good('explain_topic',{query:'英语第一单元'});
+  const unitTwo = await good('explain_topic',{query:'英语第二单元'});
+  assert.ok(unitOne.practice_groups.some(group=>group.group_id==='classroom-u1-intro-sounds'));
+  assert.ok(unitTwo.practice_groups.some(group=>group.group_id==='classroom-u2-integration-sentences'));
+  for (const query of ['英语柳林风声','英语快乐王子']) {
+    const book = await good('explain_topic',{query});
+    assert.match(book.sources[0].url,/^https:\/\/www\.gutenberg\.org\//);
+    const questions = await good('draw_questions',{query,count:8});
+    assert.equal(questions.questions.length,8);
+    assert.equal(new Set(questions.questions.map(question=>question.material)).size,2);
+  }
+});
 test('grades objective work and isolates personal mistakes and progress',async ()=>{
   const questionId = 'web-math-calculation-5';
   const owner = 'student-a';

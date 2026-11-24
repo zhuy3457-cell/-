@@ -2,6 +2,7 @@ const SITE_URL = 'https://suxue-grade7-practice.myworkspace-8202.chatgpt.site/';
 const subjectNames = new Map(STUDY.subjects.map(({id,name})=>[id,name]));
 const questions = new Map(STUDY.questions.map(question=>[question.id,question]));
 const topics = new Map(STUDY.topics.map(topic=>[topic.key,topic]));
+const courseTopics = new Map(STUDY.courses.map(course=>[course.key,course]));
 const scopeList = [
   ...STUDY.courses.map(course=>({...course,kind:'course',subject:course.subjectId})),
   ...STUDY.topics.filter(topic=>subjectNames.has(topic.subject)).map(topic=>({...topic,kind:'topic'})),
@@ -87,7 +88,8 @@ function courseRequest(args) {
   return {subject,term:term ?? inferredTerm ?? null,keyword};
 }
 function matchingScopes(subject,term,keyword) {
-  return scopeList.filter(scope=>scopeMatches(scope,subject,term)).map(scope=>{
+  return scopeList.filter(scope=>scopeMatches(scope,subject,term) &&
+    (scope.kind!=='topic' || courseTopics.get(scope.key)?.title!==scope.title)).map(scope=>{
     const title = normalizeCatalog(scope.title);
     const key = normalizeCatalog(scope.key);
     const description = normalizeCatalog(scope.description ?? '');

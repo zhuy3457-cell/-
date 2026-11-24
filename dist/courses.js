@@ -24,15 +24,23 @@ const courseCatalog = (() => {
     ['english-grammar-day10', 'english-grammar-day11'],
     []
   ];
+  const classroomByUnit = [englishClassroomModules.slice(0,2),englishClassroomModules.slice(2,3)];
+  const classroomGroups = (module,prefix = '') => module.sections.map((section,index)=>({
+    ...sectionGroup(module,index),title:prefix+section.title
+  }));
   const english = englishPhraseModules.map(unit => {
     const index = unit.unit - 1;
     const check = englishCourseChecks[index];
     const grammar = grammarByUnit[index];
+    const classroom = classroomByUnit[index] ?? [];
     return makeCourse('unit-' + unit.unit, unit.title, topics.get(check).description,
       [fullGroup(check, '随堂小测'), ...unit.sections.map((section, i) => sectionGroup(unit, i)),
-        ...grammar.map(key => fullGroup(key))],
-      [unit.key, ...grammar]);
+        ...grammar.map(key => fullGroup(key)),
+        ...classroom.flatMap(module=>classroomGroups(module,module.title.split(' · ')[1]+' · '))],
+      [unit.key, ...grammar, ...classroom.map(module=>module.key)]);
   });
+  const englishClassroom = englishClassroomModules.map(module=>
+    makeCourse(module.key,module.title,module.description,classroomGroups(module),[module.key],module.sources));
 
   const [classics, scenery] = publicStudyCollections.chinese;
   const chinese = [
@@ -117,7 +125,7 @@ const courseCatalog = (() => {
   const namedCourses = {
     chinese: {上: [...chinese, ...poemCourses('上')], 下: poemCourses('下')},
     math: {上: math},
-    english: {上: english},
+    english: {上: [...english,...englishClassroom]},
     civics: {上: civicsReviewModules.map(module => topicCourse(module.key))},
     history: {上: history},
     geography: {上: geoReviewModules.map(module => topicCourse(module.key))},
