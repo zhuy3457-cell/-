@@ -641,7 +641,25 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "-4，1，13，-1",
-        "explanation": "（1）合并得 −4a+b。（2）先展开得 4a³b+2ab³−3ab³+9a³b，合并得 13a³b−ab³。"
+        "explanation": "（1）合并得 −4a+b。（2）先展开得 4a³b+2ab³−3ab³+9a³b，合并得 13a³b−ab³。",
+        "solution": [
+          {
+            "title": "（1）按字母分组合并",
+            "lines": [
+              "2a−2b−6a+3b = (2−6)a+(−2+3)b",
+              "= −4a+b"
+            ]
+          },
+          {
+            "title": "（2）先分配，再合并",
+            "lines": [
+              "2(2a³b+ab³)−3(ab³−3a³b)",
+              "= 4a³b+2ab³−3ab³+9a³b",
+              "= (4+9)a³b+(2−3)ab³",
+              "= 13a³b−ab³"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-2",
@@ -667,7 +685,24 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "1，-2，-2，-3",
-        "explanation": "原式=x²−2xy−2y²。代入得 1+4−8=−3。"
+        "explanation": "原式=x²−2xy−2y²。代入得 1+4−8=−3。",
+        "solution": [
+          {
+            "title": "去括号并合并",
+            "lines": [
+              "4x²+2(2xy−y²)−3(x²+2xy)",
+              "= 4x²+4xy−2y²−3x²−6xy",
+              "= x²−2xy−2y²"
+            ]
+          },
+          {
+            "title": "代入 x=−1、y=2",
+            "lines": [
+              "(−1)²−2×(−1)×2−2×2²",
+              "= 1+4−8 = −3"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-3",
@@ -689,7 +724,23 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "1，-4，-7",
-        "explanation": "xy 项抵消，原式=x²−4y²。代入得 9−16=−7。"
+        "explanation": "xy 项抵消，原式=x²−4y²。代入得 9−16=−7。",
+        "solution": [
+          {
+            "title": "展开各项",
+            "lines": [
+              "2x²+(−x²−2xy)−2(−xy+2y²)",
+              "= 2x²−x²−2xy+2xy−4y²",
+              "= x²−4y²"
+            ]
+          },
+          {
+            "title": "代入 x=3、y=−2",
+            "lines": [
+              "3²−4×(−2)² = 9−16 = −7"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-4",
@@ -707,7 +758,23 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "-2，8",
-        "explanation": "a²b 项抵消，原式=−2ab²。代入得 −2×(−1)×4=8。"
+        "explanation": "a²b 项抵消，原式=−2ab²。代入得 −2×(−1)×4=8。",
+        "solution": [
+          {
+            "title": "展开并消去同类项",
+            "lines": [
+              "4(3a²b−2ab²)−6(−ab²+2a²b)",
+              "= 12a²b−8ab²+6ab²−12a²b",
+              "= −2ab²"
+            ]
+          },
+          {
+            "title": "代入 a=−1、b=−2",
+            "lines": [
+              "−2×(−1)×(−2)² = 2×4 = 8"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-5",
@@ -725,7 +792,25 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "-1，5/3",
-        "explanation": "A−2B=−5a+(5−3a)b。代入 1、2 得 −1。若与 b 无关，令 5−3a=0，得 a=5/3。"
+        "explanation": "A−2B=−5a+(5−3a)b。代入 1、2 得 −1。若与 b 无关，令 5−3a=0，得 a=5/3。",
+        "solution": [
+          {
+            "title": "（1）先求 A−2B，再代入",
+            "lines": [
+              "A−2B = (2a²−a+3b−ab)−2(a²+2a−b+ab)",
+              "= 2a²−a+3b−ab−2a²−4a+2b−2ab",
+              "= −5a+5b−3ab",
+              "a=1、b=2 时，原式 = −5+10−6 = −1。"
+            ]
+          },
+          {
+            "title": "（2）把含 b 的项合并",
+            "lines": [
+              "−5a+5b−3ab = −5a+(5−3a)b",
+              "结果与 b 无关，所以 5−3a=0，解得 a=5/3。"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-6",
@@ -755,7 +840,24 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "12，2，6，-1，27",
-        "explanation": "2A+3B=12x²+2mx+6x−1。代入 m=2、x=−2，得 48−8−12−1=27。"
+        "explanation": "2A+3B=12x²+2mx+6x−1。代入 m=2、x=−2，得 48−8−12−1=27。",
+        "solution": [
+          {
+            "title": "（1）分别展开 2A、3B",
+            "lines": [
+              "2A+3B = 2(3x²−2mx+3x+1)+3(2x²+2mx−1)",
+              "= 6x²−4mx+6x+2+6x²+6mx−3",
+              "= 12x²+2mx+6x−1 = 12x²+(2m+6)x−1"
+            ]
+          },
+          {
+            "title": "（2）代入 m=2、x=−2",
+            "lines": [
+              "12×(−2)²+(2×2+6)×(−2)−1",
+              "= 48−20−1 = 27"
+            ]
+          }
+        ]
       }
     ]
   },
@@ -815,7 +917,26 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "-1，2，-4，2，-9",
-        "explanation": "（1）合并得 −a²+2a。（2）去括号后为 3a²+a−5−4+a−7a²，合并得 −4a²+2a−9。"
+        "explanation": "（1）合并得 −a²+2a。（2）去括号后为 3a²+a−5−4+a−7a²，合并得 −4a²+2a−9。",
+        "solution": [
+          {
+            "title": "（1）分别合并二次项和一次项",
+            "lines": [
+              "2a²−4a−3a²+6a",
+              "= (2−3)a²+(−4+6)a",
+              "= −a²+2a"
+            ]
+          },
+          {
+            "title": "（2）减号后的每一项都变号",
+            "lines": [
+              "(3a²+a−5)−(4−a+7a²)",
+              "= 3a²+a−5−4+a−7a²",
+              "= (3−7)a²+(1+1)a−5−4",
+              "= −4a²+2a−9"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-8",
@@ -837,7 +958,23 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "12，-13，-25",
-        "explanation": "原式=12x²y−13xy²，代入得 −12−13=−25。"
+        "explanation": "原式=12x²y−13xy²，代入得 −12−13=−25。",
+        "solution": [
+          {
+            "title": "去括号并合并",
+            "lines": [
+              "3(2x²y−3xy²)−2(2xy²−3x²y)",
+              "= 6x²y−9xy²−4xy²+6x²y",
+              "= 12x²y−13xy²"
+            ]
+          },
+          {
+            "title": "代入 x=1、y=−1",
+            "lines": [
+              "12×1²×(−1)−13×1×(−1)² = −12−13 = −25"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-9",
@@ -867,7 +1004,31 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "7，7，-14，19，1/2",
-        "explanation": "化简得 7x+7y−14xy。（2）写成 7(x+y)−14xy，代入得 5+14=19。（3）写成 7x+(7−14x)y，令 7−14x=0。"
+        "explanation": "化简得 7x+7y−14xy。（2）写成 7(x+y)−14xy，代入得 5+14=19。（3）写成 7x+(7−14x)y，令 7−14x=0。",
+        "solution": [
+          {
+            "title": "（1）展开 2A−3B",
+            "lines": [
+              "2(3x²−x+2y−4xy)−3(2x²−3x−y+2xy)",
+              "= 6x²−2x+4y−8xy−6x²+9x+3y−6xy",
+              "= 7x+7y−14xy"
+            ]
+          },
+          {
+            "title": "（2）把 x+y 与 xy 整体代入",
+            "lines": [
+              "7x+7y−14xy = 7(x+y)−14xy",
+              "= 7×(5/7)−14×(−1) = 19"
+            ]
+          },
+          {
+            "title": "（3）找含 y 项的系数",
+            "lines": [
+              "7x+7y−14xy = 7x+(7−14x)y",
+              "结果与 y 无关，需要 7−14x=0，所以 x=1/2。"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-10",
@@ -885,7 +1046,23 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "-2，-2",
-        "explanation": "xy 项抵消，x²y 的系数为 2−8+4=−2。代入 x²y=1 得 −2。"
+        "explanation": "xy 项抵消，x²y 的系数为 2−8+4=−2。代入 x²y=1 得 −2。",
+        "solution": [
+          {
+            "title": "展开并抵消 xy 项",
+            "lines": [
+              "2x²y+2(3xy−4x²y)−(1/2)(12xy−8x²y)",
+              "= 2x²y+6xy−8x²y−6xy+4x²y",
+              "= (2−8+4)x²y = −2x²y"
+            ]
+          },
+          {
+            "title": "代入 x=−1/2、y=4",
+            "lines": [
+              "−2×(−1/2)²×4 = −2×(1/4)×4 = −2"
+            ]
+          }
+        ]
       }
     ]
   },
@@ -937,7 +1114,25 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "5，2，-2，-2/5",
-        "explanation": "A−2B=5xy+2y−2x=(5x+2)y−2x。令 5x+2=0，得 x=−2/5。"
+        "explanation": "A−2B=5xy+2y−2x=(5x+2)y−2x。令 5x+2=0，得 x=−2/5。",
+        "solution": [
+          {
+            "title": "（1）化简 A−2B",
+            "lines": [
+              "2x²+3xy+2y−2(x²−xy+x)",
+              "= 2x²+3xy+2y−2x²+2xy−2x",
+              "= 5xy+2y−2x"
+            ]
+          },
+          {
+            "title": "（2）提取 y，再求 x",
+            "lines": [
+              "5xy+2y−2x = (5x+2)y−2x",
+              "要使 A−2B 的值与 y 无关，令 y 的系数 5x+2=0。",
+              "解得 x=−2/5。"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-12",
@@ -959,7 +1154,24 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "12，-6，2/3",
-        "explanation": "化简为 12a²b−6ab²。分别代入得 1 和 −1/3，合计 2/3。"
+        "explanation": "化简为 12a²b−6ab²。分别代入得 1 和 −1/3，合计 2/3。",
+        "solution": [
+          {
+            "title": "去括号并合并",
+            "lines": [
+              "5(3a²b−ab²)−(ab²+3a²b)",
+              "= 15a²b−5ab²−ab²−3a²b",
+              "= 12a²b−6ab²"
+            ]
+          },
+          {
+            "title": "代入 a=1/2、b=1/3",
+            "lines": [
+              "12×(1/2)²×(1/3)−6×(1/2)×(1/3)²",
+              "= 1−1/3 = 2/3"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-13",
@@ -981,7 +1193,23 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "-1，1，-3/2",
-        "explanation": "x²y 项抵消，原式=−xy²+xy。代入得 −1/2−1=−3/2。"
+        "explanation": "x²y 项抵消，原式=−xy²+xy。代入得 −1/2−1=−3/2。",
+        "solution": [
+          {
+            "title": "展开正负号并合并",
+            "lines": [
+              "−3(x²y−(1/3)xy²)−(−3x²y+2xy²)+xy",
+              "= −3x²y+xy²+3x²y−2xy²+xy",
+              "= xy−xy²"
+            ]
+          },
+          {
+            "title": "代入 x=2、y=−1/2",
+            "lines": [
+              "2×(−1/2)−2×(−1/2)² = −1−1/2 = −3/2"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-14",
@@ -1003,7 +1231,27 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "12，3，1/2",
-        "explanation": "设误算结果为 D。A+B=D+2B=12x²y+3。A−3B=D−2B=(8y−4)x−5，令 8y−4=0。"
+        "explanation": "设误算结果为 D。A+B=D+2B=12x²y+3。A−3B=D−2B=(8y−4)x−5，令 8y−4=0。",
+        "solution": [
+          {
+            "title": "（1）由误算的差还原正确的和",
+            "lines": [
+              "A+B = (A−B)+2B",
+              "= 6x²y+4xy−2x−1+2(3x²y−2xy+x+2)",
+              "= 6x²y+4xy−2x−1+6x²y−4xy+2x+4",
+              "= 12x²y+3"
+            ]
+          },
+          {
+            "title": "（2）找使 A−3B 与 x 无关的 y",
+            "lines": [
+              "A−3B = (A+B)−4B",
+              "= 12x²y+3−4(3x²y−2xy+x+2)",
+              "= 8xy−4x−5 = (8y−4)x−5",
+              "令 8y−4=0，解得 y=1/2。"
+            ]
+          }
+        ]
       }
     ]
   },
@@ -1047,7 +1295,23 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "1，-3/2",
-        "explanation": "a² 项系数为 2−3+1=0，ab 项系数为 −1+2=1。原式=ab=−3/2。"
+        "explanation": "a² 项系数为 2−3+1=0，ab 项系数为 −1+2=1。原式=ab=−3/2。",
+        "solution": [
+          {
+            "title": "先展开，再合并",
+            "lines": [
+              "2(a²−(1/2)ab)−3(−(2/3)ab+a²)+a²",
+              "= 2a²−ab+2ab−3a²+a²",
+              "= (2−3+1)a²+(−1+2)ab = ab"
+            ]
+          },
+          {
+            "title": "代入 a=3、b=−1/2",
+            "lines": [
+              "ab = 3×(−1/2) = −3/2"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-16",
@@ -1069,7 +1333,24 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "4，2，-2",
-        "explanation": "方括号内=−2a²b−2ab²，原式=4a²b+2ab²。代入得 2−4=−2。"
+        "explanation": "方括号内=−2a²b−2ab²，原式=4a²b+2ab²。代入得 2−4=−2。",
+        "solution": [
+          {
+            "title": "先化简方括号",
+            "lines": [
+              "2ab²−2(a²b+2ab²)",
+              "= 2ab²−2a²b−4ab² = −2a²b−2ab²"
+            ]
+          },
+          {
+            "title": "去外层括号并代入",
+            "lines": [
+              "原式 = 2a²b−(−2a²b−2ab²) = 4a²b+2ab²",
+              "a=−1/2、b=2 时，原式 = 4×(1/4)×2+2×(−1/2)×4",
+              "= 2−4 = −2。"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-17",
@@ -1088,7 +1369,26 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "10，>",
-        "explanation": "（1）2M−3N=−x²+2x+13，代入得 10。（2）M−N=x²+4>0，所以 M>N。"
+        "explanation": "（1）2M−3N=−x²+2x+13，代入得 10。（2）M−N=x²+4>0，所以 M>N。",
+        "solution": [
+          {
+            "title": "（1）整体化简后代入",
+            "lines": [
+              "4M−(2M+3N) = 2M−3N",
+              "= 2(4x²−2x−1)−3(3x²−2x−5)",
+              "= 8x²−4x−2−9x²+6x+15 = −x²+2x+13",
+              "x=−1 时，原式 = −1−2+13 = 10。"
+            ]
+          },
+          {
+            "title": "（2）作差比较",
+            "lines": [
+              "M−N = (4x²−2x−1)−(3x²−2x−5)",
+              "= x²+4",
+              "任意 x 都有 x²≥0，因此 M−N≥4>0，所以 M>N。"
+            ]
+          }
+        ]
       },
       {
         "id": "algebra-simplify-18",
@@ -1118,7 +1418,26 @@ const mathAlgebraModules = [
           }
         ],
         "correct": "8，-5，3，6，5/7",
-        "explanation": "设误算结果为 D。A+B=D+2B=8x²y−5xy+3x+6。A−3B=D−2B=(7y−5)x−14，令 7y−5=0。"
+        "explanation": "设误算结果为 D。A+B=D+2B=8x²y−5xy+3x+6。A−3B=D−2B=(7y−5)x−14，令 7y−5=0。",
+        "solution": [
+          {
+            "title": "（1）给误算的差补上 2B",
+            "lines": [
+              "A+B = (A−B)+2B",
+              "= 4x²y+xy−x−4+2(2x²y−3xy+2x+5)",
+              "= 8x²y−5xy+3x+6"
+            ]
+          },
+          {
+            "title": "（2）改写并求 y",
+            "lines": [
+              "A−3B = (A−B)−2B",
+              "= 4x²y+xy−x−4−2(2x²y−3xy+2x+5)",
+              "= 7xy−5x−14 = (7y−5)x−14",
+              "结果与 x 无关，所以 7y−5=0，解得 y=5/7。"
+            ]
+          }
+        ]
       }
     ]
   }
