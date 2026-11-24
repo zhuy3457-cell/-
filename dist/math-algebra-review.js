@@ -1421,20 +1421,33 @@ const mathAlgebraModules = [
         "explanation": "设误算结果为 D。A+B=D+2B=8x²y−5xy+3x+6。A−3B=D−2B=(7y−5)x−14，令 7y−5=0。",
         "solution": [
           {
-            "title": "（1）给误算的差补上 2B",
+            "title": "解法一 · 先从误算结果还原 A",
             "lines": [
-              "A+B = (A−B)+2B",
-              "= 4x²y+xy−x−4+2(2x²y−3xy+2x+5)",
+              "A = (A−B)+B",
+              "= (4x²y+xy−x−4)+(2x²y−3xy+2x+5)",
+              "= 6x²y−2xy+x+1"
+            ]
+          },
+          {
+            "title": "（1）在 A 的基础上求 A+B",
+            "lines": [
+              "A+B = (6x²y−2xy+x+1)+(2x²y−3xy+2x+5)",
               "= 8x²y−5xy+3x+6"
             ]
           },
           {
-            "title": "（2）改写并求 y",
+            "title": "（2）令含 x 的项抵消",
             "lines": [
-              "A−3B = (A−B)−2B",
-              "= 4x²y+xy−x−4−2(2x²y−3xy+2x+5)",
+              "A−3B = 6x²y−2xy+x+1−3(2x²y−3xy+2x+5)",
               "= 7xy−5x−14 = (7y−5)x−14",
               "结果与 x 无关，所以 7y−5=0，解得 y=5/7。"
+            ]
+          },
+          {
+            "title": "解法二 · 直接使用差式",
+            "lines": [
+              "A+B = (A−B)+2B = 8x²y−5xy+3x+6",
+              "A−3B = (A−B)−2B = (7y−5)x−14，同样得 y=5/7。"
             ]
           }
         ]

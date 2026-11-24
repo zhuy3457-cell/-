@@ -73,6 +73,12 @@ const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn sec
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
 const reviewCollections = new Map([
+  ['equation-application', {
+    subject:'math', name:'数学', icon:'math', tone:'violet',
+    title:'一元一次方程应用', keywords:'一元一次方程应用 行程问题 分段计费 工程 配套 利润',
+    subtitle:'根据上传的专题三、四、五整理。先找等量关系，再填结果，提交后可查看完整列式和检验。',
+    start:'equation-application', returnLabel:'一元一次方程应用', modules:equationApplicationModules, byTopic:equationApplicationByTopic
+  }],
   ['math-algebra-review', {
     subject:'math', name:'数学', icon:'math', tone:'violet', unitLabel:'组',
     title:'绝对值与整式化简', keywords:'绝对值化简 整式化简求值 代数式化简 数轴专项',
