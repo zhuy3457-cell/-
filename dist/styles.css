@@ -292,3 +292,11 @@ dialog::backdrop{background:#23193968}
 .material-table-scroll th,.material-table-scroll td{padding:6px 8px;text-align:left;border:1px solid #e1dbea}
 .material-table-scroll thead th{background:#eeebfa}
 .material-table-scroll .material-cell-shaded{background:#ded6f4}
+.course-list{margin-top:24px}
+.course-list .group-title{margin-bottom:10px}
+.course-description{color:var(--muted);line-height:1.6}
+.course-actions{justify-content:flex-start}
+.course-row:hover{border-color:#baa7ee}
+.course-row .crumb{flex:none}
+.course-list summary{cursor:pointer}
+@media(max-width:570px){.course-row{align-items:flex-start;flex-direction:column;gap:5px}.course-list{margin-top:18px}}

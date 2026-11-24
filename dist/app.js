@@ -192,6 +192,13 @@ const topicSearchIndex = allTopics.map(topic=>{
     detail:normalizeSearch([topic.description,module?.range,collection?.keywords].filter(Boolean).join(' '))
   };
 });
+const courseSearchIndex = [...courseCatalog.values()].flatMap(({lessons})=>lessons.map(({key})=>{
+  const course = courseByKey.get(key);
+  const {name} = subjects.find(subject=>subject.id===course.subjectId);
+  const volume = course.term+'册';
+  return {course, name, title:normalizeSearch(course.title),
+    scope:normalizeSearch([name,volume,'七年级'+volume,'七'+course.term+name,name+volume].join(' ')),detail:''};
+}));
 const phraseSearchKey = text => normalizeSearch(text).replace(/[’‘ʼ]/g,"'")
   .replace(/[^\p{L}\p{N}']+/gu,' ').trim();
 const phraseSearchIndex = englishPhraseModules.flatMap(unit=>unit.questions.map((question,index)=>{
@@ -292,7 +299,10 @@ function home() {
   const continuation = state.session && !endOfSession(state.session)
     ? '<a class="btn secondary" href="#quiz">'+icon('book')+'继续上次练习</a>'
     : mixedLink();
-  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+continuation+(state.session && !endOfSession(state.session) ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+'</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+publicStudyShortcuts()+subjectGrid();
+  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 初一全科</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+
+    '<a class="btn secondary" href="#course">'+icon('book')+'按课练习</a>'+continuation+
+    (state.session && !endOfSession(state.session) ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+
+    '</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+publicStudyShortcuts()+subjectGrid();
 }
 function subjectPage(subject) {
   const level = state.difficulty;
@@ -307,8 +317,71 @@ function subjectPage(subject) {
     return '<div class="row topic-row"><div><h3>'+topic.title+'</h3><p>'+topic.description+'</p><p>已答对 '+mastered+' / '+questions.length+' 题</p></div><div class="saved-actions">'+lessonLink(topic.key)+startButton(key,'做练习')+'</div></div>';
   }).join('');
   const review = state.term==='上' ? [...reviewCollections].filter(([,collection])=>collection.subject===subject.id).map(([route,collection])=>reviewEntry(route,collection)).join('') : '';
-  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+review+advancedEntry(subject)+'<section><div class="section-head"><h2 class="group-title">知识点</h2><div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div>'+filters+
+  return pageHead(subject.name, termName()+' · 按知识点看讲解、做练习',bankLink)+courseEntry(subject)+review+advancedEntry(subject)+'<section><div class="section-head"><h2 class="group-title">知识点</h2><div class="section-actions">'+mixedLink(subject.id,'本学科组卷')+termTabs()+'</div></div>'+filters+
     (rows ? '<div class="topic-list">'+rows+'</div>' : '<p class="empty" role="status">本册暂无这个难度的题。可以选择「不限难度」查看所有知识点。</p>')+'</section>';
+}
+function courseEntry(subject) {
+  const href = '#course'+(subject ? '/'+subject.id : '');
+  return '<a class="pack-entry" href="'+href+'"><span class="subject-icon violet">'+icon('book')+'</span>'+
+    '<span><strong>按课练习</strong><small>选择课次、课文或单元，做对应题目</small></span>'+
+    '<span class="pack-entry-label">打开目录</span></a>';
+}
+const courseProgress = (ids, done) => '已答对 '+ids.filter(id=>done.has(id)).length+' / '+ids.length+' 题';
+function coursePage(subject, key) {
+  if (!subject) {
+    const cards = subjects.map(item=>{
+      const {lessons,topics} = courseCatalog.get(item.id+'/'+state.term);
+      const summary = [lessons.length ? lessons.length+' 组分课练习' : '', topics.length ? topics.length+' 组知识点练习' : ''].filter(Boolean).join(' · ');
+      return '<a class="subject-card" href="#course/'+item.id+'"><div class="subject-head"><span class="subject-icon '+item.tone+'">'+
+        icon(item.icon)+'</span><h3>'+item.name+'</h3></div><div class="subject-foot"><span>'+summary+'</span><strong>选课</strong></div></a>';
+    }).join('');
+    return pageHead('按课练习','选择学科和册次，查看已收录的课次与单元。',bankLink)+
+      '<div class="section-head"><h2 class="group-title">学科目录</h2>'+termTabs()+'</div><div class="subject-grid">'+cards+'</div>';
+  }
+  if (key) {
+    const course = courseByKey.get(key);
+    if (!course || course.subjectId!==subject.id) return empty('找不到这组练习','可以从学科目录重新选课。','book');
+    if (state.term!==course.term) {
+      state.term = course.term;
+      save();
+    }
+    return courseDetail(course,subject);
+  }
+  const {lessons,topics} = courseCatalog.get(subject.id+'/'+state.term);
+  const done = correctQuestionIds();
+  const cards = (items,title)=>items.length ? '<section class="course-list"><h2 class="group-title">'+title+'</h2><div class="topic-list">'+items.map(course=>
+    '<a class="row course-row" href="'+courseByKey.get(course.key).href+'"><div><h3>'+esc(course.title)+'</h3><p>'+
+    esc(course.description)+'</p></div><span class="crumb">'+courseProgress(course.ids,done)+'</span></a>').join('')+'</div></section>' : '';
+  return pageHead(subject.name+' · 按课练习',termName(),'<a class="crumb" href="#course">全部学科</a>')+
+    '<div class="section-head"><a class="crumb" href="#subject/'+subject.id+'">学科题库</a>'+termTabs()+'</div>'+
+    cards(lessons,'已收录的课次与单元')+cards(topics,'知识点练习');
+}
+function courseDetail(course,subject) {
+  const done = correctQuestionIds();
+  const pending = course.ids.filter(id=>!done.has(id)).length;
+  const current = state.session;
+  const canResume = current?.back===course.href && !endOfSession(current);
+  const unit = course.key.startsWith('unit-');
+  const nextGroup = course.groups.find(group=>group.ids.some(id=>!done.has(id))) ?? course.groups[0];
+  const links = course.studyKeys.map(key=>{
+    const href = studyHref(key);
+    if (!href) return '';
+    const topic = topicByKey.get(key);
+    return '<a class="btn secondary" href="'+href+'">'+esc(topic.title)+'</a>';
+  }).join('');
+  const refs = referenceItems(course.sources);
+  const groups = course.groups.map(group=>
+    '<div class="row topic-row"><div><h3>'+esc(group.title)+'</h3><p>'+courseProgress(group.ids,done)+'</p></div>'+
+    startButton('course/'+course.key+'/'+group.key,'做这组','secondary')+'</div>').join('');
+  const back = '<a class="crumb" href="#course/'+subject.id+'">返回'+subject.name+'课程目录</a>';
+  const actions = (canResume ? '<a class="btn primary" href="#quiz">继续'+(unit?'本单元':'本课')+'练习</a>' :
+    startButton('course/'+course.key+'/'+nextGroup.key,'开始练习','primary','pencil'))+
+    (course.groups.length>1 && pending ? startButton('course/'+course.key+'/remaining','未答对的题 · '+pending+' 题','secondary') : '');
+  return pageHead(esc(course.title),subject.name+' · 七年级'+course.term+'册 · '+courseProgress(course.ids,done),back)+
+    '<p class="course-description">'+esc(course.description)+'</p><div class="actions course-actions">'+actions+'</div>'+
+    '<section class="course-list"><h2 class="group-title">选择题组</h2><div class="topic-list">'+groups+'</div></section>'+
+    (links ? '<section class="course-list"><h2 class="group-title">复习资料</h2><div class="actions course-actions">'+links+'</div></section>' : '')+
+    (refs ? '<details class="course-list"><summary>参考来源</summary><ul class="reference-list">'+refs+'</ul></details>' : '');
 }
 function difficultyPage() {
   const rubric = [...difficultyLevels].map(([level,[name,description]])=>'<div class="row"><div><h3><span class="chip level-'+level+'">'+name+'</span></h3><p>'+description+'</p></div></div>').join('');
@@ -577,6 +650,21 @@ function start(key, backTarget) {
     const set = advancedSets.get(id+'/'+term);
     if (!set) return;
     ids = set.ids; label = set.name+' · '+term+'册综合提升'; back = '#advanced/'+id;
+  } else if (kind === 'course') {
+    const course = courseByKey.get(id);
+    if (!course) return;
+    if (term === 'remaining') {
+      const done = correctQuestionIds();
+      ids = course.ids.filter(questionId=>!done.has(questionId));
+      label = course.title+' · 未答对的题';
+    } else {
+      const group = course.groups.find(item=>item.key===term);
+      if (!group) return;
+      ids = group.ids;
+      label = course.title+' · '+group.title;
+    }
+    state.term = course.term;
+    back = course.href;
   } else if (reviewRouteByStart.has(kind)) {
     const route = reviewRouteByStart.get(kind);
     const collection = reviewCollections.get(route);
@@ -809,13 +897,13 @@ function quizPage() {
   if (!s || !s.ids.every(id=>questionById.has(id))) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const reviewBack = reviewCollections.get(s.back.slice(1).split('/')[0]);
   const backLabel = reviewBack?.returnLabel ?? (s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科'));
+    : s.back.startsWith('#course/') ? '本课练习' : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科'));
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
     const wrong = missedSessionIds(s).length;
     const retry = s.key.startsWith('mixed/') ? startButton(s.key,'再出一组','secondary')
-      : (/^(mistakes$|session-mistakes$|topic-mistakes\/|review-remaining\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
+      : (/^(mistakes$|session-mistakes$|topic-mistakes\/|review-remaining\/|course\/[^/]+\/remaining$)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
     const nextAction = wrong
       ? '<a class="btn secondary" href="#mistakes">查看错题本</a>'+startButton('session-mistakes','重练本组 '+wrong+' 道错题','primary','notebook')
       : '<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>';
@@ -852,16 +940,16 @@ function quizPage() {
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
-  const [page,subjectId] = location.hash.slice(1).split('/');
+  const [page,subjectId,courseKey] = location.hash.slice(1).split('/');
   const subject = subjects.find(s=>s.id===subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = reviewCollections.has(page) ? 'bank' : {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const view = reviewCollections.has(page) ? 'bank' : {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',course:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
   }
   document.querySelector('#mistakeBadge').textContent = mistakeIds().length || '';
-  if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+subjectGrid();
+  if (page==='bank') app.innerHTML = '<div class="bank-header">'+pageHead('学科题库','按学科和册次查看讲解或选择练习。',homeLink)+mixedLink()+'</div>'+courseEntry()+subjectGrid();
   else if (page==='mixed') app.innerHTML = mixedPage(subject);
   else if (page==='difficulty') app.innerHTML = difficultyPage();
   else if (page==='advanced') app.innerHTML = advancedPage(subject);
@@ -873,6 +961,7 @@ function render(moveFocus = false) {
     app.innerHTML = reviewPage(page,subjectId);
   }
   else if (page==='packs') app.innerHTML = packPage(subjectId);
+  else if (page==='course') app.innerHTML = coursePage(subject,courseKey);
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='learn') {
     const topic = topicByKey.get(subjectId);
@@ -1060,9 +1149,16 @@ function search() {
     const lesson = '<button class="btn secondary" type="button" data-key="'+unit.key+'" data-search-action="learn" aria-label="查看 '+esc(unit.title)+'">看本单元</button>';
     return '<div class="search-entry">'+action+lesson+'</div>';
   }).join('');
-  const topicGroup = topics && phrases ? '<h3 class="search-heading">知识点</h3>'+topics : topics;
+  const courseMatches = terms.length ? courseSearchIndex.map(entry=>({...entry,score:searchScore(entry,terms)}))
+    .filter(entry=>entry.score>=8 && terms.some(term=>entry.title.includes(term)))
+    .sort((a,b)=>b.score-a.score).slice(0,5) : [];
+  const courses = courseMatches.map(({course,name})=>
+    '<div class="search-entry"><button class="search-result option" type="button" data-search-course="'+course.key+'"><strong>'+
+    esc(course.title)+'</strong><small>'+name+' · '+course.term+'册 · '+course.ids.length+' 题</small></button></div>').join('');
+  const courseGroup = courses ? '<h3 class="search-heading">按课练习</h3>'+courses : '';
+  const topicGroup = topics && (phrases || courses) ? '<h3 class="search-heading">知识点</h3>'+topics : topics;
   const phraseGroup = phrases ? '<h3 class="search-heading">重点词组</h3>'+phrases : '';
-  results.innerHTML = (matches[0]?.score===3 ? phraseGroup+topicGroup : topicGroup+phraseGroup) ||
+  results.innerHTML = (matches[0]?.score===3 ? phraseGroup+courseGroup+topicGroup : courseGroup+topicGroup+phraseGroup) ||
     '<p class="scope" role="status">'+(query?'没有找到匹配的知识点或词组。':'试试「英语 Day 11」「保持健康」或「Unit 3 第 44 条」。')+'</p>';
 }
 function openSearch() {
@@ -1086,11 +1182,15 @@ dialog.addEventListener('click',event=>{
     const rect=dialog.getBoundingClientRect();
     if (event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom) dialog.close();
   }
-  const button = event.target.closest('[data-key], [data-phrase-id]');
+  const button = event.target.closest('[data-key], [data-phrase-id], [data-search-course]');
   if (!button) return;
   dialog.close();
   if (button.dataset.phraseId) {
     start('phrase/'+button.dataset.phraseId);
+    return;
+  }
+  if (button.dataset.searchCourse) {
+    location.hash = courseByKey.get(button.dataset.searchCourse).href;
     return;
   }
   const key = button.dataset.key;
