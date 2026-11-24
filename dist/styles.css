@@ -260,6 +260,7 @@ dialog::backdrop{background:#23193968}
 .civics-review-entry .pack-entry-label{color:#226b56}
 .short-answer{margin-top:24px}
 .short-answer p{margin:8px 0;color:var(--muted);line-height:1.65}
+.short-answer p:first-of-type{white-space:pre-line}
 .short-answer details{margin-top:12px}
 .short-answer ol{margin:10px 0 0;padding-left:1.4em;line-height:1.65}
 .short-answer li+li{margin-top:6px}

@@ -73,6 +73,12 @@ const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn sec
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
 const reviewCollections = new Map([
+  ['jiezishu-review', {
+    subject:'chinese', name:'语文', icon:'book', tone:'pink',
+    title:'《诫子书》诵读与阅读', keywords:'诫子书 诸葛亮 文言文默写 家书家训 意与日去',
+    subtitle:'按上传的 4 页整理，练习分句默写、字词翻译、论证分析和对比阅读。',
+    start:'jiezishu-review', returnLabel:'《诫子书》专题', modules:jiezishuModules, byTopic:jiezishuByTopic
+  }],
   ['geo-daily', {
     subject:'geography', name:'地理', icon:'globe', tone:'teal',
     title:'每日一练 1–6', keywords:'七上地理每日一练 地理每日一练', unitLabel:'组',
