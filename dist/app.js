@@ -63,7 +63,11 @@ const esc = text => String(text).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'
 const dateKey = (date = new Date()) => [date.getFullYear(), String(date.getMonth()+1).padStart(2,'0'), String(date.getDate()).padStart(2,'0')].join('-');
 const mistakeIds = () => Object.keys(state.mistakes).filter(id => questionById.has(id));
 const favoriteIds = () => state.favorites.filter(id => questionById.has(id));
-const correctQuestionIds = () => new Set(state.attempts.filter(attempt=>attempt.ok).map(attempt=>attempt.id));
+const correctQuestionIds = () => {
+  const latest = new Map();
+  for (const attempt of state.attempts) latest.set(attempt.id,attempt.ok);
+  return new Set([...latest].filter(([,ok])=>ok).map(([id])=>id));
+};
 const remainingReviewIds = (unit, correctIds) => unit.questions.map(question=>question.id).filter(id=>!correctIds.has(id));
 const missedSessionIds = session => [...new Set(session.answers.filter(answer=>!answer.ok && questionById.has(answer.id)).map(answer=>answer.id))];
 const endOfSession = s => s.index >= s.ids.length;
