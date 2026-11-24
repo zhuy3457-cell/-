@@ -92,7 +92,7 @@ const reviewCollections = new Map([
   ['civics-review', {
     subject:'civics', name:'道德与法治', icon:'shield', tone:'teal',
     title:'课课贴复习', keywords:'七上道法 道法课课贴 道德与法治课课贴',
-    subtitle:'根据你上传的第 3、4、6、8、10 页整理，覆盖资料中的 40 个考点。',
+    subtitle:'按你上传的第 1–4、6、8、10 页整理，共 63 张问答卡。第一单元已覆盖考点 1–27。',
     start:'civics-cards', returnLabel:'道法课课贴', modules:civicsReviewModules, byTopic:civicsReviewByTopic
   }]
 ]);
