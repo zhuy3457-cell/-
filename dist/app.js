@@ -73,6 +73,12 @@ const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn sec
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
 const reviewCollections = new Map([
+  ['geo-daily', {
+    subject:'geography', name:'地理', icon:'globe', tone:'teal',
+    title:'每日一练 1–6', keywords:'七上地理每日一练 地理每日一练', unitLabel:'组',
+    subtitle:'按上传的 6 张练习单编号排列。可以逐组复习，做填空、应用题和材料简答。',
+    start:'geo-daily', returnLabel:'地理每日一练', modules:geoDailyModules, byTopic:geoDailyByTopic
+  }],
   ['geo-review', {
     subject:'geography', name:'地理', icon:'globe', tone:'teal',
     title:'第一次月考复习', keywords:'地理月考复习 第一次月考', subtitle:'根据你上传的第 1–7 页整理，涵盖资料中的考点 1–102。',
@@ -212,7 +218,7 @@ function advancedEntry(subject) {
 function reviewEntry(route,collection) {
   const total = collection.modules.reduce((count,unit)=>count+unit.questions.length,0);
   return '<a class="pack-entry '+route+'-entry" href="#'+route+'"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span>'+
-    '<span><strong>'+collection.title+'</strong><small>'+collection.modules.length+' 个主题 · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
+    '<span><strong>'+collection.title+'</strong><small>'+collection.modules.length+' '+(collection.unitLabel??'个主题')+' · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
 }
 function reviewPage(route,key) {
   const collection = reviewCollections.get(route);
@@ -498,10 +504,12 @@ function materialTable(table) {
   return '<div class="material-table-scroll"><table><caption>'+esc(table.caption)+'</caption><thead><tr>'+columns+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 function readingMaterial(question, expanded = false) {
-  if (!question.material && !question.table) return '';
-  const title = question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
+  const diagram = question.diagram;
+  if (!question.material && !question.table && !diagram) return '';
+  const title = diagram ? '查看示意图' : question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
+  const figure = diagram ? '<img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'" width="720" height="360">' : '';
   return '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary>'+
-    (question.material?'<div>'+esc(question.material)+'</div>':'')+(question.table?materialTable(question.table):'')+'</details>';
+    (question.material?'<div>'+esc(question.material)+'</div>':'')+figure+(question.table?materialTable(question.table):'')+'</details>';
 }
 const normalizeDictation = text => text.normalize('NFKC').replace(/[\p{P}\s]/gu,'');
 const fieldValues = (question, values) => (question.steps ?? question.blanks).map((_,index)=>Array.isArray(values)?(values[index]??''):'');
