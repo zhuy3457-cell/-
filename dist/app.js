@@ -84,6 +84,12 @@ const reviewCollections = new Map([
     title:'第一次月考复习', keywords:'地理月考复习 第一次月考', subtitle:'根据你上传的第 1–7 页整理，涵盖资料中的考点 1–102。',
     start:'geo-monthly', returnLabel:'月考复习', modules:geoReviewModules, byTopic:geoReviewByTopic
   }],
+  ['history-mindmap', {
+    subject:'history', name:'历史', icon:'history', tone:'gold', unitLabel:'课',
+    title:'思维导图与史料练习', keywords:'七上历史思维导图 历史导图', noteHeading:'思维导图',
+    subtitle:'按上传的第 1–4、8 页整理，覆盖第 1–8、15–16 课。',
+    start:'history-mindmap', returnLabel:'历史思维导图', modules:historyMindmapModules, byTopic:historyMindmapByTopic
+  }],
   ['history-review', {
     subject:'history', name:'历史', icon:'history', tone:'gold',
     title:'时间轴与默写', keywords:'时间轴 历史默写 七上历史 夏商周', subtitle:'按上传资料整理史前时期、夏商周与秦统一的时间轴和考点。',
@@ -226,13 +232,16 @@ function reviewPage(route,key) {
   const unit = collection.byTopic.get(key);
   if (!unit) {
     const total = collection.modules.reduce((count,module)=>count+module.questions.length,0);
-    const cards = collection.modules.map(module=>'<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+' 张卡 · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
+    const cards = collection.modules.map(module=>'<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+(collection.noteHeading?' 条分支':' 张卡')+' · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
     const practiceName = collection.modules.some(module=>module.shortAnswer) ? '练习 '+total+' 道选择和填空' : '练习全部 '+total+' 题';
+    const studyTip = collection.noteHeading ? '展开各课的导图分支复习，或做一组综合练习。' : '展开问答卡回忆要点，或做一组综合练习。';
     return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
-      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>展开问答卡回忆要点，或做一组综合练习。</p></div>'+startButton(collection.start,practiceName)+'</div>'+
+      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>'+studyTip+'</p></div>'+startButton(collection.start,practiceName)+'</div>'+
       '<div class="pack-grid">'+cards+'</div>';
   }
-  const notes = unit.notes.map(note=>'<details class="geo-note"><summary>'+esc(note.label)+'</summary><p>'+esc(note.text)+'</p></details>').join('');
+  const branches = collection.noteHeading ? ' review-branches' : '';
+  const notes = unit.notes.map(note=>'<details class="geo-note"><summary>'+esc(note.label)+'</summary>'+
+    (note.points ? '<ul>'+note.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ul>' : '<p>'+esc(note.text)+'</p>')+'</details>').join('');
   const refs = referenceItems(unit.sources);
   const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
   const task = unit.shortAnswer;
@@ -242,7 +251,7 @@ function reviewPage(route,key) {
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
   return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="'+base+'">'+collection.title+'</a>')+
-    timeline+'<div class="section-head"><h2>问答复习卡</h2>'+practice+'</div><div class="geo-notes">'+notes+'</div>'+shortAnswer+
+    timeline+'<div class="section-head"><h2>'+(collection.noteHeading ?? '问答复习卡')+'</h2>'+practice+'</div><div class="geo-notes'+branches+'">'+notes+'</div>'+shortAnswer+
     (refs?'<details class="geo-references"><summary>查阅参考来源</summary><ul class="reference-list">'+refs+'</ul></details>':'')+'</article>';
 }
 function advancedPage(selected) {
