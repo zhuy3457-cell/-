@@ -241,6 +241,15 @@ async function mcpResponse(request,env) {
   return json({jsonrpc:'2.0',id,result});
 }
 async function syncResponse(request,env,url) {
+  if (request.method==='HEAD') {
+    try {
+      await studyDb(env).prepare('SELECT 1 FROM study_attempts LIMIT 0').all();
+      return new Response(null,{status:204,headers:{'Cache-Control':'no-store'}});
+    } catch (error) {
+      console.error('Study storage readiness: '+error.name+' '+error.message);
+      return new Response(null,{status:503,headers:{'Cache-Control':'no-store'}});
+    }
+  }
   if (!request.headers.get('oai-authenticated-user-id')) return json({error:'请先登录 ChatGPT 账号。'},401);
   const owner = requireOwner(request);
   try {
@@ -258,7 +267,7 @@ async function syncResponse(request,env,url) {
       return json({attempts:rows.map(({id,ref,date,time,ok})=>({id,ref,date,time,ok})),
         next:rows.length===limit ? rows.at(-1).cursor : null});
     }
-    return new Response(null,{status:405,headers:{Allow:'GET, POST'}});
+    return new Response(null,{status:405,headers:{Allow:'GET, HEAD, POST'}});
   } catch (error) {
     if (error instanceof StudyError || error instanceof SyntaxError) return json({error:error instanceof SyntaxError ? '同步数据格式有误。' : error.message},400);
     console.error('Study sync: '+error.name+' '+error.message);

@@ -15,10 +15,9 @@ database.exec(readFileSync(join(root,'drizzle','0000_chat_study.sql'),'utf8'));
 const env = {DB:{
   prepare(sql) {
     const statement = database.prepare(sql);
-    return {bind(...values) {
-      return {async all() { return {results:statement.all(...values)}; },
-        run() { return {meta:{changes:statement.run(...values).changes}}; }};
-    }};
+    const bound = (...values)=>({async all() { return {results:statement.all(...values)}; },
+      run() { return {meta:{changes:statement.run(...values).changes}}; }});
+    return {...bound(),bind:bound};
   },
   async batch(statements) {
     database.exec('BEGIN');
@@ -142,6 +141,7 @@ test('browser sync requires account identity and same origin, and merges both wa
   const payload = [{id:'web-math-calculation-5',ok:true,ref:'legacy:2026-11-23:old:1:1',date:'2026-11-23'}];
   const write = (requestOrigin,user = owner)=>request(attemptEndpoint,{owner:user,method:'POST',
     headers:{Origin:requestOrigin,'Content-Type':'application/json'},body:JSON.stringify({attempts:payload})});
+  assert.equal((await request(attemptEndpoint,{method:'HEAD'})).status,204);
   assert.equal((await request(attemptEndpoint)).status,401);
   assert.equal((await write('https://example.org')).status,403);
   const first = await (await write(origin)).json();
