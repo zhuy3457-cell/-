@@ -558,7 +558,7 @@ function rationalParts(text) {
   return [BigInt(whole+decimals),10n**BigInt(decimals.length)];
 }
 function matchesNumber(raw, expected) {
-  const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').replace(/[⁄∕]/g,'/').trim();
+  const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').replace(/[⁄∕÷]/g,'/').trim();
   const actual = rationalParts(normalized);
   const target = rationalParts(String(expected).trim());
   if (actual && target) return actual[0]*target[1]===target[0]*actual[1];
