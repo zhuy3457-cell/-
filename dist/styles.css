@@ -117,6 +117,7 @@ dialog::backdrop{background:#23193968}
 .search-field input{width:100%;min-width:0;border:0;background:transparent;outline:none}
 .search-field:focus-within{outline:2px solid #977dff}
 #searchResults{display:grid;gap:4px}
+.search-heading{font-size:.9rem;margin:8px 0 1px;color:var(--ink)}
 .search-result{padding:9px;border-radius:7px;display:block}
 .search-result:hover,.search-result:focus-visible{background:#f4efff}
 .search-result small{display:block;color:var(--muted);margin-top:3px}

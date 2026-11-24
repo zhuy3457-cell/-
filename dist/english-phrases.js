@@ -545,7 +545,7 @@ const englishPhraseModules = (() => {
       notes.push({label:title+' · 中英对照',points:group.map(entry=>entry.review)});
     }
     return {
-      key,title:'Unit '+unit+' · '+name,range:'原资料 Unit '+unit,
+      key,unit,title:'Unit '+unit+' · '+name,range:'原资料 Unit '+unit,
       description,notes,sections,
       questions:entries.map(entry=>entry.question)
     };

@@ -85,7 +85,7 @@ const reviewCollections = new Map([
   ['english-phrases', {
     subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'个单元',
     title:'Unit 1–8 重点词组', keywords:'英语重点词组 短语默写 中译英 中英对照',
-    subtitle:'按上传资料的单元和原编号整理。可先查看中英对照，再按单元或编号范围练习。',
+    subtitle:'可查看中英对照，按单元或编号范围默写。顶部搜索支持按中文、英文或原编号查找单条词组。',
     start:'english-phrases', returnLabel:'英语重点词组', modules:englishPhraseModules, byTopic:englishPhraseByTopic
   }],
   ['english-grammar-daily', {
@@ -174,6 +174,16 @@ const topicSearchIndex = allTopics.map(topic=>{
     detail:normalizeSearch([topic.description,module?.range,collection?.keywords].filter(Boolean).join(' '))
   };
 });
+const phraseSearchKey = text => normalizeSearch(text).replace(/[’‘ʼ]/g,"'")
+  .replace(/[^\p{L}\p{N}']+/gu,' ').trim();
+const phraseSearchIndex = englishPhraseModules.flatMap(unit=>unit.questions.map((question,index)=>{
+  const chinese = question.prompt.replace(/^\d+\.\s*/,'');
+  const forms = question.steps.flatMap(step=>[step.answer,...step.aliases]);
+  return {
+    unit, question, number:index+1,
+    values:[...new Set([chinese,...forms].map(phraseSearchKey))]
+  };
+}));
 function lessonLink(key, style = 'btn secondary') {
   const href = studyHref(key);
   return href ? '<a class="'+style+'" href="'+href+'">'+(reviewRouteByTopic.has(key)?'看复习卡':'看讲解')+'</a>' : '';
@@ -545,6 +555,14 @@ function start(key, backTarget) {
     const collection = reviewCollections.get(route);
     ids = collection.modules.flatMap(module=>module.questions.map(question=>question.id));
     label = collection.name+'上册 · '+collection.title; back = '#'+route;
+  } else if (kind === 'phrase') {
+    const question = questionById.get(id);
+    const unit = englishPhraseByTopic.get(question?.topic);
+    if (!unit) return;
+    ids = [id];
+    label = unit.title+' · 单条默写';
+    back = studyHref(unit.key);
+    state.term = '上';
   } else if (kind === 'review-section' || kind === 'review-remaining') {
     const route = reviewRouteByTopic.get(id);
     const unit = reviewCollections.get(route)?.byTopic.get(id);
@@ -946,19 +964,49 @@ function searchScore(entry, terms) {
   }
   return score;
 }
+const phraseScopeWords = new Set(['英语','七上','七上英语','英语上册','重点词组','英语重点词组','词组','短语','短语默写','词组默写']);
+function findPhrases(query) {
+  const words = query.replace(/第\s*(\d+)\s*单元/g,'unit$1').split(/\s+/);
+  const unitToken = words.find(word=>/^unit\d+$/.test(word));
+  const unitNumber = unitToken ? Number(unitToken.slice(4)) : null;
+  const body = words.filter(word=>word!==unitToken && !phraseScopeWords.has(word)).join(' ');
+  const needle = phraseSearchKey(body);
+  if (!needle || /^[a-z]$/.test(needle)) return [];
+  const itemNumber = unitToken && /^第?\s*(\d+)\s*(?:条|题)?$/.exec(needle);
+  const terms = needle.split(' ');
+  const contains = (value,term) => /\p{Script=Han}/u.test(term) ? value.includes(term) : (' '+value+' ').includes(' '+term+' ');
+  return phraseSearchIndex.flatMap(entry=>{
+    if (unitNumber!==null && entry.unit.unit!==unitNumber) return [];
+    if (itemNumber) return entry.number===Number(itemNumber[1]) ? [{entry,score:3}] : [];
+    if (entry.values.includes(needle)) return [{entry,score:3}];
+    if (entry.values.some(value=>contains(value,needle))) return [{entry,score:2}];
+    if (terms.length>1 && terms.every(term=>entry.values.some(value=>contains(value,term)))) return [{entry,score:1}];
+    return [];
+  }).sort((left,right)=>right.score-left.score).slice(0,8);
+}
 function search() {
   const query = normalizeSearch(searchInput.value);
   const terms = query ? [...new Set(query.split(/\s+/))] : [];
   const found = terms.length ? topicSearchIndex
     .map(entry=>({topic:entry.topic, score:searchScore(entry,terms)}))
     .filter(result=>result.score>0).sort((a,b)=>b.score-a.score).slice(0,14).map(result=>result.topic) : [];
-  results.innerHTML = found.map(t=>{
+  const topics = found.map(t=>{
     const hasLesson = !!studyHref(t.key);
     const result = '<button class="search-result option" type="button" data-key="'+t.key+'" data-search-action="'+(hasLesson?'learn':'practice')+'"><div><strong>'+t.title+'</strong><small>'+t.subject.name+' · '+t.term+'册'+(hasLesson?' · 看讲解':'')+'</small></div></button>';
     const practice = hasLesson ? '<button class="btn secondary" type="button" data-key="'+t.key+'" data-search-action="practice" aria-label="练习'+esc(t.title)+'">做练习</button>' : '';
     return '<div class="search-entry">'+result+practice+'</div>';
-  }).join('') ||
-    '<p class="scope" role="status">'+(query?'没有找到匹配的知识点。':'试试「英语 Day 11」或「数学 分段计费」。')+'</p>';
+  }).join('');
+  const matches = terms.length ? findPhrases(query) : [];
+  const phrases = matches.map(({entry:{question,unit}})=>{
+    const action = '<button class="search-result option" type="button" data-phrase-id="'+question.id+'"><strong>'+esc(question.prompt)+'</strong>'+
+      '<small>'+esc(question.correct)+'</small><small>Unit '+unit.unit+' · 默写这条</small></button>';
+    const lesson = '<button class="btn secondary" type="button" data-key="'+unit.key+'" data-search-action="learn" aria-label="查看 '+esc(unit.title)+'">看本单元</button>';
+    return '<div class="search-entry">'+action+lesson+'</div>';
+  }).join('');
+  const topicGroup = topics && phrases ? '<h3 class="search-heading">知识点</h3>'+topics : topics;
+  const phraseGroup = phrases ? '<h3 class="search-heading">重点词组</h3>'+phrases : '';
+  results.innerHTML = (matches[0]?.score===3 ? phraseGroup+topicGroup : topicGroup+phraseGroup) ||
+    '<p class="scope" role="status">'+(query?'没有找到匹配的知识点或词组。':'试试「英语 Day 11」「保持健康」或「Unit 3 第 44 条」。')+'</p>';
 }
 function openSearch() {
   if (dialog.open) return;
@@ -981,9 +1029,13 @@ dialog.addEventListener('click',event=>{
     const rect=dialog.getBoundingClientRect();
     if (event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom) dialog.close();
   }
-  const button = event.target.closest('[data-key]');
+  const button = event.target.closest('[data-key], [data-phrase-id]');
   if (!button) return;
   dialog.close();
+  if (button.dataset.phraseId) {
+    start('phrase/'+button.dataset.phraseId);
+    return;
+  }
   const key = button.dataset.key;
   if (button.dataset.searchAction === 'learn') location.hash = studyHref(key);
   else {
