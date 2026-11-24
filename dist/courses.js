@@ -109,8 +109,9 @@ const courseCatalog = (() => {
     ], ['algebra','math-variable-independent'], [calculation.sources[1]]),
     makeCourse('linear-equations', '一元一次方程', '按数量关系、行程、计费、比赛等情境列方程。', [
       ...models.sections.map((section, i) => sectionGroup(models, i)),
-      ...equationApplicationModules.map(module => fullGroup(module.key))
-    ], ['equation','web-math-models'], models.sources),
+      ...equationApplicationModules.map(module => fullGroup(module.key)),
+      fullGroup('math-equation-final-review')
+    ], ['equation','web-math-models','math-equation-final-review'], models.sources),
     topicCourse('geometry')
   ];
 
@@ -139,8 +140,13 @@ const courseCatalog = (() => {
     biology: {上: biologyReviewModules.map(module => topicCourse(module.key))}
   };
   const groupedTopicKeys = new Set(['dictation-upper', 'dictation-lower', 'rational', 'algebra', 'geometry']);
+  const reviewLessons = sevenUpperReview.map(module=>({
+    subject:module.subject,
+    course:makeCourse(module.key,module.title,module.description,moduleGroups(module),[module.key])
+  }));
   return new Map(activeSubjects.flatMap(subject => ['上', '下'].map(term => {
-    const lessons = namedCourses[subject.id]?.[term] ?? [];
+    const lessons = [...(namedCourses[subject.id]?.[term] ?? []),
+      ...(term==='上' ? reviewLessons.filter(item=>item.subject===subject.id).map(item=>item.course) : [])];
     const topics = subject.topics.filter(topic => topic.term === term && lessonByTopic.has(topic.key) &&
       !groupedTopicKeys.has(topic.key)).map(topic => topicCourse(topic.key, '知识点练习'));
     return [subject.id + '/' + term, {lessons, topics}];

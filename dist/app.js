@@ -195,6 +195,18 @@ const reviewCollections = new Map([
     start:'civics-cards', returnLabel:'道法课课贴', modules:civicsReviewModules, byTopic:civicsReviewByTopic
   }]
 ]);
+for (const id of ['geography','history','english','math']) {
+  const subject = activeSubjectById.get(id);
+  const modules = sevenUpperReview.filter(module=>module.subject===id);
+  const route = id+'-upper-review';
+  reviewCollections.set(route,{
+    subject:id,name:subject.name,icon:subject.icon,tone:subject.tone,
+    title:'七上复习 · '+subject.name,keywords:'七上 期末复习',
+    subtitle:'按截图可辨认的考点整理，分组复习后可直接做题。',
+    start:route,returnLabel:subject.name+'七上复习',modules,
+    byTopic:new Map(modules.map(module=>[module.key,module]))
+  });
+}
 const reviewRouteByTopic = new Map([...reviewCollections].flatMap(([route,collection])=>collection.modules.map(module=>[module.key,route])));
 const reviewRouteByStart = new Map([...reviewCollections].map(([route,collection])=>[collection.start,route]));
 const studyHref = key => reviewRouteByTopic.has(key) ? '#'+reviewRouteByTopic.get(key)+'/'+key : lessonByTopic.has(key) ? '#learn/'+key : '';

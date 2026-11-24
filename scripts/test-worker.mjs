@@ -186,6 +186,30 @@ test('uploaded English worksheets and both book units work through the chat tool
     assert.equal(new Set(questions.questions.map(question=>question.material)).size,2);
   }
 });
+test('upper grade review exposes all four subjects and preserves reading tables and worked answers',async ()=>{
+  const summaries = [
+    ['地理经纬网与地球运动',11],['历史史前到夏商周',8],
+    ['英语语法知识梳理',8],['英语 take 动词短语',25],
+    ['数学一元一次方程期末应用题',11]
+  ];
+  for (const [query,count] of summaries) {
+    const lesson = await good('explain_topic',{query});
+    assert.equal(lesson.question_count,count);
+    assert.ok(lesson.teaching.length);
+  }
+  const grid = await good('draw_questions',{query:'地理经纬网与地球运动',group_id:'geography-map-review-grid',count:5});
+  assert.ok(grid.questions.every(question=>question.table.rows.length===4 && !Object.hasOwn(question,'correct')));
+  const take = await good('draw_questions',{query:'英语 take 动词短语',group_id:'english-take-phrases-day-1',count:10});
+  assert.equal(take.questions.length,10);
+  const grades = await good('grade_homework',{record:false,submissions:[
+    {question_id:'geography-map-review-1',answer:'B'},
+    {question_id:'english-take-phrases-19',answer:'take a picture'},
+    {question_id:'math-equation-final-review-2',answer:'24'},
+    {question_id:'math-equation-final-review-3',answer:'15/2'}
+  ]});
+  assert.equal(grades.correct,4);
+  assert.match(JSON.stringify(grades.results[2].solution),/20x\+5x=30/);
+});
 test('vocabulary and sentence sheets preserve order, marking and the Unit 1–2 links',async ()=>{
   const one = await good('explain_topic',{query:'英语 Unit 1 词汇默写与词性'});
   const two = await good('explain_topic',{query:'英语 Unit 2 词汇默写与词性'});
