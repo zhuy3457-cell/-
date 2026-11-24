@@ -104,6 +104,42 @@ test('lookup, explanations and random questions are constrained to the selected 
   const unit = await good('special_practice',{subject:'english',scope_id:'course:unit-3',group_id:group.group_id,count:4});
   assert.ok(unit.questions.every(question=>question.question_id.startsWith('unit-check-3-')));
 });
+test('chat resolves Chinese course phrases and respects explicit subject and term',async ()=>{
+  const algebra = await good('query_courses',{query:'七上 数学 方程'});
+  assert.equal(algebra.subject,'数学');
+  assert.equal(algebra.term,'上');
+  assert.equal(algebra.results[0].scope_id,'course:linear-equations');
+  const english = await good('explain_topic',{query:'英语第三单元'});
+  assert.equal(english.scope_id,'course:unit-3');
+  const algebraDraw = await good('draw_questions',{query:'七上数学一元一次方程',count:2});
+  assert.equal(algebraDraw.scope,'一元一次方程');
+  assert.ok(algebraDraw.questions.every(question=>question.term==='上' && question.subject==='数学'));
+  assert.equal((await good('explain_topic',{scope_id:'course:unit-3'})).scope_id,'course:unit-3');
+  const explicit = await call('draw_questions',{subject:'math',query:'英语第三单元'});
+  assert.match(explicit.content[0].text,/所选学科/);
+  const wrongTerm = await call('draw_questions',{term:'下',query:'七上数学一元一次方程'});
+  assert.match(wrongTerm.content[0].text,/所选册次/);
+  const ambiguous = await call('draw_questions',{query:'七上数学方程'});
+  assert.match(ambiguous.content[0].text,/多个匹配范围/);
+});
+test('continuing a chat practice only draws unseen questions and reports exhaustion',async ()=>{
+  const query = '英语第三单元';
+  const lesson = await good('explain_topic',{query});
+  const group_id = lesson.practice_groups[0].group_id;
+  const first = await good('draw_questions',{query,group_id,count:3});
+  assert.equal(first.remaining,1);
+  const shown = first.questions.map(question=>question.question_id);
+  const second = await good('special_practice',{query,group_id,count:3,exclude_question_ids:shown});
+  assert.equal(second.available,1);
+  assert.equal(second.questions.length,1);
+  assert.ok(!shown.includes(second.questions[0].question_id));
+  const exhausted = await good('draw_questions',{query,group_id,count:3,
+    exclude_question_ids:shown.concat(second.questions[0].question_id)});
+  assert.equal(exhausted.available,0);
+  assert.equal(exhausted.remaining,0);
+  assert.deepEqual(exhausted.questions,[]);
+  assert.equal((await call('draw_questions',{query,exclude_question_ids:'bad'})).isError,true);
+});
 test('grades objective work and isolates personal mistakes and progress',async ()=>{
   const questionId = 'web-math-calculation-5';
   const owner = 'student-a';
@@ -173,6 +209,8 @@ test('chat retakes saved homework without repeating the prompt or answer key',as
   assert.equal(list.available,1);
   assert.equal(list.questions[0].question_id,id);
   assert.equal(list.questions[0].grading_method,'stored_reference');
+  const alreadyShown = await good('special_practice',{term:'下',mode:'mistakes',exclude_question_ids:[id]},owner);
+  assert.deepEqual(alreadyShown.questions,[]);
   assert.doesNotMatch(JSON.stringify(list),/reference_answer|两边减/);
   const resubmit = {batch_id:'homework-retake',submissions:[{question_id:id,answer:'8/2'}]};
   assert.ok((await call('grade_homework',resubmit,'another-chat-account')).isError);

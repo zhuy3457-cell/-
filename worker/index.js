@@ -5,11 +5,15 @@ const scopeProperties = {
   term:{type:'string',enum:['上','下','all'],description:'册次。省略时查询上下册。'},
   scope_id:{type:'string',description:'由 query_courses 返回的课程、知识点或专项题组编号。'}
 };
+const courseQueryProperty = {type:'string',description:'课程名或带学科、册次的短语，例如「七上一元一次方程」或「英语第三单元」。'};
 const drawProperties = {
   ...scopeProperties,
+  query:courseQueryProperty,
   group_id:{type:'string',description:'只在指定课程的一个题组取题时使用，由 explain_topic 返回。'},
   difficulty:{type:'string',enum:['all','basic','standard','challenge']},
-  count:{type:'integer',minimum:1,maximum:15,description:'题目数量，默认 5。'}
+  count:{type:'integer',minimum:1,maximum:15,description:'题目数量，默认 5。'},
+  exclude_question_ids:{type:'array',maxItems:maxExcludedQuestions,items:{type:'string',maxLength:120},
+    description:'续抽时传入本轮已经展示的 question_id，以免重复。范围题目用尽时返回空列表。'}
 };
 const answerSchema = {
   oneOf:[{type:'string',maxLength:500},{type:'number'},
@@ -20,13 +24,15 @@ function toolDefinition(name,title,description,properties,required = [],readOnly
     annotations:{readOnlyHint:readOnly,destructiveHint:false,idempotentHint:true,openWorldHint:false}};
 }
 const toolsList = [
-  toolDefinition('query_courses','查询课程','查询练习室已收录的年级课程、知识点和专项题组。默认数学。后续用返回的 scope_id 查讲解或练习。',{
+  toolDefinition('query_courses','查询课程','查询课程、知识点和专项题组。可以识别「七上数学方程」和「英语第三单元」等短语。后续可用返回的 scope_id 查讲解或练习。',{
     subject:scopeProperties.subject,term:scopeProperties.term,
-    query:{type:'string',description:'可用课文标题、章节主题或知识点筛选。'},
+    query:courseQueryProperty,
     limit:{type:'integer',minimum:1,maximum:35}
   }),
-  toolDefinition('explain_topic','讲解知识点','返回课程要点、易错提醒、例题与解题思路。需要先从课程查询选定 scope_id。',scopeProperties,['scope_id']),
-  toolDefinition('draw_questions','随机出题','按学科、册次、课程和难度抽题。返回题目与题号，不提前给答案。请保留 question_id 以便答完后批改。',drawProperties),
+  toolDefinition('explain_topic','讲解知识点','返回课程要点、易错提醒、例题与解题思路。可提供准确课程名 query 或查询到的 scope_id。遇到多个匹配范围，请让学生选课。',{
+    ...scopeProperties,query:courseQueryProperty
+  }),
+  toolDefinition('draw_questions','随机出题','按学科、册次、课程和难度抽题。可直接提交准确课程名 query。请保留 question_id 用来批改，续抽时把本轮已展示的题号传入 exclude_question_ids。',drawProperties),
   toolDefinition('grade_homework','批改作业','用户作答后，按 question_id 批改题库题或已保存的作业错题。单选可传选项字母，多空传数组。首次批改外部题时提交原题与已确认的参考答案。已保存的参考答案可用于后续聊天重练。外部主观题可先讲评，再调用 record_homework_review。默认保存结果。同一提交重试时复用 batch_id。',{
     subject:scopeProperties.subject,term:scopeProperties.term,
     batch_id:{type:'string',description:'记录时必填。为本次实际提交生成唯一编号，只用字母、数字、连字符或下划线。重试复用。'},
@@ -49,7 +55,7 @@ const toolsList = [
   toolDefinition('get_mistakes','查询错题','查询当前账号最近一次仍答错的题，包含已同步的网页记录和聊天批改。直接返回题目，方便复练。',{
     ...scopeProperties,limit:{type:'integer',minimum:1,maximum:30}
   }),
-  toolDefinition('special_practice','专项练习','按课程或题组练习。用户说重做错题时，用 mode=mistakes。未指定课程时可直接从个人错题本出题，包括外部作业。请保留 question_id，提交后用该编号批改。',{
+  toolDefinition('special_practice','专项练习','按课程或题组练习。用户说重做错题时，用 mode=mistakes。未指定课程时可直接从个人错题本出题，包括外部作业。保留 question_id 用于批改，续抽时将已展示题号传入 exclude_question_ids。',{
     ...drawProperties,mode:{type:'string',enum:['all','unmastered','mistakes'],description:'all 为范围内任选，unmastered 为还未答对，mistakes 为待复练错题。'}
   }),
   toolDefinition('get_progress','查询学习进度','查询当前账号的答题次数、正确率、已掌握题数和待复练错题。统计来自聊天批改和已主动同步的网页记录。',scopeProperties)
@@ -232,7 +238,7 @@ async function mcpResponse(request,env) {
   const {id,method,params} = message;
   if (id===undefined) return new Response(null,{status:202});
   const capabilities = {tools:{}};
-  const serverInfo = {name:PRODUCT_NAME,title:PRODUCT_NAME,version:'1.1.0'};
+  const serverInfo = {name:PRODUCT_NAME,title:PRODUCT_NAME,version:'1.2.0'};
   let result;
   if (method==='server/discover') {
     result = {supportedVersions:[MCP_VERSIONS[0]],capabilities,serverInfo};

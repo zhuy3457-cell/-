@@ -12,6 +12,11 @@ const levels = ['basic','standard','challenge'];
 const levelNames = {basic:'基础',standard:'进阶',challenge:'挑战'};
 const normalizeCatalog = value=>value.normalize('NFKC').toLowerCase().replace(/[\p{P}\s]/gu,'');
 const publicLink = href=>href ? new URL(href,SITE_URL).href : null;
+const subjectPrefixes = [...STUDY.subjects.map(({id,name})=>[name,id]),
+  ['道法','civics'],['生物','biology'],['政治','civics']].sort((a,b)=>b[0].length-a[0].length);
+const termPrefix = /^(?:(?:七年级|初一)([上下])(?:册|学期)?|七([上下])(?:册)?|([上下])(?:册|学期))/;
+const englishUnit = /^(?:第)?([一二三四五六七八1-8])单元$/;
+const maxExcludedQuestions = 300;
 
 class StudyError extends Error {}
 
@@ -63,18 +68,37 @@ function scopeSummary(scope,subject,term) {
     url:publicLink(scope.href ?? '#subject/'+subject)
   };
 }
-function queryCourses(args) {
-  const subject = validSubject(args.subject);
+function courseRequest(args) {
+  let keyword = normalizeCatalog(textValue(args.query,'搜索词',100));
+  const leadingTerm = termPrefix.exec(keyword);
+  if (leadingTerm) keyword = keyword.slice(leadingTerm[0].length);
+  const named = subjectPrefixes.find(([name])=>keyword.startsWith(name));
+  if (named) keyword = keyword.slice(named[0].length);
+  const embeddedTerm = !leadingTerm && termPrefix.exec(keyword);
+  if (embeddedTerm) keyword = keyword.slice(embeddedTerm[0].length);
+  const inferredTerm = (leadingTerm || embeddedTerm || []).slice(1).find(Boolean);
   const term = validTerm(args.term);
-  const keyword = normalizeCatalog(textValue(args.query,'搜索词',100));
-  const limit = validCount(args.limit,15,35);
-  const matches = scopeList.filter(scope=>scopeMatches(scope,subject,term)).map(scope=>{
+  if (term && inferredTerm && term!==inferredTerm) throw new StudyError('所选册次与搜索词中的册次不同。');
+  const explicitSubject = args.subject===undefined ? null : validSubject(args.subject);
+  if (explicitSubject && named && explicitSubject!==named[1]) throw new StudyError('所选学科与搜索词中的学科不同。');
+  const subject = explicitSubject ?? named?.[1] ?? scopes.get(args.scope_id)?.subject ?? 'math';
+  const unit = subject==='english' && englishUnit.exec(keyword);
+  if (unit) keyword = 'unit'+(Number(unit[1]) || ('一二三四五六七八'.indexOf(unit[1])+1));
+  return {subject,term:term ?? inferredTerm ?? null,keyword};
+}
+function matchingScopes(subject,term,keyword) {
+  return scopeList.filter(scope=>scopeMatches(scope,subject,term)).map(scope=>{
     const title = normalizeCatalog(scope.title);
     const key = normalizeCatalog(scope.key);
     const description = normalizeCatalog(scope.description ?? '');
     const relevance = !keyword ? 1 : title===keyword || key===keyword ? 5 : title.includes(keyword) || key.includes(keyword) ? 3 : description.includes(keyword) ? 1 : 0;
     return {scope,relevance};
   }).filter(item=>item.relevance).sort((a,b)=>b.relevance-a.relevance);
+}
+function queryCourses(args) {
+  const {subject,term,keyword} = courseRequest(args);
+  const limit = validCount(args.limit,15,35);
+  const matches = matchingScopes(subject,term,keyword);
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',total:matches.length,
     results:matches.slice(0,limit).map(({scope})=>scopeSummary(scope,subject,term))};
 }
@@ -86,6 +110,22 @@ function getScope(id,subject,term,required = false) {
     throw new StudyError('找不到该学科和册次下的范围。先用 query_courses 查找 scope_id。');
   }
   return scope;
+}
+function courseSelection(args,required) {
+  const {subject,term,keyword} = courseRequest(args);
+  const selection = scope=>({subject,term:term ?? scope?.term ?? null,scope});
+  if (args.scope_id!==undefined || !keyword) return selection(getScope(args.scope_id,subject,term,required));
+  const matches = matchingScopes(subject,term,keyword);
+  if (!matches.length) throw new StudyError('找不到匹配的课程。请换个搜索词，或用 query_courses 查看目录。');
+  const best = matches[0];
+  const tied = matches.filter(item=>item.relevance===best.relevance);
+  const preferred = tied.filter(({scope})=>scope.kind==='course' && normalizeCatalog(scope.title)===keyword);
+  if (preferred.length===1) return selection(preferred[0].scope);
+  if (tied.length>1) {
+    const titles = tied.slice(0,4).map(({scope})=>scope.title+(scope.term ? '（'+scope.term+'册）' : ''));
+    throw new StudyError('有多个匹配范围，请选一个：'+titles.join('、')+'。也可用 query_courses 查看编号。');
+  }
+  return selection(best.scope);
 }
 function lessonNotes(topic) {
   if (topic.lesson) {
@@ -101,9 +141,7 @@ function lessonNotes(topic) {
   return null;
 }
 function explainTopic(args) {
-  const subject = validSubject(args.subject);
-  const term = validTerm(args.term);
-  const scope = getScope(args.scope_id,subject,term,true);
+  const {subject,term,scope} = courseSelection(args,true);
   const candidates = scope.kind==='topic' ? [scope] : (scope.studyKeys ?? []).map(key=>topics.get(key)).filter(Boolean);
   const teaching = candidates.map(lessonNotes).filter(Boolean).slice(0,4);
   return {...scopeSummary(scope,subject,term),teaching,
@@ -112,9 +150,7 @@ function explainTopic(args) {
     ...(teaching.length ? {} : {guidance:'该范围提供练习。可先随机抽取一道，作答后通过批改工具查看例题解析。'})};
 }
 function poolFor(args,requireScope = false) {
-  const subject = validSubject(args.subject);
-  const term = validTerm(args.term);
-  const scope = getScope(args.scope_id,subject,term,requireScope);
+  const {subject,term,scope} = courseSelection(args,requireScope);
   const level = args.difficulty ?? 'all';
   if (level!=='all' && !levels.includes(level)) throw new StudyError('难度应为 basic、standard、challenge 或 all。');
   const groupKey = textValue(args.group_id,'题组编号',150);
@@ -123,7 +159,12 @@ function poolFor(args,requireScope = false) {
   const pool = (group?.ids ?? scope?.ids ?? STUDY.questions.map(item=>item.id)).map(id=>questions.get(id))
     .filter(question=>question.subject===subject && (!term || topics.get(question.topic).term===term) &&
       (level==='all' || (question.level ?? 'basic')===level));
-  return {subject,term,scope,group,pool};
+  const excluded = args.exclude_question_ids ?? [];
+  if (!Array.isArray(excluded) || excluded.length>maxExcludedQuestions ||
+      excluded.some(id=>typeof id!=='string' || !id.length || id.length>120)) {
+    throw new StudyError('已出题号必须是数组，最多 '+maxExcludedQuestions+' 条。');
+  }
+  return {subject,term,scope,group,pool,excluded:new Set(excluded)};
 }
 function questionView(question) {
   const topic = topics.get(question.topic);
@@ -152,7 +193,10 @@ function sample(pool,count) {
   return result.slice(0,count);
 }
 function makePractice(selection,count,mode,view = questionView) {
-  const {scope,group,pool,subject,term} = selection;
+  const {scope,group,pool,subject,term,excluded} = selection;
+  const eligible = excluded.size ? pool.filter(item=>!excluded.has(item.id)) : pool;
+  const picked = sample(eligible,count);
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',scope:scope?.title ?? '全学科范围',
-    group:group?.title,mode,available:pool.length,questions:sample(pool,count).map(view)};
+    group:group?.title,mode,available:eligible.length,remaining:eligible.length-picked.length,
+    questions:picked.map(view)};
 }
