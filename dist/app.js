@@ -75,9 +75,15 @@ const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crum
 const reviewCollections = new Map([
   ['equation-application', {
     subject:'math', name:'数学', icon:'math', tone:'violet',
-    title:'一元一次方程应用', keywords:'一元一次方程应用 行程问题 分段计费 工程 配套 利润',
-    subtitle:'根据上传的专题三、四、五整理。先找等量关系，再填结果，提交后可查看完整列式和检验。',
+    title:'一元一次方程应用', keywords:'一元一次方程应用 行程问题 分段计费 工程 配套 利润 方案选择 答题得分 球赛积分 含参方程 盈亏 古代问题',
+    subtitle:'按上传资料的专题三至十二整理。先找等量关系，再作答，提交后可查看列式和检验。',
     start:'equation-application', returnLabel:'一元一次方程应用', modules:equationApplicationModules, byTopic:equationApplicationByTopic
+  }],
+  ['english-pronouns-day2', {
+    subject:'english', name:'英语', icon:'letters', tone:'blue',
+    title:'语法每日一练 Day 2 · 人称代词和物主代词', keywords:'Unit 1 Day 2 英语语法 人称代词 物主代词 主格 宾格',
+    subtitle:'先逐行练代词表，再做 20 道变形填空和 10 道单选。填空按代词形式判分，书写时注意 I 和句首大写。',
+    start:'english-pronouns-day2', returnLabel:'英语代词 Day 2', modules:englishPronounModules, byTopic:englishPronounByTopic
   }],
   ['math-algebra-review', {
     subject:'math', name:'数学', icon:'math', tone:'violet', unitLabel:'组',
@@ -533,7 +539,10 @@ function answer(current,currentQuestion) {
 }
 function materialTable(table) {
   const columns = table.headers.map(header=>'<th scope="col">'+esc(header)+'</th>').join('');
-  const rows = table.rows.map(([first,...values])=>'<tr><th scope="row">'+esc(first)+'</th>'+values.map(value=>'<td>'+esc(value)+'</td>').join('')+'</tr>').join('');
+  const rows = table.rows.map(row=>'<tr>'+row.map((value,index)=>{
+    if (index===0 && table.rowHeaders!==false) return '<th scope="row">'+esc(value)+'</th>';
+    return '<td'+(table.shaded?.includes(value)?' class="material-cell-shaded"':'')+'>'+esc(value)+'</td>';
+  }).join('')+'</tr>').join('');
   return '<div class="material-table-scroll"><table><caption>'+esc(table.caption)+'</caption><thead><tr>'+columns+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 function numberLineFigure(line) {
@@ -570,7 +579,12 @@ function matchesNumber(raw, expected) {
   if (actual && target) return actual[0]*target[1]===target[0]*actual[1];
   return !!actual && !normalized.includes('/') && Number(normalized)===Number(expected);
 }
-const matchesStep = (step,value) => step.symbol ? value.normalize('NFKC').trim()===step.answer : matchesNumber(value,step.answer);
+const normalizeStepText = value => value.normalize('NFKC').trim().toLowerCase();
+function matchesStep(step,value) {
+  if (step.text) return [step.answer,...(step.aliases ?? [])].some(answer=>normalizeStepText(answer)===normalizeStepText(value));
+  if (step.symbol) return value.normalize('NFKC').trim()===step.answer;
+  return matchesNumber(value,step.answer);
+}
 const blankName = index => index === 0 ? '第一空' : '第二空';
 function dictationInputs(question, selected, submitted) {
   const values = fieldValues(question,submitted?.fields ?? selected);
@@ -621,7 +635,7 @@ function stepInputs(question, selected, submitted) {
     const id = 'step-'+index;
     const invalid = submitted && !matchesStep(step,values[index]);
     const unit = step.unit ? '<span class="step-unit">'+esc(step.unit)+'</span>' : '';
-    const placeholder = step.symbol ? '按题意填符号或字母' : '整数、小数或分数';
+    const placeholder = step.text ? '按题意填词' : step.symbol ? '按题意填符号或字母' : '整数、小数或分数';
     return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" spellcheck="false" maxlength="32" placeholder="'+placeholder+'" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
   }).join('')+'</div>';
 }

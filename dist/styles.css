@@ -282,3 +282,4 @@ dialog::backdrop{background:#23193968}
 .material-table-scroll caption{text-align:left;padding:0 0 5px;font-size:.86rem;color:var(--muted)}
 .material-table-scroll th,.material-table-scroll td{padding:6px 8px;text-align:left;border:1px solid #e1dbea}
 .material-table-scroll thead th{background:#eeebfa}
+.material-table-scroll .material-cell-shaded{background:#ded6f4}
