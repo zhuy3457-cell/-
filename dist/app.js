@@ -76,6 +76,24 @@ const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn sec
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
 const reviewCollections = new Map([
+  ['english-public-study', {
+    subject:'english', name:'英语', icon:'letters', tone:'blue',
+    title:'公开资料拓展', keywords:'公开资料拓展 A1 A2 英语',
+    subtitle:'读社团通知、图书角告示和义卖对话，再做词组与语法练习。各专题附有公开参考来源。',
+    start:'english-public-study', returnLabel:'英语拓展练习', modules:publicStudyCollections.english, byTopic:publicStudyByTopic.english
+  }],
+  ['math-public-study', {
+    subject:'math', name:'数学', icon:'math', tone:'violet',
+    title:'公开资料拓展', keywords:'公开资料拓展 苏科版',
+    subtitle:'按苏科版七上第 2–4 章编排。计算和应用填空附列式，可核对中间过程。',
+    start:'math-public-study', returnLabel:'数学拓展练习', modules:publicStudyCollections.math, byTopic:publicStudyByTopic.math
+  }],
+  ['chinese-public-study', {
+    subject:'chinese', name:'语文', icon:'book', tone:'pink',
+    title:'公开资料拓展', keywords:'公开资料拓展 语文阅读',
+    subtitle:'练习《世说新语》《观沧海》公开节选与原创短文。材料和参考来源可在专题中查看。',
+    start:'chinese-public-study', returnLabel:'语文拓展练习', modules:publicStudyCollections.chinese, byTopic:publicStudyByTopic.chinese
+  }],
   ['equation-application', {
     subject:'math', name:'数学', icon:'math', tone:'violet',
     title:'一元一次方程应用', keywords:'一元一次方程应用 行程问题 分段计费 工程 配套 利润 方案选择 答题得分 球赛积分 含参方程 盈亏 古代问题',
