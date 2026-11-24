@@ -73,6 +73,12 @@ const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn sec
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
 const reviewCollections = new Map([
+  ['math-algebra-review', {
+    subject:'math', name:'数学', icon:'math', tone:'violet', unitLabel:'组',
+    title:'绝对值与整式化简', keywords:'绝对值化简 整式化简求值 代数式化简 数轴专项',
+    subtitle:'按上传的 6 页资料整理。绝对值 10 题，代数式化简求值 18 题，保留两套资料的原题号。',
+    start:'math-algebra-review', returnLabel:'绝对值与整式化简', modules:mathAlgebraModules, byTopic:mathAlgebraByTopic
+  }],
   ['math-midterm-workout', {
     subject:'math', name:'数学', icon:'math', tone:'violet', unitLabel:'组',
     title:'期中计算强化 10 天', keywords:'期中计算强化 计算必刷 有理数 整式的加减',
@@ -504,7 +510,7 @@ function answer(current,currentQuestion) {
   const raw = fields ? fields.join(' / ') : q.options ? current.selected : document.querySelector('#answerInput').value.trim();
   if (!fields && !raw) return;
   let ok;
-  if (q.steps) ok = q.steps.every((step,index)=>matchesNumber(fields[index],step.answer));
+  if (q.steps) ok = q.steps.every((step,index)=>matchesStep(step,fields[index]));
   else if (q.blanks) ok = q.blanks.every((expected,index)=>normalizeDictation(fields[index]) === normalizeDictation(expected));
   else if (q.options) ok = raw === q.correct;
   else ok = matchesNumber(raw,q.correct);
@@ -524,11 +530,18 @@ function materialTable(table) {
   const rows = table.rows.map(([first,...values])=>'<tr><th scope="row">'+esc(first)+'</th>'+values.map(value=>'<td>'+esc(value)+'</td>').join('')+'</tr>').join('');
   return '<div class="material-table-scroll"><table><caption>'+esc(table.caption)+'</caption><thead><tr>'+columns+'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
+function numberLineFigure(line) {
+  const marks = line.marks.map(([position,label,above])=>'<span class="number-line-mark" aria-hidden="true" style="left:'+position+'%">'+
+    (above?'<span class="number-line-above">'+esc(above)+'</span>':'')+
+    (label?'<span class="number-line-below">'+esc(label)+'</span>':'')+'</span>').join('');
+  return '<figure class="number-line" role="img" aria-label="'+esc(line.description)+'"><span class="number-line-axis" aria-hidden="true">'+marks+'</span></figure>';
+}
 function readingMaterial(question, expanded = false) {
   const diagram = question.diagram;
-  if (!question.material && !question.table && !diagram) return '';
-  const title = diagram ? '查看示意图' : question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
-  const figure = diagram ? '<img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'" width="720" height="360">' : '';
+  const line = question.numberLine;
+  if (!question.material && !question.table && !diagram && !line) return '';
+  const title = line ? '查看数轴' : diagram ? '查看示意图' : question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
+  const figure = line ? numberLineFigure(line) : diagram ? '<img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'" width="720" height="360">' : '';
   return '<details class="reading-material" '+(expanded?'open':'')+'><summary>'+title+'</summary>'+
     (question.material?'<div>'+esc(question.material)+'</div>':'')+figure+(question.table?materialTable(question.table):'')+'</details>';
 }
@@ -551,6 +564,7 @@ function matchesNumber(raw, expected) {
   if (actual && target) return actual[0]*target[1]===target[0]*actual[1];
   return !!actual && !normalized.includes('/') && Number(normalized)===Number(expected);
 }
+const matchesStep = (step,value) => step.symbol ? value.normalize('NFKC').trim()===step.answer : matchesNumber(value,step.answer);
 const blankName = index => index === 0 ? '第一空' : '第二空';
 function dictationInputs(question, selected, submitted) {
   const values = fieldValues(question,submitted?.fields ?? selected);
@@ -599,16 +613,17 @@ function stepInputs(question, selected, submitted) {
   const values = fieldValues(question,submitted?.fields ?? selected);
   return '<div class="step-fields">'+question.steps.map((step,index)=>{
     const id = 'step-'+index;
-    const invalid = submitted && !matchesNumber(values[index],step.answer);
+    const invalid = submitted && !matchesStep(step,values[index]);
     const unit = step.unit ? '<span class="step-unit">'+esc(step.unit)+'</span>' : '';
-    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" maxlength="32" placeholder="整数、小数或分数" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
+    const placeholder = step.symbol ? '按题意填符号或字母' : '整数、小数或分数';
+    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" spellcheck="false" maxlength="32" placeholder="'+placeholder+'" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
   }).join('')+'</div>';
 }
 function stepReview(question, submitted) {
   const values = fieldValues(question,submitted.fields);
   return '<ul class="dictation-review">'+question.steps.map((step,index)=>{
     const value = values[index];
-    const ok = matchesNumber(value,step.answer);
+    const ok = matchesStep(step,value);
     return '<li><strong>'+esc(step.label)+' · '+(ok?'正确':value.trim()?'有误':'未填')+'</strong>'+
       (ok?'':'<span>你的答案　'+(esc(value.trim())||'（空白）')+'</span>')+'<span>正确结果　'+esc(step.answer)+(step.unit?' '+esc(step.unit):'')+'</span></li>';
   }).join('')+'</ul>';

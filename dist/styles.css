@@ -202,6 +202,13 @@ dialog::backdrop{background:#23193968}
 .reading-material{margin-top:13px;background:#f7f4ff;border-radius:9px;padding:11px 13px}
 .reading-material>div{margin-top:7px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 .material-diagram{display:block;width:100%;max-width:540px;height:auto;margin-top:9px;border:1px solid var(--line);border-radius:8px}
+.number-line{box-sizing:border-box;max-width:520px;margin:9px 0 0;padding:30px 12px;height:76px;color:#283343}
+.number-line-axis{position:relative;display:block;border-top:2px solid currentColor}
+.number-line-axis::after{content:"";position:absolute;right:0;top:-5px;width:8px;height:8px;border-top:2px solid;border-right:2px solid;transform:rotate(45deg)}
+.number-line-mark{position:absolute;top:-6px;width:2px;height:10px;background:currentColor}
+.number-line-mark>span{position:absolute;left:50%;transform:translateX(-50%);font-size:.86rem;white-space:nowrap}
+.number-line-above{bottom:12px}
+.number-line-below{top:12px}
 .result-review .reading-material{margin:8px 0 0 14px}
 @media(max-width:690px){.pack-grid{grid-template-columns:1fr}}
 @media(max-width:570px){.pack-entry{padding:9px 10px;gap:8px;margin-bottom:17px}.pack-entry .subject-icon{width:34px;height:34px}.pack-entry strong{font-size:.88rem}.pack-entry small,.pack-entry-label{font-size:.73rem}}
