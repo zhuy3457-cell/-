@@ -197,3 +197,21 @@ test('existing homework without a key keeps its original identity when reviewed 
   assert.deepEqual(checked.question_ids,[legacyQuestionId]);
   assert.equal((await good('get_mistakes',{term:'下'},owner)).total,0);
 });
+test('retired subjects are unavailable for practice and their old records still sync',async ()=>{
+  const owner = 'old-electives';
+  for (const subject of ['pe','music','art','it','labor']) {
+    const search = await call('query_courses',{subject});
+    assert.equal(search.isError,true);
+    assert.match(search.content[0].text,/当前开放的学科/);
+    assert.equal((await call('draw_questions',{subject})).isError,true);
+  }
+  const question_id = 'rhythm-1';
+  const oldGrade = await call('grade_homework',{record:false,submissions:[{question_id,answer:'A'}]});
+  assert.match(oldGrade.content[0].text,/练习入口已停用/);
+  const attempt = {id:question_id,ok:false,ref:'old-music-answer',date:'2026-11-23',time:0};
+  const sync = await request(attemptEndpoint,{owner,method:'POST',
+    headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({attempts:[attempt]})});
+  assert.deepEqual(await sync.json(),{added:1,ignored:0});
+  const backup = await (await request(attemptEndpoint,{owner})).json();
+  assert.deepEqual(backup.attempts,[attempt]);
+});

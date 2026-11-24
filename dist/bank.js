@@ -345,6 +345,7 @@ const subjects = subjectData.map(([id, name, icon, tone, entries], index) => ({
   }))
 }));
 
+const activeSubjects = subjects.filter(subject=>!subject.extra);
 const mathTopics = subjects.find(subject => subject.id === 'math').topics;
 function addCalculation(topicKey, index, prompt, correct, explanation) {
   mathTopics.find(topic => topic.key === topicKey).questions.push({

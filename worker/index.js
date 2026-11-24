@@ -121,6 +121,7 @@ async function gradeHomework(env,request,args) {
     const saved = questionId && !question ? await savedHomework(env,owner ?? requireOwner(request),questionId) : null;
     const prompt = question?.prompt ?? saved?.prompt ?? textValue(item.prompt,'外部作业题干',1500,true);
     const itemSubject = question?.subject ?? saved?.subject ?? subject;
+    ensureStudySubject(itemSubject);
     const itemTerm = question ? topics.get(question.topic).term : saved?.term ?? term ?? '上';
     const id = question?.id ?? saved?.id ?? await homeworkKey(itemSubject,itemTerm,prompt);
     const reference = question ? undefined : item.reference_answer===undefined ? saved?.reference : asAnswer(item.reference_answer);
@@ -151,9 +152,11 @@ async function recordReviewedHomework(env,request,args) {
     if (!item || typeof item.correct!=='boolean') throw new StudyError('请为每道题提供已确认的正误。');
     const questionId = textValue(item.question_id,'题目编号',120);
     const saved = questionId ? await savedHomework(env,owner,questionId) : null;
+    const itemSubject = saved?.subject ?? subject;
+    ensureStudySubject(itemSubject);
     const prompt = saved?.prompt ?? textValue(item.prompt,'作业题干',1500,true);
     const id = saved?.id ?? await homeworkKey(subject,term,prompt);
-    return {ref:'review:'+ref+':'+index,id,subject:saved?.subject ?? subject,term:saved?.term ?? term,prompt,
+    return {ref:'review:'+ref+':'+index,id,subject:itemSubject,term:saved?.term ?? term,prompt,
       ok:item.correct,date:calendarDate.format(now),time:now.getTime()};
   }));
   return {new_records:await insertAttempts(env,owner,rows),question_ids:rows.map(row=>row.id)};

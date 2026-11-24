@@ -4,7 +4,7 @@ const questions = new Map(STUDY.questions.map(question=>[question.id,question]))
 const topics = new Map(STUDY.topics.map(topic=>[topic.key,topic]));
 const scopeList = [
   ...STUDY.courses.map(course=>({...course,kind:'course',subject:course.subjectId})),
-  ...STUDY.topics.map(topic=>({...topic,kind:'topic'})),
+  ...STUDY.topics.filter(topic=>subjectNames.has(topic.subject)).map(topic=>({...topic,kind:'topic'})),
   ...STUDY.packs.map(pack=>({...pack,kind:'pack'}))
 ];
 const scopes = new Map(scopeList.map(scope=>[scope.kind+':'+scope.key,scope]));
@@ -27,7 +27,10 @@ function validSubject(value) {
   if (typeof value==='string' && subjectNames.has(value)) return value;
   const named = STUDY.subjects.find(subject=>subject.name===value);
   if (named) return named.id;
-  throw new StudyError('请选择有效学科，例如 math（数学）或 english（英语）。');
+  throw new StudyError('当前开放的学科有语文、数学、英语、道德与法治、历史、地理和生物学。');
+}
+function ensureStudySubject(subject) {
+  if (!subjectNames.has(subject)) throw new StudyError('该学科的练习入口已停用，已有学习记录会保留。');
 }
 function validTerm(value) {
   if (value===undefined || value==='all') return null;

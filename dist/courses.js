@@ -124,7 +124,7 @@ const courseCatalog = (() => {
     biology: {上: biologyReviewModules.map(module => topicCourse(module.key))}
   };
   const groupedTopicKeys = new Set(['dictation-upper', 'dictation-lower', 'rational', 'algebra', 'geometry']);
-  return new Map(subjects.flatMap(subject => ['上', '下'].map(term => {
+  return new Map(activeSubjects.flatMap(subject => ['上', '下'].map(term => {
     const lessons = namedCourses[subject.id]?.[term] ?? [];
     const topics = subject.topics.filter(topic => topic.term === term && lessonByTopic.has(topic.key) &&
       !groupedTopicKeys.has(topic.key)).map(topic => topicCourse(topic.key, '知识点练习'));
