@@ -1,5 +1,65 @@
 const englishPhraseModules = (() => {
   const units = [
+    [1,'自我介绍与交友', '练习打招呼、自我介绍、人物外貌与性格，以及班级和朋友相关表达。',`
+这是我！|This is me!
+我的英文名／中文名|我的英文名=my English name|我的中文名=my Chinese name
+和我打招呼|greet me|say hello to me
+介绍彼此|introduce each other
+叫我西蒙|call me Simon
+被称为|go by|be known as|be called
+早上好／下午好／晚上好|早上好=good morning|下午好=good afternoon|晚上好=good evening
+见到你很高兴！|Nice to meet you!|Glad to meet you!|I’m glad to meet you.
+你在哪个班级／年级？|你在哪个班级？=Which class are you in?~What class are you in?|你在哪个年级？=Which grade are you in?~What grade are you in?
+你呢？|And you?|What about you?|How about you?
+在同一个班级|in the same class
+有一些爱好|have some hobbies
+弹钢琴|play the piano
+欢迎来到七（1）班！|Welcome to Class 1, Grade 7!|Welcome to Class One, Grade Seven!
+阳光中学的一名新学生|a new student at Sunshine Middle School|a new student in Sunshine Middle School
+十二岁|12 years old|twelve years old
+喜爱阅读|love reading|enjoy reading|love to read
+一个八岁的女孩|an 8-year-old girl|an eight-year-old girl
+对别人友好|be friendly to others|be nice to others|be kind to others
+这儿是我的新同学们。|Here are my new classmates.
+充满活力|full of energy
+擅长运动|be good at sport|be good at sports
+擅长踢足球|be good at playing football|be good at playing soccer
+放学后|after school
+又高又苗条|tall and slim
+留着长发|have long hair
+一个留着长发的女孩|a girl with long hair
+戴眼镜|wear glasses
+戴着眼镜的那个男孩|the boy with glasses|the boy wearing glasses
+聪明且有礼貌|smart and polite|clever and polite
+愿意帮助别人|be ready to help others|be willing to help others
+对科学感兴趣|be interested in science
+对跳舞感兴趣|be interested in dancing
+乐于助人的|be helpful|helpful
+对彼此友好|be friendly to each other|be kind to each other
+说「请」和「谢谢」|say “please” and “thank you”|say "please" and "thank you"|say 'please' and 'thank you'|say please and thank you
+他们两人都喜爱运动。|They both love sport.|Both of them love sport.|They both love sports.|Both of them love sports.
+那儿的那个女孩|the girl over there
+有可爱的眼睛|have lovely eyes|have cute eyes
+腼腆又文静|shy and quiet
+小巧可爱|small and cute
+擅长游泳|be good at swimming
+看起来标致|look pretty
+上舞蹈课|have dance classes|take dance classes
+帮助我保持健康|help me stay healthy|help me keep healthy|help me to stay healthy|help me to keep healthy
+有一场和二班的足球赛|have a football match with Class 2|have a football match with Class Two|have a football match against Class 2
+祝你好运！|Good luck!|Good luck to you!
+下象棋|play Chinese chess
+和我爸爸打乒乓球|play ping-pong with my father|play table tennis with my father|play ping-pong with my dad|play table tennis with my dad
+喜爱下国际象棋|enjoy playing chess|love playing chess|love to play chess
+我最喜爱的科目|my favourite subject|my favourite subjects
+帮助我的同学解决数学难题|help my classmates with Maths problems|help my classmates with math problems
+在周末|at the weekend|on the weekend
+它们很有趣。|They are fun.|They are interesting.|They’re fun.|They’re interesting.
+玩得开心|have fun|have a good time
+和他们交朋友|make friends with them
+成为我的朋友|be my friend|be my friends|become my friend|become my friends
+喜爱计算机科学|love Computer Science
+`],
     [2,'爱好与俱乐部', '从兴趣爱好、科学探索到社团活动和职业梦想。',`
 你喜欢做什么？|What do you like to do?|What do you like doing?
 各种各样的东西|all kinds of things

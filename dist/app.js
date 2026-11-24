@@ -84,7 +84,7 @@ const reviewCollections = new Map([
   }],
   ['english-phrases', {
     subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'个单元',
-    title:'Unit 2–8 重点词组', keywords:'英语重点词组 短语默写 中译英 中英对照',
+    title:'Unit 1–8 重点词组', keywords:'英语重点词组 短语默写 中译英 中英对照',
     subtitle:'按上传资料的单元和原编号整理。可先查看中英对照，再按单元或编号范围练习。',
     start:'english-phrases', returnLabel:'英语重点词组', modules:englishPhraseModules, byTopic:englishPhraseByTopic
   }],
