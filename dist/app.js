@@ -73,6 +73,12 @@ const mixedLink = (subjectId = '', label = '自选组卷') => '<a class="btn sec
 const bankLink = '<a class="crumb" href="#bank">学科题库</a>';
 const referenceItems = (sources = []) => sources.map(source=>'<li><a class="crumb" href="'+esc(source.url)+'" target="_blank" rel="noopener">'+esc(source.title)+'</a><p>'+esc(source.note)+'</p></li>').join('');
 const reviewCollections = new Map([
+  ['math-midterm-workout', {
+    subject:'math', name:'数学', icon:'math', tone:'violet', unitLabel:'组',
+    title:'期中计算强化 10 天', keywords:'期中计算强化 计算必刷 有理数 整式的加减',
+    subtitle:'按上传的 10 天练习单编排，每组建议用时 15 分钟。涵盖有理数、绝对值、整式与整体代入。',
+    start:'math-midterm-workout', returnLabel:'期中计算强化', modules:mathMidtermModules, byTopic:mathMidtermByTopic
+  }],
   ['jiezishu-review', {
     subject:'chinese', name:'语文', icon:'book', tone:'pink',
     title:'《诫子书》诵读与阅读', keywords:'诫子书 诸葛亮 文言文默写 家书家训 意与日去',
@@ -528,9 +534,22 @@ function readingMaterial(question, expanded = false) {
 }
 const normalizeDictation = text => text.normalize('NFKC').replace(/[\p{P}\s]/gu,'');
 const fieldValues = (question, values) => (question.steps ?? question.blanks).map((_,index)=>Array.isArray(values)?(values[index]??''):'');
+function rationalParts(text) {
+  const fraction = /^([+-]?\d+)\s*\/\s*([+-]?\d+)$/.exec(text);
+  if (fraction) {
+    const denominator = BigInt(fraction[2]);
+    return denominator ? [BigInt(fraction[1]),denominator] : null;
+  }
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+  const [whole, decimals=''] = text.split('.');
+  return [BigInt(whole+decimals),10n**BigInt(decimals.length)];
+}
 function matchesNumber(raw, expected) {
-  const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').trim();
-  return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized) && Number(normalized) === Number(expected);
+  const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').replace(/[⁄∕]/g,'/').trim();
+  const actual = rationalParts(normalized);
+  const target = rationalParts(String(expected).trim());
+  if (actual && target) return actual[0]*target[1]===target[0]*actual[1];
+  return !!actual && !normalized.includes('/') && Number(normalized)===Number(expected);
 }
 const blankName = index => index === 0 ? '第一空' : '第二空';
 function dictationInputs(question, selected, submitted) {
@@ -582,7 +601,7 @@ function stepInputs(question, selected, submitted) {
     const id = 'step-'+index;
     const invalid = submitted && !matchesNumber(values[index],step.answer);
     const unit = step.unit ? '<span class="step-unit">'+esc(step.unit)+'</span>' : '';
-    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" maxlength="32" placeholder="只填数字" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
+    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" maxlength="32" placeholder="整数、小数或分数" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
   }).join('')+'</div>';
 }
 function stepReview(question, submitted) {
@@ -622,7 +641,7 @@ function quizPage() {
       const status = submitted ? option===q.correct?' correct':option===value?' wrong':'' : '';
       return '<button class="option'+status+'" type="button" data-option="'+i+'" aria-pressed="'+(option===value)+'" '+(submitted?'disabled':'')+'><span>'+String.fromCharCode(65+i)+'</span><span>'+esc(option)+'</span></button>';
     }).join('')+'</div>'
-    : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="输入数字" autocomplete="off" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
+    : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="整数、小数或分数（如 1/2）" autocomplete="off" maxlength="32" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+'<p><b>解析</b>　'+esc(q.explanation)+'</p>'+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,!submitted)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
