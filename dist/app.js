@@ -79,6 +79,13 @@ const reviewCollections = new Map([
     subtitle:'按上传资料的专题三至十二整理。先找等量关系，再作答，提交后可查看列式和检验。',
     start:'equation-application', returnLabel:'一元一次方程应用', modules:equationApplicationModules, byTopic:equationApplicationByTopic
   }],
+  ['english-grammar-daily', {
+    subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'天',
+    title:'语法每日一练 Day 3–9', keywords:'七上英语语法 每日一练',
+    subtitle:'按原练习的 Day 3 至 Day 9 排列。可以做一天的完整练习，也可以按题型单独作答。',
+    related:{route:'english-pronouns-day2',label:'Day 2 · 人称代词和物主代词'},
+    start:'english-grammar-daily', returnLabel:'英语每日一练', modules:englishGrammarModules, byTopic:englishGrammarByTopic
+  }],
   ['english-pronouns-day2', {
     subject:'english', name:'英语', icon:'letters', tone:'blue',
     title:'语法每日一练 Day 2 · 人称代词和物主代词', keywords:'Unit 1 Day 2 英语语法 人称代词 物主代词 主格 宾格',
@@ -264,7 +271,8 @@ function reviewPage(route,key) {
     const total = collection.modules.reduce((count,module)=>count+module.questions.length,0);
     const cards = collection.modules.map(module=>'<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+(collection.noteHeading?' 条分支':' 张卡')+' · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
     const practiceName = collection.modules.some(module=>module.shortAnswer) ? '练习 '+total+' 道选择和填空' : '练习全部 '+total+' 题';
-    const studyTip = collection.noteHeading ? '展开各课的导图分支复习，或做一组综合练习。' : '展开问答卡回忆要点，或做一组综合练习。';
+    const studyTip = collection.related ? '<a class="crumb" href="#'+collection.related.route+'">'+esc(collection.related.label)+'</a>'
+      : collection.noteHeading ? '展开各课的导图分支复习，或做一组综合练习。' : '展开问答卡回忆要点，或做一组综合练习。';
     return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
       '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>'+studyTip+'</p></div>'+startButton(collection.start,practiceName)+'</div>'+
       '<div class="pack-grid">'+cards+'</div>';
@@ -280,8 +288,11 @@ function reviewPage(route,key) {
   const practice = state.session && !endOfSession(state.session) && questionById.get(state.session.ids[state.session.index])?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
+  const sections = unit.sections ? '<div class="actions review-sections">'+unit.sections.map(section=>
+    startButton('review-section/'+unit.key+'/'+section.key,esc(section.title)+' · '+section.ids.length+' 题','secondary')
+  ).join('')+'</div>' : '';
   return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="'+base+'">'+collection.title+'</a>')+
-    timeline+'<div class="section-head"><h2>'+(collection.noteHeading ?? '问答复习卡')+'</h2>'+practice+'</div><div class="geo-notes'+branches+'">'+notes+'</div>'+shortAnswer+
+    timeline+'<div class="section-head"><h2>'+(collection.noteHeading ?? '问答复习卡')+'</h2>'+practice+'</div>'+sections+'<div class="geo-notes'+branches+'">'+notes+'</div>'+shortAnswer+
     (refs?'<details class="geo-references"><summary>查阅参考来源</summary><ul class="reference-list">'+refs+'</ul></details>':'')+'</article>';
 }
 function advancedPage(selected) {
@@ -492,6 +503,14 @@ function start(key, backTarget) {
     const collection = reviewCollections.get(route);
     ids = collection.modules.flatMap(module=>module.questions.map(question=>question.id));
     label = collection.name+'上册 · '+collection.title; back = '#'+route;
+  } else if (kind === 'review-section') {
+    const route = reviewRouteByTopic.get(id);
+    const unit = reviewCollections.get(route)?.byTopic.get(id);
+    const section = unit?.sections?.find(section=>section.key===term);
+    if (!section) return;
+    ids = section.ids;
+    label = unit.title+' · '+section.title;
+    back = '#'+route+'/'+id;
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -580,8 +599,13 @@ function matchesNumber(raw, expected) {
   return !!actual && !normalized.includes('/') && Number(normalized)===Number(expected);
 }
 const normalizeStepText = value => value.normalize('NFKC').trim().toLowerCase();
+const normalizeEnglish = value => normalizeStepText(value).replace(/[’‘ʼ]/g,"'").replace(/[,，.。?!？！‐‑-]+/g,' ').replace(/\s+/g,' ').trim();
 function matchesStep(step,value) {
-  if (step.text) return [step.answer,...(step.aliases ?? [])].some(answer=>normalizeStepText(answer)===normalizeStepText(value));
+  if (step.text) {
+    const normalize = step.text === 'english' ? normalizeEnglish : normalizeStepText;
+    const entered = normalize(value);
+    return [step.answer,...(step.aliases ?? [])].some(answer=>normalize(answer)===entered);
+  }
   if (step.symbol) return value.normalize('NFKC').trim()===step.answer;
   return matchesNumber(value,step.answer);
 }
@@ -635,8 +659,12 @@ function stepInputs(question, selected, submitted) {
     const id = 'step-'+index;
     const invalid = submitted && !matchesStep(step,values[index]);
     const unit = step.unit ? '<span class="step-unit">'+esc(step.unit)+'</span>' : '';
-    const placeholder = step.text ? '按题意填词' : step.symbol ? '按题意填符号或字母' : '整数、小数或分数';
-    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input"><input class="answer-input" id="'+id+'" data-answer-field="'+index+'" type="text" autocomplete="off" spellcheck="false" maxlength="32" placeholder="'+placeholder+'" value="'+esc(values[index])+'" '+(submitted?'disabled':'')+(invalid?' aria-invalid="true"':'')+'>'+unit+'</div></div>';
+    const english = step.text === 'english';
+    const placeholder = english ? '输入英文' : step.text ? '按题意填词' : step.symbol ? '按题意填符号或字母' : '整数、小数或分数';
+    const attributes = ' class="answer-input" id="'+id+'" data-answer-field="'+index+'" autocomplete="off" spellcheck="false" maxlength="'+(english?160:32)+'" placeholder="'+placeholder+'"'+(submitted?' disabled':'')+(invalid?' aria-invalid="true"':'');
+    const value = esc(values[index]);
+    const field = english && step.answer.length>32 ? '<textarea rows="2"'+attributes+'>'+value+'</textarea>' : '<input type="text"'+attributes+' value="'+value+'">';
+    return '<div><label for="'+id+'">'+esc(step.label)+'</label><div class="step-input">'+field+unit+'</div></div>';
   }).join('')+'</div>';
 }
 function stepReview(question, submitted) {
