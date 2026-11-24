@@ -103,6 +103,7 @@ footer span{margin:0 4px}
 .option:disabled{cursor:default}
 .actions{display:flex;justify-content:flex-end;margin-top:17px;gap:9px;flex-wrap:wrap}
 .review-sections{justify-content:flex-start;margin:0 0 18px}
+.geo-review-head .section-actions{flex-wrap:wrap;justify-content:flex-end}
 .feedback{margin-top:15px;padding:12px 14px;background:#f1edfc;border-radius:9px;line-height:1.6;overflow-wrap:anywhere}
 .feedback p{margin-top:3px}
 .feedback.good strong{color:#116646}

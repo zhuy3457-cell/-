@@ -63,6 +63,8 @@ const esc = text => String(text).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'
 const dateKey = (date = new Date()) => [date.getFullYear(), String(date.getMonth()+1).padStart(2,'0'), String(date.getDate()).padStart(2,'0')].join('-');
 const mistakeIds = () => Object.keys(state.mistakes).filter(id => questionById.has(id));
 const favoriteIds = () => state.favorites.filter(id => questionById.has(id));
+const correctQuestionIds = () => new Set(state.attempts.filter(attempt=>attempt.ok).map(attempt=>attempt.id));
+const missedSessionIds = session => [...new Set(session.answers.filter(answer=>!answer.ok && questionById.has(answer.id)).map(answer=>answer.id))];
 const endOfSession = s => s.index >= s.ids.length;
 const percent = (right,total) => total ? Math.round(right / total * 100) + '%' : '—';
 const termName = () => '七年级' + state.term + '册';
@@ -148,6 +150,23 @@ const reviewCollections = new Map([
 const reviewRouteByTopic = new Map([...reviewCollections].flatMap(([route,collection])=>collection.modules.map(module=>[module.key,route])));
 const reviewRouteByStart = new Map([...reviewCollections].map(([route,collection])=>[collection.start,route]));
 const studyHref = key => reviewRouteByTopic.has(key) ? '#'+reviewRouteByTopic.get(key)+'/'+key : lessonByTopic.has(key) ? '#learn/'+key : '';
+const normalizeSearch = text => text.normalize('NFKC').toLowerCase()
+  .replace(/\b(day|unit)[\s-]*(?=\d)/g,'$1')
+  .replace(/(\p{Script=Han})(?=[a-z0-9])/gu,'$1 ').replace(/([a-z0-9])(?=\p{Script=Han})/gu,'$1 ')
+  .replace(/[·、，,]/g,' ').trim();
+const topicSearchIndex = allTopics.map(topic=>{
+  const collection = reviewCollections.get(reviewRouteByTopic.get(topic.key));
+  const module = collection?.byTopic.get(topic.key);
+  const name = topic.subject.name;
+  const volume = topic.term+'册';
+  const shortGrade = '七'+topic.term;
+  return {
+    topic,
+    title:normalizeSearch(topic.title),
+    scope:normalizeSearch([name,volume,'七年级'+volume,shortGrade,name+volume,shortGrade+name].join(' ')),
+    detail:normalizeSearch([topic.description,module?.range,collection?.keywords].filter(Boolean).join(' '))
+  };
+});
 function lessonLink(key, style = 'btn secondary') {
   const href = studyHref(key);
   return href ? '<a class="'+style+'" href="'+href+'">'+(reviewRouteByTopic.has(key)?'看复习卡':'看讲解')+'</a>' : '';
@@ -234,7 +253,7 @@ function home() {
 function subjectPage(subject) {
   const level = state.difficulty;
   const topics = topicsIn(subject).map(topic=>({topic, questions:questionsAt(topic,level)})).filter(item=>item.questions.length);
-  const done = new Set(state.attempts.filter(a=>a.ok).map(a=>a.id));
+  const done = correctQuestionIds();
   const shortcut = subject.id==='math' && state.term==='上' ? '<a class="crumb" href="#packs/equation-modeling">一元一次方程同难度练习</a>'
     : subject.id==='chinese' ? '<a class="crumb" href="#learn/dictation-'+(state.term==='上'?'upper':'lower')+'">古诗文默写</a>' : '';
   const filters = '<div class="difficulty-filter"><label for="topicDifficulty">练习难度</label><select id="topicDifficulty">'+difficultyOptions(level)+'</select><a class="crumb" href="#difficulty">难度说明</a>'+shortcut+'</div>';
@@ -267,14 +286,24 @@ function reviewPage(route,key) {
   const collection = reviewCollections.get(route);
   const base = '#'+route;
   const unit = collection.byTopic.get(key);
+  const done = correctQuestionIds();
+  const session = state.session;
+  const current = session && !endOfSession(session) ? questionById.get(session.ids[session.index]) : null;
   if (!unit) {
     const total = collection.modules.reduce((count,module)=>count+module.questions.length,0);
-    const cards = collection.modules.map(module=>'<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+module.notes.length+(collection.noteHeading?' 条分支':' 张卡')+' · '+module.questions.length+' 题</p></div></div><p>'+esc(module.description)+'</p></a>').join('');
+    const cards = collection.modules.map(module=>{
+      const correct = module.questions.filter(question=>done.has(question.id)).length;
+      const progress = '已答对 '+correct+' / '+module.questions.length+' 题';
+      return '<a class="pack-card geo-unit-link" href="'+base+'/'+module.key+'"><div class="subject-head"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span><div><h2>'+esc(module.title)+'</h2><p>'+esc(module.range)+' · '+progress+'</p></div></div><p>'+esc(module.description)+'</p></a>';
+    }).join('');
     const practiceName = collection.modules.some(module=>module.shortAnswer) ? '练习 '+total+' 道选择和填空' : '练习全部 '+total+' 题';
     const studyTip = collection.related ? '<a class="crumb" href="#'+collection.related.route+'">'+esc(collection.related.label)+'</a>'
       : collection.noteHeading ? '展开各课的导图分支复习，或做一组综合练习。' : '展开问答卡回忆要点，或做一组综合练习。';
+    const practice = current && reviewRouteByTopic.get(current.topic)===route
+      ? '<a class="btn primary" href="#quiz">继续当前练习</a>'+startButton(collection.start,practiceName,'secondary')
+      : startButton(collection.start,practiceName);
     return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
-      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>'+studyTip+'</p></div>'+startButton(collection.start,practiceName)+'</div>'+
+      '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>'+studyTip+'</p></div><div class="section-actions">'+practice+'</div></div>'+
       '<div class="pack-grid">'+cards+'</div>';
   }
   const branches = collection.noteHeading ? ' review-branches' : '';
@@ -285,12 +314,14 @@ function reviewPage(route,key) {
   const task = unit.shortAnswer;
   const shortAnswer = task ? '<section class="short-answer"><h2 class="group-title">材料简答</h2><p>'+esc(task.material)+'</p><p>'+esc(task.prompt)+'</p>'+
     '<details class="geo-note"><summary>核对作答要点</summary><ol>'+task.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ol></details></section>' : '';
-  const practice = state.session && !endOfSession(state.session) && questionById.get(state.session.ids[state.session.index])?.topic===unit.key
+  const practice = current?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
-  const sections = unit.sections ? '<div class="actions review-sections">'+unit.sections.map(section=>
-    startButton('review-section/'+unit.key+'/'+section.key,esc(section.title)+' · '+section.ids.length+' 题','secondary')
-  ).join('')+'</div>' : '';
+  const sections = unit.sections ? '<div class="actions review-sections">'+unit.sections.map(section=>{
+    const correct = section.ids.filter(id=>done.has(id)).length;
+    const label = esc(section.title)+' · 已答对 '+correct+' / '+section.ids.length;
+    return startButton('review-section/'+unit.key+'/'+section.key,label,'secondary');
+  }).join('')+'</div>' : '';
   return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="'+base+'">'+collection.title+'</a>')+
     timeline+'<div class="section-head"><h2>'+(collection.noteHeading ?? '问答复习卡')+'</h2>'+practice+'</div>'+sections+'<div class="geo-notes'+branches+'">'+notes+'</div>'+shortAnswer+
     (refs?'<details class="geo-references"><summary>查阅参考来源</summary><ul class="reference-list">'+refs+'</ul></details>':'')+'</article>';
@@ -511,6 +542,12 @@ function start(key, backTarget) {
     ids = section.ids;
     label = unit.title+' · '+section.title;
     back = '#'+route+'/'+id;
+  } else if (kind === 'session-mistakes') {
+    const session = state.session;
+    if (!session || !endOfSession(session)) return;
+    ids = missedSessionIds(session);
+    label = session.key===key ? session.label : session.label+' · 本组错题';
+    back = session.back;
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -691,14 +728,18 @@ function quizPage() {
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
+    const wrong = missedSessionIds(s).length;
     const retry = s.key.startsWith('mixed/') ? startButton(s.key,'再出一组','secondary')
-      : (/^(mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
+      : (/^(mistakes$|session-mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
+    const nextAction = wrong
+      ? '<a class="btn secondary" href="#mistakes">查看错题本</a>'+startButton('session-mistakes','重练本组 '+wrong+' 道错题','primary','notebook')
+      : '<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>';
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
       return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+'<p>'+esc(question.explanation)+'</p>'+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
-    return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+(right<s.ids.length?'<a class="btn primary" href="#mistakes">查看错题本</a>':'<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>')+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
+    return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
   }
   const q = questionById.get(s.ids[s.index]);
   const topic = topicByKey.get(q.topic);
@@ -860,16 +901,31 @@ app.addEventListener('submit',event=>{
   const s=state.session;
   if (!s.answers[s.index]) answer(s,questionById.get(s.ids[s.index]));
 });
+function searchScore(entry, terms) {
+  let score = 0;
+  for (const term of terms) {
+    const numbered = /^(day|unit)\d+$/.test(term);
+    const matches = text=>numbered ? text.split(/[^a-z0-9]+/).includes(term) : text.includes(term);
+    if (matches(entry.title)) score += 8;
+    else if (matches(entry.scope)) score += 4;
+    else if (matches(entry.detail)) score += 1;
+    else return 0;
+  }
+  return score;
+}
 function search() {
-  const query=searchInput.value.trim().toLowerCase();
-  const found = query ? allTopics.filter(t=>[t.subject.name,t.title,t.description,reviewCollections.get(reviewRouteByTopic.get(t.key))?.keywords??''].some(s=>s.toLowerCase().includes(query))).slice(0,14) : [];
+  const query = normalizeSearch(searchInput.value);
+  const terms = query ? [...new Set(query.split(/\s+/))] : [];
+  const found = terms.length ? topicSearchIndex
+    .map(entry=>({topic:entry.topic, score:searchScore(entry,terms)}))
+    .filter(result=>result.score>0).sort((a,b)=>b.score-a.score).slice(0,14).map(result=>result.topic) : [];
   results.innerHTML = found.map(t=>{
     const hasLesson = !!studyHref(t.key);
     const result = '<button class="search-result option" type="button" data-key="'+t.key+'" data-search-action="'+(hasLesson?'learn':'practice')+'"><div><strong>'+t.title+'</strong><small>'+t.subject.name+' · '+t.term+'册'+(hasLesson?' · 看讲解':'')+'</small></div></button>';
     const practice = hasLesson ? '<button class="btn secondary" type="button" data-key="'+t.key+'" data-search-action="practice" aria-label="练习'+esc(t.title)+'">做练习</button>' : '';
     return '<div class="search-entry">'+result+practice+'</div>';
   }).join('') ||
-    '<p class="scope" role="status">'+(query?'没有找到匹配的知识点。':'输入「数学」「古诗」或「细胞」试试。')+'</p>';
+    '<p class="scope" role="status">'+(query?'没有找到匹配的知识点。':'试试「英语 Day 11」或「数学 分段计费」。')+'</p>';
 }
 function openSearch() {
   if (dialog.open) return;
@@ -881,6 +937,12 @@ function openSearch() {
 document.querySelector('#searchButton').addEventListener('click',openSearch);
 document.querySelector('#closeSearch').addEventListener('click',()=>dialog.close());
 searchInput.addEventListener('input',search);
+searchInput.addEventListener('keydown',event=>{
+  if (event.key==='Enter' && !event.isComposing) {
+    event.preventDefault();
+    results.querySelector('.search-result')?.click();
+  }
+});
 dialog.addEventListener('click',event=>{
   if (event.target===dialog) {
     const rect=dialog.getBoundingClientRect();
@@ -893,7 +955,7 @@ dialog.addEventListener('click',event=>{
   if (button.dataset.searchAction === 'learn') location.hash = studyHref(key);
   else {
     state.term = topicByKey.get(key).term;
-    start('topic/'+key);
+    start('topic/'+key,studyHref(key));
   }
 });
 window.addEventListener('keydown',event=>{
