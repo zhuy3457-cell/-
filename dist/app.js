@@ -64,6 +64,7 @@ const dateKey = (date = new Date()) => [date.getFullYear(), String(date.getMonth
 const mistakeIds = () => Object.keys(state.mistakes).filter(id => questionById.has(id));
 const favoriteIds = () => state.favorites.filter(id => questionById.has(id));
 const correctQuestionIds = () => new Set(state.attempts.filter(attempt=>attempt.ok).map(attempt=>attempt.id));
+const remainingReviewIds = (unit, correctIds) => unit.questions.map(question=>question.id).filter(id=>!correctIds.has(id));
 const missedSessionIds = session => [...new Set(session.answers.filter(answer=>!answer.ok && questionById.has(answer.id)).map(answer=>answer.id))];
 const endOfSession = s => s.index >= s.ids.length;
 const percent = (right,total) => total ? Math.round(right / total * 100) + '%' : '—';
@@ -317,13 +318,17 @@ function reviewPage(route,key) {
   const practice = current?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
+  const remaining = remainingReviewIds(unit,done).length;
+  const targetedPractice = current?.topic!==unit.key && remaining>0 && remaining<unit.questions.length
+    ? startButton('review-remaining/'+unit.key,'只练未答对的 '+remaining+' 题','secondary')
+    : '';
   const sections = unit.sections ? '<div class="actions review-sections">'+unit.sections.map(section=>{
     const correct = section.ids.filter(id=>done.has(id)).length;
     const label = esc(section.title)+' · 已答对 '+correct+' / '+section.ids.length;
     return startButton('review-section/'+unit.key+'/'+section.key,label,'secondary');
   }).join('')+'</div>' : '';
   return '<article class="lesson-page">'+pageHead(esc(unit.title),esc(unit.range)+' · '+esc(unit.description),'<a class="crumb" href="'+base+'">'+collection.title+'</a>')+
-    timeline+'<div class="section-head"><h2>'+(collection.noteHeading ?? '问答复习卡')+'</h2>'+practice+'</div>'+sections+'<div class="geo-notes'+branches+'">'+notes+'</div>'+shortAnswer+
+    timeline+'<div class="section-head geo-review-head"><h2>'+(collection.noteHeading ?? '问答复习卡')+'</h2><div class="section-actions">'+targetedPractice+practice+'</div></div>'+sections+'<div class="geo-notes'+branches+'">'+notes+'</div>'+shortAnswer+
     (refs?'<details class="geo-references"><summary>查阅参考来源</summary><ul class="reference-list">'+refs+'</ul></details>':'')+'</article>';
 }
 function advancedPage(selected) {
@@ -534,13 +539,19 @@ function start(key, backTarget) {
     const collection = reviewCollections.get(route);
     ids = collection.modules.flatMap(module=>module.questions.map(question=>question.id));
     label = collection.name+'上册 · '+collection.title; back = '#'+route;
-  } else if (kind === 'review-section') {
+  } else if (kind === 'review-section' || kind === 'review-remaining') {
     const route = reviewRouteByTopic.get(id);
     const unit = reviewCollections.get(route)?.byTopic.get(id);
-    const section = unit?.sections?.find(section=>section.key===term);
-    if (!section) return;
-    ids = section.ids;
-    label = unit.title+' · '+section.title;
+    if (!unit) return;
+    if (kind === 'review-section') {
+      const section = unit.sections?.find(section=>section.key===term);
+      if (!section) return;
+      ids = section.ids;
+      label = unit.title+' · '+section.title;
+    } else {
+      ids = remainingReviewIds(unit,correctQuestionIds());
+      label = unit.title+' · 未答对的题';
+    }
     back = '#'+route+'/'+id;
   } else if (kind === 'session-mistakes') {
     const session = state.session;
@@ -730,16 +741,22 @@ function quizPage() {
     const right = s.answers.filter(a=>a.ok).length;
     const wrong = missedSessionIds(s).length;
     const retry = s.key.startsWith('mixed/') ? startButton(s.key,'再出一组','secondary')
-      : (/^(mistakes$|session-mistakes$|topic-mistakes\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
+      : (/^(mistakes$|session-mistakes$|topic-mistakes\/|review-remaining\/)/.test(s.key) ? '' : startButton(s.key,'再练一遍','secondary','',s.back));
     const nextAction = wrong
       ? '<a class="btn secondary" href="#mistakes">查看错题本</a>'+startButton('session-mistakes','重练本组 '+wrong+' 道错题','primary','notebook')
       : '<a class="btn primary" href="'+s.back+'">返回'+backLabel+'</a>';
+    const view = wrong && s.resultView==='mistakes' ? 'mistakes' : 'all';
+    const filter = wrong ? '<div class="segmented" role="group" aria-label="答题回顾筛选">'+
+      [['all','全部 '+s.answers.length],['mistakes','只看错题 '+wrong]].map(([key,label])=>
+        '<button type="button" data-result-filter="'+key+'" aria-controls="answerReviewList" aria-pressed="'+(view===key)+'">'+label+'</button>'
+      ).join('')+'</div>' : '';
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
-      return '<li><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+'<p>'+esc(question.explanation)+'</p>'+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+'<p>'+esc(question.explanation)+'</p>'+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
-    return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div><section class="result-review"><h2 class="group-title">本组答题回顾</h2><ul>'+overview+'</ul></section></section>';
+    return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div>'+
+      '<section class="result-review" id="answerReview" data-result-view="'+view+'"><div class="section-head result-review-head"><h2 class="group-title">本组答题回顾</h2>'+filter+'</div><ul id="answerReviewList">'+overview+'</ul></section></section>';
   }
   const q = questionById.get(s.ids[s.index]);
   const topic = topicByKey.get(q.topic);
@@ -810,6 +827,14 @@ app.addEventListener('click',event => {
     app.querySelector('[data-term="'+state.term+'"]')?.focus({preventScroll:true});
   } else if (button.dataset.start) {
     start(button.dataset.start,button.dataset.back);
+  } else if (button.dataset.resultFilter) {
+    const view = button.dataset.resultFilter;
+    const review = app.querySelector('#answerReview');
+    if (!review || !['all','mistakes'].includes(view)) return;
+    review.dataset.resultView = view;
+    app.querySelectorAll('[data-result-filter]').forEach(control=>control.setAttribute('aria-pressed',String(control===button)));
+    state.session.resultView = view;
+    save();
   } else if (button.dataset.favorite) {
     const id = button.dataset.favorite;
     const wasSelected = state.favorites.includes(id);

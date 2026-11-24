@@ -135,6 +135,8 @@ dialog::backdrop{background:#23193968}
 .mix-form .scope{margin:14px 0 0}
 .priority{margin-bottom:24px}
 .result-review{margin-top:25px}
+.result-review-head{align-items:center;flex-wrap:wrap;margin-bottom:0}
+.result-review[data-result-view="mistakes"] > ul > li[data-correct="true"]{display:none}
 .result-review ul{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
 .result-review details{background:white;border:1px solid var(--line);border-radius:10px;padding:11px 13px}
 .result-review summary{cursor:pointer;line-height:1.55;overflow-wrap:anywhere}
