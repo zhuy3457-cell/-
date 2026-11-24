@@ -425,7 +425,112 @@ const englishGrammarModules = (() => {
     ])
   ]);
 
-  return [day3, day4, day5, day6, day7, day8, day9];
+  const numerals = [
+    ['三','three'], ['九','nine'], ['十一','eleven'], ['十二','twelve'], ['十三','thirteen'],
+    ['十五','fifteen'], ['十九','nineteen'], ['二十','twenty'], ['二十一','twenty-one'], ['三十','thirty'],
+    ['四十','forty'], ['五十','fifty'], ['九十','ninety'],
+    ['一百',english('one hundred','a hundred')], ['一千',english('one thousand','a thousand')],
+    ['第一','first'], ['第二','second'], ['第三','third'], ['第五','fifth'], ['第九','ninth'],
+    ['第十','tenth'], ['第十一','eleventh'], ['第十二','twelfth'], ['第十三','thirteenth'], ['第二十','twentieth'],
+    ['第二十一','twenty-first'], ['第二十二','twenty-second'], ['第二十三','twenty-third'], ['第三十','thirtieth'], ['第三十一','thirty-first']
+  ].map(([chinese, answer], i) => {
+    const word = typeof answer === 'string' ? answer : answer.answer;
+    const kind = i < 15 ? '基数词' : '序数词';
+    return ['写出「'+chinese+'」对应的英文'+kind+'。',answer,
+      kind+'写作 '+word+'。'+(word.includes('-')?'书写时在十位和个位之间加连字符。':'')];
+  });
+  const day10 = day(10, '数词', '原练习 Unit 7', '练习基数词、序数词的拼写，并在日期、顺序和年龄表达中使用。', [
+    ['什么时候用基数词、什么时候用序数词？','基数词表示数量，如 seven days。序数词表示次序或日期，如 the first day 和 May fourth。序数词前已有物主限定词时通常不用 the，如 her ninth birthday。'],
+    ['复合序数词怎么写？','通常只把最后一个数词变成序数词，并保留连字符，如 twenty-first。注意 fifth、ninth、twelfth、twentieth 的拼写。'],
+    ['年龄用连字符时怎样写？','修饰名词时写 an eight-year-old girl，year 保持单数。单独说年龄用 She is eight years old.']
+  ], [
+    section('day10-numbers','基数词和序数词拼写',numerals),
+    section('day10-choice','单项选择',[
+      ['There are ___ days in a week. Sunday is the ___ day of the week.（按美国日历的常见排法）',
+        [0,'seven / first','seven / one','seventh / first','seventh / one'],'表示天数用基数词 seven。按本题的日历排法，星期日排第一，用 first。'],
+      ['—Which sweater is yours? —The ___ one is ___.',[0,'third / mine','five / my','sixth / me','two / mine'],
+        '序数词 third 表示第三件。mine 独立使用，指 my sweater。'],
+      ['We shared a nice cake ___ her sister’s ___ birthday.',[3,'on / nine','in / ninth','at / nine','on / ninth'],
+        '在具体的生日当天用 on。第九个生日用序数词 ninth。'],
+      ['My grandparents have ___ daughters. My mother is their ___ daughter.',
+        [3,'fourth / third','fourth / three','four / three','four / third'],'女儿人数用基数词 four，排行第三用序数词 third。'],
+      ['There are ___ months in a year. September is the ___ month.',
+        [2,'twelve / nine','twelfth / nineth','twelve / ninth','twelfth / nine'],'一年有十二个月，用 twelve。九月是第九个月，用 ninth。'],
+      ['Mary is ___ girl.',[3,'an 8 year old','8-years-old','the 8 years old','an 8-year-old'],
+        '修饰 girl 用 8-year-old，三部分用连字符连接，year 不加 s。8 读作 eight，以元音音素开头，用 an。'],
+      ['Which number is spelled incorrectly?', [1,'ninety','ninteen','ninth','nineteenth'],
+        '十九正确写法为 nineteen，保留 nine 末尾的 e。'],
+      ['—How many magazines do you have? —I have ___.',[0,'two','both','twice','the second'],
+        'How many 询问数量，直接用基数词 two 回答。'],
+      ['In February of a leap year, there are only ___ days.（闰年）',
+        [2,'twenty nine','twenty-nineth','twenty-nine','twenty eight'],
+        '闰年二月有 29 天，基数词写作 twenty-nine，十位和个位之间加连字符。'],
+      ['—When is your birthday? —It’s May ___.',[2,'four','fourteen','fourth','forty'],
+        '按本题日期表达规则，某月的第几天用序数词。五月四日可读作 May fourth。']
+    ], {choice:true}),
+    section('day10-fill','用所给词填空',[
+      ['Thursday is ___ (five) day of a week.（按美国日历的常见排法）','the fifth',
+        '按题目的周日起始排法，周四排第五。fifth 是序数词，这里还需要定冠词 the。'],
+      ['I think the ___ (ten) lesson is the most difficult in this book.','tenth','第十课用序数词 tenth，the 已经给出。'],
+      ['Her birthday is on ___ (twenty) of July.','the twentieth','七月二十日可写作 the twentieth of July，注意 twenty 变为 twentieth。'],
+      ['Helen, it’s your turn. You’re the ___ (nine) one.','ninth','表示排第九，用序数词 ninth。'],
+      ['The ___ (two) car drives fast.','second','表示第二辆车，用序数词 second。'],
+      ['There are ___ (twelve) months in a year. December is the ___ (twelve) one.',
+        ['twelve','twelfth'],'第一个空表示月份数量，用 twelve。第二个空表示次序，用 twelfth。'],
+      ['Yesterday was the ___ (twenty-two) of August.','twenty-second',
+        '复合序数词只把最后一个词 two 改为 second，保留连字符。'],
+      ['Today is his ___ (fourteen) birthday.','fourteenth','第十四个生日用序数词 fourteenth。his 后直接接序数词。'],
+      ['He lived on the ___ (one) street.','first','one 的序数词是不规则形式 first。'],
+      ['There are ___ (eighteenth) mangoes in the basket.','eighteen','此处表示芒果数量，用基数词 eighteen。']
+    ])
+  ]);
+
+  const day11 = day(11, '特殊疑问句', '原练习 Unit 7', '根据答句选择疑问词，练习询问日期、数量、价格、年龄和地点。', [
+    ['how many 和 how much 有什么区别？','How many 后接可数名词复数，问数量。How much 可问不可数名词的量，也可问价格，如 How much are these shoes?'],
+    ['怎样确定疑问词？','问人物用 Who，问地点用 Where，问日期或时间用 When，问年龄用 How old，问状态或感受用 How。']
+  ], [
+    section('day11-choice','单项选择',[
+      ['—___ is your English teacher? —Mrs Wang.',[0,'Who','How','What','Why'],'答句给出老师是谁，用 Who。'],
+      ['—___ chocolate do you want to buy? —Only a little.',[1,'How many','How much','How old','How heavy'],
+        'chocolate 在这里是不可数名词，用 How much 问量。'],
+      ['—___ hamburgers do you want? —Two, please. And ___ are they? —They’re 12 yuan.',
+        [2,'How much / how much','How many / how many','How many / how much','How much / how many'],
+        'hamburgers 是可数名词复数，问数量用 How many。答 12 yuan 的问题问的是价格，用 how much。'],
+      ['—___ is your new school, Kitty? —It’s beautiful and modern.',[1,'What','How','Which','Where'],
+        '答句描述学校的样子，用 How 询问对学校的看法。'],
+      ['—___ is your sister, Bob? —She is ten.',[1,'How much','How old','Who','How'],'She is ten 回答年龄，用 How old。'],
+      ['—___ is your brother? —He’s five.',[1,'How','How old','What','Where'],'He’s five 说明年龄，用 How old。'],
+      ['—___ is she? —She is fine.',[1,'How old','How','Where','What'],'fine 描述近况，问她怎么样用 How。'],
+      ['—___ is this book? —20 yuan.',[3,'How often','How long','How many','How much'],'答句给出价格，用 How much。'],
+      ['—___ bread would you like? —Three pieces of ___.',
+        [3,'How many / breads','How many / bread','How much / breads','How much / bread'],
+        'bread 在这里不可数，问量用 How much。计数由 pieces 表示，of 后的 bread 不加 s。'],
+      ['—___ is Mike? —Oh, he is in the classroom.',[1,'Who','Where','What','How'],'in the classroom 说明地点，用 Where。']
+    ], {choice:true}),
+    section('day11-rewrite','按要求改写句子',[
+      ['My birthday is on the third of June.（对 on the third of June 提问）',
+        english('When is your birthday?','When is my birthday?'),'对日期用 When。转为向对方提问时，my 改为 your。'],
+      ['There are forty people in the classroom.（对 forty people 提问）','How many people are there in the classroom?',
+        '问人数用 How many people，再接疑问语序 are there。'],
+      ['The price of this T-shirt is 30 yuan.（用 How much 提问）',
+        english('How much is this T-shirt?','How much does this T-shirt cost?'),'询问价格可用 How much is ...? 或 How much does ... cost?'],
+      ['Her birthday is on February 12th.（对 on February 12th 提问）','When is her birthday?','对日期用 When 提问。'],
+      ['There is some juice in the glass.（对 some 提问）','How much juice is there in the glass?',
+        'juice 是不可数名词。问有多少果汁，用 How much juice，再接 is there。'],
+      ['I will have a party on my fiftieth birthday.（对 on my fiftieth birthday 提问）',
+        english('When will you have a party?','When will I have a party?'),'问将来的时间用 When，接着把 will 放到主语前。'],
+      ['The event is on September 25th, 2023.（对 on September 25th, 2023 提问）','When is the event?',
+        '对具体年月日提问用 When，把 is 放到 the event 前。'],
+      ['These shoes are 80 yuan.（用 How much 提问）',
+        english('How much are these shoes?','How much do these shoes cost?'),'问价格用 How much。these shoes 是复数，搭配 are 或 do。'],
+      ['There are six apples on the tree.（对 six 提问）','How many apples are there on the tree?',
+        'apples 是可数名词复数，用 How many apples 问数量。'],
+      ['What’s the price of that hat?（用 How much 提问）',
+        english('How much is that hat?','How much does that hat cost?'),'How much is that hat? 和 How much does that hat cost? 都可询问那顶帽子的价格。']
+    ])
+  ]);
+
+  return [day3, day4, day5, day6, day7, day8, day9, day10, day11];
 })();
 
 const englishGrammarByTopic = new Map(englishGrammarModules.map(module => [module.key,module]));

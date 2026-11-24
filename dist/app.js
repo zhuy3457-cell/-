@@ -81,8 +81,8 @@ const reviewCollections = new Map([
   }],
   ['english-grammar-daily', {
     subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'天',
-    title:'语法每日一练 Day 3–9', keywords:'七上英语语法 每日一练',
-    subtitle:'按原练习的 Day 3 至 Day 9 排列。可以做一天的完整练习，也可以按题型单独作答。',
+    title:'语法每日一练 Day 3–11', keywords:'七上英语语法 每日一练',
+    subtitle:'按原练习的 Day 3 至 Day 11 排列。可以做一天的完整练习，也可以按题型单独作答。',
     related:{route:'english-pronouns-day2',label:'Day 2 · 人称代词和物主代词'},
     start:'english-grammar-daily', returnLabel:'英语每日一练', modules:englishGrammarModules, byTopic:englishGrammarByTopic
   }],
