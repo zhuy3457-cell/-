@@ -98,8 +98,9 @@ const courseCatalog = (() => {
       fullGroup('rational', '有理数基础与应用'),
       fullGroup('absolute-axis-first'),
       fullGroup('absolute-axis-second'),
-      fullGroup('math-absolute-nonnegative')
-    ], ['rational','math-absolute-nonnegative'], [calculation.sources[0]]),
+      fullGroup('math-absolute-nonnegative'),
+      fullGroup('math-absolute-distance-review')
+    ], ['rational','math-absolute-nonnegative','math-absolute-distance-review'], [calculation.sources[0]]),
     makeCourse('algebraic-expressions', '代数式', '练习列代数式、求值、去括号和合并同类项。', [
       sectionGroup(calculation, 1),
       fullGroup('algebra', '用字母表示数与求值'),
@@ -110,8 +111,9 @@ const courseCatalog = (() => {
     makeCourse('linear-equations', '一元一次方程', '按数量关系、行程、计费、比赛等情境列方程。', [
       ...models.sections.map((section, i) => sectionGroup(models, i)),
       ...equationApplicationModules.map(module => fullGroup(module.key)),
-      fullGroup('math-equation-final-review')
-    ], ['equation','web-math-models','math-equation-final-review'], models.sources),
+      fullGroup('math-equation-final-review'),
+      fullGroup('math-bar-model-review')
+    ], ['equation','web-math-models','math-equation-final-review','math-bar-model-review'], models.sources),
     topicCourse('geometry')
   ];
 
