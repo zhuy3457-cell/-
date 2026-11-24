@@ -186,6 +186,49 @@ test('uploaded English worksheets and both book units work through the chat tool
     assert.equal(new Set(questions.questions.map(question=>question.material)).size,2);
   }
 });
+test('vocabulary and sentence sheets preserve order, marking and the Unit 1–2 links',async ()=>{
+  const one = await good('explain_topic',{query:'英语 Unit 1 词汇默写与词性'});
+  const two = await good('explain_topic',{query:'英语 Unit 2 词汇默写与词性'});
+  const sentences = await good('explain_topic',{query:'英语 10 句默写'});
+  assert.equal(one.scope_id,'course:english-u1-vocab-dictation');
+  assert.deepEqual(one.practice_groups.map(group=>group.question_count),[10,10,10,10]);
+  assert.equal(two.scope_id,'course:english-u2-vocab-dictation');
+  assert.deepEqual(two.practice_groups.map(group=>group.question_count),[10,10,10,10,4,10,6]);
+  assert.deepEqual(sentences.practice_groups.map(group=>group.question_count),[4,5,1]);
+  assert.match(JSON.stringify(one.teaching),/ɡriːt/);
+  const drawn = await good('special_practice',{scope_id:two.scope_id,group_id:'english-u2-vocab-dictation-words-1',count:10});
+  const change = drawn.questions.find(question=>question.question_id==='english-u2-vocab-dictation-word-7');
+  assert.deepEqual(change.fields.map(field=>field.label),['及物动词释义','不及物动词释义','名词释义']);
+  const attempts = await good('grade_homework',{record:false,submissions:[
+    {question_id:'english-u1-vocab-dictation-word-1',answer:['问候','动词']},
+    {question_id:'english-u1-vocab-dictation-word-3',answer:['相互','短语']},
+    {question_id:'english-u1-vocab-dictation-word-39',answer:['乐趣','adv.']},
+    {question_id:'english-u2-vocab-dictation-word-1',answer:['慢跑','一次慢跑']},
+    {question_id:change.question_id,answer:['使改变','发生变化','变动']},
+    {question_id:'english-u2-vocab-dictation-forms-4',answer:'fixes'},
+    {question_id:'english-u12-sentence-dictation-intro-1',answer:"I'm a 13-year-old girl from Class 1, Grade 7."}
+  ]});
+  assert.equal(attempts.correct,6);
+  assert.deepEqual(attempts.results[2].fields.map(field=>field.correct),[true,false]);
+  const u1 = await good('explain_topic',{query:'英语第一单元'});
+  const u2 = await good('explain_topic',{query:'英语第二单元'});
+  assert.ok(u1.practice_groups.some(group=>group.group_id==='english-u12-sentence-dictation-friends'));
+  assert.ok(u2.practice_groups.some(group=>group.group_id==='english-u2-vocab-dictation-forms'));
+});
+test('both math photo questions provide worked solutions and grade the exact numerical answers',async ()=>{
+  const absolute = await good('draw_questions',{query:'七上数学绝对值与非负性',count:1});
+  const variable = await good('draw_questions',{query:'七上数学代数式与字母无关',count:1});
+  assert.equal(absolute.questions[0].question_id,'math-absolute-nonnegative-1');
+  assert.match(absolute.questions[0].prompt,/\(a−3\)²\|b\|/);
+  assert.equal(variable.questions[0].question_id,'math-variable-independent-1');
+  const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:absolute.questions[0].question_id,answer:5},
+    {question_id:variable.questions[0].question_id,answer:'−3'}
+  ]});
+  assert.equal(graded.correct,2);
+  assert.match(JSON.stringify(graded.results[0].solution),/\|b−2\|=0/);
+  assert.match(JSON.stringify(graded.results[1].solution),/2y\+6=0/);
+});
 test('grades objective work and isolates personal mistakes and progress',async ()=>{
   const questionId = 'web-math-calculation-5';
   const owner = 'student-a';

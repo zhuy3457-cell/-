@@ -25,22 +25,27 @@ const courseCatalog = (() => {
     []
   ];
   const classroomByUnit = [englishClassroomModules.slice(0,2),englishClassroomModules.slice(2,3)];
-  const classroomGroups = (module,prefix = '') => module.sections.map((section,index)=>({
+  const moduleGroups = (module,prefix = '') => module.sections.map((section,index)=>({
     ...sectionGroup(module,index),title:prefix+section.title
   }));
+  const [unitOneVocab,unitTwoVocab,sentenceSheet] = englishVocabModules;
+  const vocabByUnit = [unitOneVocab,unitTwoVocab];
+  const sentenceGroups = [[sectionGroup(sentenceSheet,0),sectionGroup(sentenceSheet,2)],[sectionGroup(sentenceSheet,1)]];
   const english = englishPhraseModules.map(unit => {
     const index = unit.unit - 1;
     const check = englishCourseChecks[index];
     const grammar = grammarByUnit[index];
     const classroom = classroomByUnit[index] ?? [];
+    const vocab = vocabByUnit[index];
     return makeCourse('unit-' + unit.unit, unit.title, topics.get(check).description,
       [fullGroup(check, '随堂小测'), ...unit.sections.map((section, i) => sectionGroup(unit, i)),
         ...grammar.map(key => fullGroup(key)),
-        ...classroom.flatMap(module=>classroomGroups(module,module.title.split(' · ')[1]+' · '))],
-      [unit.key, ...grammar, ...classroom.map(module=>module.key)]);
+        ...classroom.flatMap(module=>moduleGroups(module,module.title.split(' · ')[1]+' · ')),
+        ...(vocab ? [...moduleGroups(vocab),...sentenceGroups[index]] : [])],
+      [unit.key, ...grammar, ...classroom.map(module=>module.key),...(vocab ? [vocab.key,sentenceSheet.key] : [])]);
   });
-  const englishClassroom = englishClassroomModules.map(module=>
-    makeCourse(module.key,module.title,module.description,classroomGroups(module),[module.key],module.sources));
+  const englishWorksheets = [...englishClassroomModules,...englishVocabModules].map(module=>
+    makeCourse(module.key,module.title,module.description,moduleGroups(module),[module.key],module.sources));
 
   const [classics, scenery] = publicStudyCollections.chinese;
   const chinese = [
@@ -92,14 +97,16 @@ const courseCatalog = (() => {
       sectionGroup(calculation, 0),
       fullGroup('rational', '有理数基础与应用'),
       fullGroup('absolute-axis-first'),
-      fullGroup('absolute-axis-second')
-    ], ['rational'], [calculation.sources[0]]),
+      fullGroup('absolute-axis-second'),
+      fullGroup('math-absolute-nonnegative')
+    ], ['rational','math-absolute-nonnegative'], [calculation.sources[0]]),
     makeCourse('algebraic-expressions', '代数式', '练习列代数式、求值、去括号和合并同类项。', [
       sectionGroup(calculation, 1),
       fullGroup('algebra', '用字母表示数与求值'),
+      fullGroup('math-variable-independent'),
       ...mathAlgebraModules.filter(module => module.key.startsWith('algebra-simplify-'))
         .map(module => fullGroup(module.key, module.range + ' · 化简求值'))
-    ], ['algebra'], [calculation.sources[1]]),
+    ], ['algebra','math-variable-independent'], [calculation.sources[1]]),
     makeCourse('linear-equations', '一元一次方程', '按数量关系、行程、计费、比赛等情境列方程。', [
       ...models.sections.map((section, i) => sectionGroup(models, i)),
       ...equationApplicationModules.map(module => fullGroup(module.key))
@@ -125,7 +132,7 @@ const courseCatalog = (() => {
   const namedCourses = {
     chinese: {上: [...chinese, ...poemCourses('上')], 下: poemCourses('下')},
     math: {上: math},
-    english: {上: [...english,...englishClassroom]},
+    english: {上: [...english,...englishWorksheets]},
     civics: {上: civicsReviewModules.map(module => topicCourse(module.key))},
     history: {上: history},
     geography: {上: geoReviewModules.map(module => topicCourse(module.key))},

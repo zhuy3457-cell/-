@@ -130,6 +130,12 @@ const reviewCollections = new Map([
     subtitle:'按题型练 Unit 1 学案、Unit 2 默写与译写，并阅读两篇英文原著的情节简写。',
     start:'english-classroom', returnLabel:'英语学案与课外阅读', modules:englishClassroomModules, byTopic:englishClassroomByTopic
   }],
+  ['english-vocab-review', {
+    subject:'english', name:'英语', icon:'letters', tone:'blue',
+    title:'Unit 1–2 词汇与句子默写', keywords:'词汇默写 中文释义 词性 音标 词形 句子默写',
+    subtitle:'按原词表顺序写释义和词性，再练词形、重点搭配和整句中译英。',
+    start:'english-vocab-review', returnLabel:'词汇与句子默写', modules:englishVocabModules, byTopic:englishVocabByTopic
+  }],
   ['english-pronouns-day2', {
     subject:'english', name:'英语', icon:'letters', tone:'blue',
     title:'语法每日一练 Day 2 · 人称代词和物主代词', keywords:'Unit 1 Day 2 英语语法 人称代词 物主代词 主格 宾格',
