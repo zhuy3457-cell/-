@@ -60,10 +60,11 @@ const workerParts = await Promise.all([
 ]);
 const manifest = join(siteRoot,'.openai','hosting.json');
 await Promise.all(['.openai','dist/.openai','dist/server','drizzle'].map(path=>mkdir(join(output,path),{recursive:true})));
+const migrations = (await readdir(join(siteRoot,'drizzle'))).filter(file=>file.endsWith('.sql')).sort();
 await Promise.all([
   copyFile(manifest,join(output,'.openai','hosting.json')),
   copyFile(manifest,join(output,'dist','.openai','hosting.json')),
-  copyFile(join(siteRoot,'drizzle','0000_chat_study.sql'),join(output,'drizzle','0000_chat_study.sql')),
+  ...migrations.map(file=>copyFile(join(siteRoot,'drizzle',file),join(output,'drizzle',file))),
   writeFile(join(output,'dist','server','index.js'),
     'const STATIC_ASSETS = '+JSON.stringify(assets)+';\nconst STUDY = '+studyJson+';\n'+workerParts.join('\n\n'))
 ]);

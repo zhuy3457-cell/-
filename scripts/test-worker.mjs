@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {readFileSync} from 'node:fs';
+import {readdirSync,readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
@@ -11,7 +11,14 @@ const output = process.env.SUXUE_BUILD_DIR;
 assert.ok(output,'Build the Worker and set SUXUE_BUILD_DIR to its output directory.');
 const {default:worker} = await import(pathToFileURL(join(output,'dist','server','index.js')).href);
 const database = new DatabaseSync(':memory:');
-database.exec(readFileSync(join(root,'drizzle','0000_chat_study.sql'),'utf8'));
+const migrations = readdirSync(join(output,'drizzle')).filter(file=>file.endsWith('.sql')).sort();
+const applyMigration = file=>database.exec(readFileSync(join(output,'drizzle',file),'utf8'));
+applyMigration(migrations[0]);
+const legacyQuestionId = 'homework-'+'a'.repeat(40);
+database.prepare(`INSERT INTO study_attempts
+  (owner_id,attempt_ref,question_id,subject_id,term,correct,study_date,submitted_at,homework_prompt)
+  VALUES ('legacy-owner','old-review',?,'math','下',0,'2026-11-23',0,'旧作业：说明等式的性质。')`).run(legacyQuestionId);
+migrations.slice(1).forEach(applyMigration);
 const env = {DB:{
   prepare(sql) {
     const statement = database.prepare(sql);
@@ -154,4 +161,39 @@ test('browser sync requires account identity and same origin, and merges both wa
   assert.equal(sync.next,null);
   assert.deepEqual(await (await request(attemptEndpoint,{owner:'different-user'})).json(),{attempts:[],next:null});
   assert.equal((await request(attemptEndpoint+'?after=-1',{owner})).status,400);
+});
+test('chat retakes saved homework without repeating the prompt or answer key',async ()=>{
+  const owner = 'chat-retake-user';
+  const prompt = '解方程 3x+5=17。';
+  const submission = await good('grade_homework',{term:'下',batch_id:'homework-first',
+    submissions:[{prompt,answer:5,reference_answer:4,explanation:'两边减 5，再除以 3。'}]},owner);
+  const id = submission.results[0].question_id;
+  assert.equal(submission.correct,0);
+  const list = await good('special_practice',{term:'下',mode:'mistakes'},owner);
+  assert.equal(list.available,1);
+  assert.equal(list.questions[0].question_id,id);
+  assert.equal(list.questions[0].grading_method,'stored_reference');
+  assert.doesNotMatch(JSON.stringify(list),/reference_answer|两边减/);
+  const resubmit = {batch_id:'homework-retake',submissions:[{question_id:id,answer:'8/2'}]};
+  assert.ok((await call('grade_homework',resubmit,'another-chat-account')).isError);
+  const corrected = await good('grade_homework',resubmit,owner);
+  assert.equal(corrected.count,1);
+  assert.equal(corrected.correct,1);
+  assert.equal(corrected.results[0].explanation,'两边减 5，再除以 3。');
+  assert.equal((await good('grade_homework',resubmit,owner)).new_records,0);
+  assert.equal((await good('get_mistakes',{term:'下'},owner)).total,0);
+  assert.equal((await good('get_progress',{term:'下'},owner)).mastered_questions,1);
+  assert.equal((await good('get_progress',{term:'上'},owner)).attempts,0);
+  const sync = await (await request(attemptEndpoint,{owner})).json();
+  assert.deepEqual(sync.attempts,[]);
+});
+test('existing homework without a key keeps its original identity when reviewed again',async ()=>{
+  const owner = 'legacy-owner';
+  const old = await good('get_mistakes',{term:'下'},owner);
+  assert.equal(old.results[0].question_id,legacyQuestionId);
+  assert.equal(old.results[0].grading_method,'review_or_reference');
+  assert.match((await call('grade_homework',{batch_id:'missing',submissions:[{question_id:legacyQuestionId,answer:'测试'}]},owner)).content[0].text,/没有参考答案/);
+  const checked = await good('record_homework_review',{batch_id:'redo-old',items:[{question_id:legacyQuestionId,correct:true}]},owner);
+  assert.deepEqual(checked.question_ids,[legacyQuestionId]);
+  assert.equal((await good('get_mistakes',{term:'下'},owner)).total,0);
 });

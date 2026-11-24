@@ -34,16 +34,26 @@ async function insertAttempts(env,owner,rows) {
   if (!rows.length) return 0;
   const db = studyDb(env);
   const sql = `INSERT INTO study_attempts
-    (owner_id,attempt_ref,question_id,subject_id,term,correct,study_date,submitted_at,homework_prompt)
-    VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(owner_id,attempt_ref) DO NOTHING`;
+    (owner_id,attempt_ref,question_id,subject_id,term,correct,study_date,submitted_at,homework_prompt,homework_reference,homework_explanation)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(owner_id,attempt_ref) DO NOTHING`;
   let inserted = 0;
   for (let i=0;i<rows.length;i+=40) {
     const batch = rows.slice(i,i+40).map(row=>db.prepare(sql).bind(owner,row.ref,row.id,row.subject,row.term,
-      Number(row.ok),row.date,row.time,row.prompt ?? null));
+      Number(row.ok),row.date,row.time,row.prompt ?? null,
+      row.reference===undefined ? null : JSON.stringify(row.reference),row.explanation ?? null));
     const results = await db.batch(batch);
     inserted += results.reduce((count,result)=>count+(result.meta?.changes ?? 0),0);
   }
   return inserted;
+}
+async function savedHomework(env,owner,id) {
+  if (!/^homework-[a-f0-9]{40}$/.test(id)) throw new StudyError('找不到该题。外部作业请提供题干和参考答案。');
+  const {results:[row]} = await studyDb(env).prepare(`SELECT subject_id AS subject,term,homework_prompt AS prompt,
+    homework_reference AS reference,homework_explanation AS explanation
+    FROM study_attempts WHERE owner_id = ? AND question_id = ? AND homework_prompt IS NOT NULL
+    ORDER BY (homework_reference IS NOT NULL) DESC, rowid DESC LIMIT 1`).bind(owner,id).all();
+  if (!row) throw new StudyError('当前账号没有这道作业的记录。');
+  return {...row,id,reference:row.reference===null ? undefined : JSON.parse(row.reference)};
 }
 async function attemptsPage(env,owner,{subject,term,after = 0,limit = 300,bankOnly = false} = {}) {
   const filters = ['owner_id = ?','rowid > ?'];
@@ -52,7 +62,8 @@ async function attemptsPage(env,owner,{subject,term,after = 0,limit = 300,bankOn
   if (term) { filters.push('term = ?'); binds.push(term); }
   if (bankOnly) filters.push('homework_prompt IS NULL');
   const {results} = await studyDb(env).prepare(`SELECT rowid AS cursor,attempt_ref AS ref,question_id AS id,
-    subject_id AS subject,term,correct AS ok,study_date AS date,submitted_at AS time,homework_prompt AS prompt
+    subject_id AS subject,term,correct AS ok,study_date AS date,submitted_at AS time,homework_prompt AS prompt,
+    homework_reference IS NOT NULL AS hasReference
     FROM study_attempts WHERE ${filters.join(' AND ')} ORDER BY rowid LIMIT ?`).bind(...binds,limit).all();
   return results.map(item=>({...item,ok:!!item.ok}));
 }
@@ -73,7 +84,8 @@ function studySummary(attempts) {
   let correct = 0;
   for (const attempt of attempts) {
     const previous = latest.get(attempt.id);
-    latest.set(attempt.id,{...attempt,wrongCount:attempt.ok ? 0 : (previous?.wrongCount ?? 0)+1});
+    latest.set(attempt.id,{...attempt,hasReference:!!attempt.hasReference || !!previous?.hasReference,
+      wrongCount:attempt.ok ? 0 : (previous?.wrongCount ?? 0)+1});
     days.add(attempt.date);
     correct += Number(attempt.ok);
   }
@@ -93,6 +105,13 @@ async function progressFor(env,owner,args) {
     last_study_day:attempts.at(-1)?.date ?? null,
     ...(attempts.length ? {} : {note:'这个范围暂无同步记录。可在练习室「学习记录」中同步，或在聊天里完成一组并批改。'})};
 }
+function mistakeQuestionView(item) {
+  const question = questions.get(item.id);
+  const prompt = question ? questionView(question) :
+    {question_id:item.id,prompt:item.prompt,subject:subjectNames.get(item.subject),term:item.term,
+      external_homework:true,grading_method:item.hasReference ? 'stored_reference' : 'review_or_reference'};
+  return {...prompt,wrong_count:item.wrongCount,last_wrong_day:item.date};
+}
 async function mistakesFor(env,owner,args) {
   const subject = validSubject(args.subject);
   const term = validTerm(args.term);
@@ -102,9 +121,5 @@ async function mistakesFor(env,owner,args) {
   const {latest} = studySummary(await studyAttempts(env,owner,subject,term));
   const open = [...latest.values()].filter(item=>!item.ok && (!ids || ids.has(item.id)))
     .sort((a,b)=>b.date.localeCompare(a.date)||b.time-a.time||b.cursor-a.cursor);
-  return {total:open.length,results:open.slice(0,limit).map(item=>({
-    ...(questions.has(item.id) ? questionView(questions.get(item.id)) :
-      {question_id:item.id,prompt:item.prompt,subject:subjectNames.get(item.subject),term:item.term,external_homework:true}),
-    wrong_count:item.wrongCount,last_wrong_day:item.date
-  }))};
+  return {total:open.length,results:open.slice(0,limit).map(mistakeQuestionView)};
 }

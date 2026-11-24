@@ -27,30 +27,31 @@ const toolsList = [
   }),
   toolDefinition('explain_topic','讲解知识点','返回课程要点、易错提醒、例题与解题思路。需要先从课程查询选定 scope_id。',scopeProperties,['scope_id']),
   toolDefinition('draw_questions','随机出题','按学科、册次、课程和难度抽题。返回题目与题号，不提前给答案。请保留 question_id 以便答完后批改。',drawProperties),
-  toolDefinition('grade_homework','批改作业','批改题库题目或有明确参考答案的外部作业。用户解答后再调用。题库单选可提交 A/B/C/D 或选项全文，多空按顺序提交数组。外部主观作业先在聊天里讲评，再用 record_homework_review 保存已确认的结果。默认记录批改结果。同一提交重试时复用 batch_id。',{
+  toolDefinition('grade_homework','批改作业','用户作答后，按 question_id 批改题库题或已保存的作业错题。单选可传选项字母，多空传数组。首次批改外部题时提交原题与已确认的参考答案。已保存的参考答案可用于后续聊天重练。外部主观题可先讲评，再调用 record_homework_review。默认保存结果。同一提交重试时复用 batch_id。',{
     subject:scopeProperties.subject,term:scopeProperties.term,
     batch_id:{type:'string',description:'记录时必填。为本次实际提交生成唯一编号，只用字母、数字、连字符或下划线。重试复用。'},
     record:{type:'boolean',description:'是否保存到当前账号，默认为 true，只检查答案时可传 false。'},
     submissions:{type:'array',minItems:1,maxItems:20,items:{type:'object',additionalProperties:false,required:['answer'],properties:{
-      question_id:{type:'string',description:'题库的 question_id。提供时直接使用题库答案。'},
+      question_id:{type:'string',description:'题库或个人错题的 question_id。使用已保存错题的编号可更新同一题的学习记录。'},
       prompt:{type:'string',maxLength:1500,description:'外部作业原题。没有题库 ID 时必填。'},
       answer:answerSchema,
-      reference_answer:{...answerSchema,description:'外部作业的明确参考答案。多空传有序数组，没有题库 ID 时必填。'},
+      reference_answer:{...answerSchema,description:'外部作业的明确参考答案。多空传有序数组。首次批改或旧错题尚无参考答案时必填。'},
       explanation:{type:'string',maxLength:1200,description:'可为外部作业补充已确认的解题过程。'}
     }}}
   },['submissions'],false),
-  toolDefinition('record_homework_review','保存已讲评的作业','保存聊天中已经讲评且用户要求记录的外部作业结果。以实际批改结果为准。同一提交重试时复用 batch_id。',{
+  toolDefinition('record_homework_review','保存已讲评的作业','保存聊天中已讲评的外部作业结果。重做旧错题时使用它的 question_id，让答对结果归入原题。同一提交重试时复用 batch_id。',{
     subject:scopeProperties.subject,term:scopeProperties.term,
     batch_id:{type:'string',description:'本次提交的唯一编号，只用字母、数字、连字符或下划线。'},
-    items:{type:'array',minItems:1,maxItems:20,items:{type:'object',additionalProperties:false,required:['prompt','correct'],
-      properties:{prompt:{type:'string',maxLength:1500},correct:{type:'boolean'}}}}
+    items:{type:'array',minItems:1,maxItems:20,items:{type:'object',additionalProperties:false,required:['correct'],
+      properties:{question_id:{type:'string',description:'重做外部作业错题时使用其原题编号。'},
+        prompt:{type:'string',maxLength:1500,description:'新增外部作业时必填。'},correct:{type:'boolean'}}}}
   },['batch_id','items'],false),
   toolDefinition('get_mistakes','查询错题','查询当前账号最近一次仍答错的题，包含已同步的网页记录和聊天批改。直接返回题目，方便复练。',{
     ...scopeProperties,limit:{type:'integer',minimum:1,maximum:30}
   }),
-  toolDefinition('special_practice','专项练习','按已选课程、知识点或专项题组练习。可抽取全部范围、账号里未答对的题，或最近仍答错的题。',{
+  toolDefinition('special_practice','专项练习','按课程或题组练习。用户说重做错题时，用 mode=mistakes。未指定课程时可直接从个人错题本出题，包括外部作业。请保留 question_id，提交后用该编号批改。',{
     ...drawProperties,mode:{type:'string',enum:['all','unmastered','mistakes'],description:'all 为范围内任选，unmastered 为还未答对，mistakes 为待复练错题。'}
-  },['scope_id']),
+  }),
   toolDefinition('get_progress','查询学习进度','查询当前账号的答题次数、正确率、已掌握题数和待复练错题。统计来自聊天批改和已主动同步的网页记录。',scopeProperties)
 ];
 function batchId(args) {
@@ -117,18 +118,22 @@ async function gradeHomework(env,request,args) {
     const answer = asAnswer(item.answer);
     const questionId = textValue(item.question_id,'题目编号',120);
     const question = questions.get(questionId);
-    if (questionId && !question) throw new StudyError('题库中没有题号 '+questionId+'。外部题请填原题和参考答案。');
-    const prompt = question?.prompt ?? textValue(item.prompt,'外部作业题干',1500,true);
-    const itemSubject = question?.subject ?? subject;
-    const itemTerm = question ? topics.get(question.topic).term : term ?? '上';
-    const id = question?.id ?? await homeworkKey(itemSubject,itemTerm,prompt);
-    const grade = question ? gradeBankQuestion(question,answer) : gradeReference(answer,asAnswer(item.reference_answer));
+    const saved = questionId && !question ? await savedHomework(env,owner ?? requireOwner(request),questionId) : null;
+    const prompt = question?.prompt ?? saved?.prompt ?? textValue(item.prompt,'外部作业题干',1500,true);
+    const itemSubject = question?.subject ?? saved?.subject ?? subject;
+    const itemTerm = question ? topics.get(question.topic).term : saved?.term ?? term ?? '上';
+    const id = question?.id ?? saved?.id ?? await homeworkKey(itemSubject,itemTerm,prompt);
+    const reference = question ? undefined : item.reference_answer===undefined ? saved?.reference : asAnswer(item.reference_answer);
+    if (!question && reference===undefined) {
+      throw new StudyError('这道作业暂时没有参考答案。请提供参考答案，或在讲评后用 record_homework_review 记录结果。');
+    }
+    const explanation = question?.explanation ?? (item.explanation===undefined ? saved?.explanation ?? '' : textValue(item.explanation,'讲评',1200));
+    const grade = question ? gradeBankQuestion(question,answer) : gradeReference(answer,reference);
     return {
-      result:{question_id:id,prompt,...grade,
-        explanation:question?.explanation ?? textValue(item.explanation,'讲评',1200),
-        solution:question?.solution},
+      result:{question_id:id,prompt,...grade,explanation,solution:question?.solution},
       row:{ref:'chat:'+ref+':'+index,id,subject:itemSubject,term:itemTerm,ok:grade.correct,
-        date:calendarDate.format(now),time:now.getTime(),prompt:question ? null : prompt}
+        date:calendarDate.format(now),time:now.getTime(),prompt:question ? null : prompt,
+        reference,explanation:question ? null : explanation}
     };
   }));
   const saved = record ? await insertAttempts(env,owner,evaluated.map(item=>item.row)) : 0;
@@ -144,25 +149,35 @@ async function recordReviewedHomework(env,request,args) {
   const now = new Date();
   const rows = await Promise.all(args.items.map(async (item,index)=>{
     if (!item || typeof item.correct!=='boolean') throw new StudyError('请为每道题提供已确认的正误。');
-    const prompt = textValue(item.prompt,'作业题干',1500,true);
-    const id = await homeworkKey(subject,term,prompt);
-    return {ref:'review:'+ref+':'+index,id,subject,term,prompt,ok:item.correct,date:calendarDate.format(now),time:now.getTime()};
+    const questionId = textValue(item.question_id,'题目编号',120);
+    const saved = questionId ? await savedHomework(env,owner,questionId) : null;
+    const prompt = saved?.prompt ?? textValue(item.prompt,'作业题干',1500,true);
+    const id = saved?.id ?? await homeworkKey(subject,term,prompt);
+    return {ref:'review:'+ref+':'+index,id,subject:saved?.subject ?? subject,term:saved?.term ?? term,prompt,
+      ok:item.correct,date:calendarDate.format(now),time:now.getTime()};
   }));
   return {new_records:await insertAttempts(env,owner,rows),question_ids:rows.map(row=>row.id)};
 }
 async function specialPractice(env,request,args) {
   const mode = args.mode ?? 'all';
   if (!['all','unmastered','mistakes'].includes(mode)) throw new StudyError('请指定 all、unmastered 或 mistakes。');
-  const selection = poolFor(args,true);
+  const selection = poolFor(args,mode!=='mistakes');
+  const count = validCount(args.count,5,15);
   if (mode!=='all') {
     const owner = requireOwner(request);
     const {latest} = studySummary(await studyAttempts(env,owner,selection.subject,selection.term));
+    if (mode==='mistakes' && !selection.scope) {
+      const bankIds = new Set(selection.pool.map(question=>question.id));
+      const includeHomework = !args.difficulty || args.difficulty==='all';
+      selection.pool = [...latest.values()].filter(item=>!item.ok && (bankIds.has(item.id) || (item.prompt && includeHomework)));
+      return makePractice(selection,count,mode,mistakeQuestionView);
+    }
     selection.pool = selection.pool.filter(question=>{
       const status = latest.get(question.id)?.ok;
       return mode==='mistakes' ? status===false : status!==true;
     });
   }
-  return makePractice(selection,validCount(args.count,5,15),mode);
+  return makePractice(selection,count,mode);
 }
 const handlers = {
   query_courses:args=>queryCourses(args),
@@ -214,7 +229,7 @@ async function mcpResponse(request,env) {
   const {id,method,params} = message;
   if (id===undefined) return new Response(null,{status:202});
   const capabilities = {tools:{}};
-  const serverInfo = {name:PRODUCT_NAME,title:PRODUCT_NAME,version:'1.0.0'};
+  const serverInfo = {name:PRODUCT_NAME,title:PRODUCT_NAME,version:'1.1.0'};
   let result;
   if (method==='server/discover') {
     result = {supportedVersions:[MCP_VERSIONS[0]],capabilities,serverInfo};
@@ -243,7 +258,7 @@ async function mcpResponse(request,env) {
 async function syncResponse(request,env,url) {
   if (request.method==='HEAD') {
     try {
-      await studyDb(env).prepare('SELECT 1 FROM study_attempts LIMIT 0').all();
+      await studyDb(env).prepare('SELECT homework_reference FROM study_attempts LIMIT 0').all();
       return new Response(null,{status:204,headers:{'Cache-Control':'no-store'}});
     } catch (error) {
       console.error('Study storage readiness: '+error.name+' '+error.message);

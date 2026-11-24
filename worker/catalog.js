@@ -148,8 +148,8 @@ function sample(pool,count) {
   }
   return result.slice(0,count);
 }
-function makePractice(selection,count,mode) {
+function makePractice(selection,count,mode,view = questionView) {
   const {scope,group,pool,subject,term} = selection;
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',scope:scope?.title ?? '全学科范围',
-    group:group?.title,mode,available:pool.length,questions:sample(pool,count).map(questionView)};
+    group:group?.title,mode,available:pool.length,questions:sample(pool,count).map(view)};
 }
