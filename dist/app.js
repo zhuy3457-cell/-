@@ -51,6 +51,9 @@ if (!['上','下'].includes(state.term)) state.term = '上';
 state.difficulty = cleanLevel(state.difficulty);
 let storageFailed = false;
 let backupNotice = '';
+let syncNotice = '';
+let syncingStudy = false;
+let syncNeedsSignIn = false;
 const backupSchema = 'suxue-study-backup';
 function save() {
   try {
@@ -594,6 +597,53 @@ function studyBackup() {
     '<input type="file" id="studyBackupInput" accept=".json,application/json" aria-label="选择学习记录备份" hidden></div>'+
     '<p class="backup-status" role="status">'+esc(backupNotice)+'</p></section>';
 }
+function studySyncPanel() {
+  if (location.protocol!=='https:') return '';
+  const signIn = syncNeedsSignIn ? '<a class="btn secondary" href="/signin-with-chatgpt?return_to=%2F%23stats" target="_top">用 ChatGPT 账号登录</a>' : '';
+  return '<section class="backup-panel"><div><h2>同步到七年级学习助手</h2>'+
+    '<p>把本浏览器的答题结果与同一 ChatGPT 账号合并，方便在聊天里查询进度和错题。</p></div>'+
+    '<div class="saved-actions">'+signIn+'<button class="btn secondary" type="button" data-study-sync '+(syncingStudy?'disabled':'')+
+    '>'+(syncingStudy?'正在同步…':'同步学习记录')+'</button></div>'+
+    '<p class="backup-status" role="status">'+esc(syncNotice)+'</p></section>';
+}
+async function syncStudyRecords() {
+  if (syncingStudy) return;
+  syncingStudy = true;
+  syncNotice = '';
+  syncNeedsSignIn = false;
+  render();
+  async function requestSync(path = '',options) {
+    const response = await fetch('/api/study-sync'+path,options);
+    if (response.status===401 || response.redirected) {
+      syncNeedsSignIn = true;
+      throw new Error('请先用同一 ChatGPT 账号登录，再同步。');
+    }
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || '暂时无法同步，请稍后重试。');
+    return data;
+  }
+  try {
+    const backup = backupPayload();
+    let page = await requestSync();
+    let uploaded = 0;
+    for (let start=0;start<backup.attempts.length;start+=200) {
+      const attempts = backup.attempts.slice(start,start+200);
+      const {added} = await requestSync('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempts})});
+      uploaded += added;
+    }
+    const attempts = page.attempts.slice();
+    while (page.next!==null) {
+      page = await requestSync('?after='+encodeURIComponent(page.next));
+      attempts.push(...page.attempts);
+    }
+    syncNotice = '已上传 '+uploaded+' 条答题记录。'+mergeBackup({...backup,attempts,favorites:[]});
+  } catch (error) {
+    syncNotice = error instanceof SyntaxError || error instanceof TypeError ? '暂时无法同步，请稍后重试。' : error.message;
+  } finally {
+    syncingStudy = false;
+    if (location.hash==='#stats') render();
+  }
+}
 function priorityReview() {
   const grouped = new Map();
   for (const id of mistakeIds()) {
@@ -616,7 +666,7 @@ function statsPage() {
   const days = new Set(attempts.map(a => a.date));
   return pageHead('学习记录','做题后自动更新。记录保存在当前浏览器。',homeLink)+
     '<div class="metrics">'+metric('累计作答',attempts.length+' 题','violet','pencil')+metric('整体正确率',percent(right.length,attempts.length),'green','target')+metric('练习天数',days.size+' 天','orange','chart')+'</div>'+
-    studyBackup()+priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+subjects.map(subject => {
+    studyBackup()+studySyncPanel()+priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+subjects.map(subject => {
       const tried = attempts.filter(a=>questionById.get(a.id)?.subject===subject.id);
       const success = tried.filter(a=>a.ok);
       const distinct = new Set(success.map(a=>a.id)).size;
@@ -731,11 +781,7 @@ function answer(current,currentQuestion) {
   const fields = q.steps || q.blanks ? fieldValues(q,current.selected) : null;
   const raw = fields ? fields.join(' / ') : q.options ? current.selected : document.querySelector('#answerInput').value.trim();
   if (!fields && !raw) return;
-  let ok;
-  if (q.steps) ok = q.steps.every((step,index)=>matchesStep(step,fields[index]));
-  else if (q.blanks) ok = q.blanks.every((expected,index)=>normalizeDictation(fields[index]) === normalizeDictation(expected));
-  else if (q.options) ok = raw === q.correct;
-  else ok = matchesNumber(raw,q.correct);
+  const ok = answerMatches(q,fields ?? raw);
   current.answers[current.index] = {id:q.id,ok,raw,...(fields?{fields}:{})};
   const now = new Date();
   const time = now.getTime();
@@ -792,36 +838,6 @@ function readingMaterial(question, expanded = false, block = null) {
   const progress = block ? '<span class="reading-progress">本篇 '+block.number+' / '+block.total+' 题</span>' : '';
   return '<details class="reading-material" '+(expanded?'open':'')+key+'><summary>'+title+progress+'</summary>'+
     (question.material?'<div>'+esc(question.material)+'</div>':'')+figure+(question.table?materialTable(question.table):'')+'</details>';
-}
-const normalizeDictation = text => text.normalize('NFKC').replace(/[\p{P}\s]/gu,'');
-const fieldValues = (question, values) => (question.steps ?? question.blanks).map((_,index)=>Array.isArray(values)?(values[index]??''):'');
-function rationalParts(text) {
-  const fraction = /^([+-]?\d+)\s*\/\s*([+-]?\d+)$/.exec(text);
-  if (fraction) {
-    const denominator = BigInt(fraction[2]);
-    return denominator ? [BigInt(fraction[1]),denominator] : null;
-  }
-  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
-  const [whole, decimals=''] = text.split('.');
-  return [BigInt(whole+decimals),10n**BigInt(decimals.length)];
-}
-function matchesNumber(raw, expected) {
-  const normalized = raw.normalize('NFKC').replace(/[−–—]/g,'-').replace(/[⁄∕÷]/g,'/').trim();
-  const actual = rationalParts(normalized);
-  const target = rationalParts(String(expected).trim());
-  if (actual && target) return actual[0]*target[1]===target[0]*actual[1];
-  return !!actual && !normalized.includes('/') && Number(normalized)===Number(expected);
-}
-const normalizeStepText = value => value.normalize('NFKC').trim().toLowerCase();
-const normalizeEnglish = value => normalizeStepText(value).replace(/[’‘ʼ]/g,"'").replace(/[,，.。?!？！‐‑-]+/g,' ').replace(/\s+/g,' ').trim();
-function matchesStep(step,value) {
-  if (step.text) {
-    const normalize = step.text === 'english' ? normalizeEnglish : normalizeStepText;
-    const entered = normalize(value);
-    return [step.answer,...(step.aliases ?? [])].some(answer=>normalize(answer)===entered);
-  }
-  if (step.symbol) return value.normalize('NFKC').trim()===step.answer;
-  return matchesNumber(value,step.answer);
 }
 const blankName = index => index === 0 ? '第一空' : '第二空';
 function dictationInputs(question, selected, submitted) {
@@ -1022,6 +1038,8 @@ app.addEventListener('click',event => {
     exportBackup();
   } else if (button.dataset.backup === 'import') {
     document.querySelector('#studyBackupInput').click();
+  } else if (button.dataset.studySync !== undefined) {
+    syncStudyRecords();
   } else if (button.dataset.option !== undefined) {
     const s = state.session;
     const q = questionById.get(s.ids[s.index]);

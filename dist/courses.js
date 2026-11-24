@@ -95,7 +95,7 @@ const courseCatalog = (() => {
     makeCourse('linear-equations', '一元一次方程', '按数量关系、行程、计费、比赛等情境列方程。', [
       ...models.sections.map((section, i) => sectionGroup(models, i)),
       ...equationApplicationModules.map(module => fullGroup(module.key))
-    ], [], models.sources),
+    ], ['equation','web-math-models'], models.sources),
     topicCourse('geometry')
   ];
 
