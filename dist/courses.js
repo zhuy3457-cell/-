@@ -106,13 +106,14 @@ const courseCatalog = (() => {
       fullGroup('math-absolute-nonnegative'),
       fullGroup('math-absolute-distance-review')
     ], ['rational','math-absolute-nonnegative','math-absolute-distance-review'], [calculation.sources[0]]),
-    makeCourse('algebraic-expressions', '代数式', '练习列代数式、求值、去括号和合并同类项。', [
+    makeCourse('algebraic-expressions', '代数式', '练习列代数式、求值、单项式、去括号和合并同类项。', [
       sectionGroup(calculation, 1),
       fullGroup('algebra', '用字母表示数与求值'),
+      fullGroup('math-monomial-coefficient-degree'),
       fullGroup('math-variable-independent'),
       ...mathAlgebraModules.filter(module => module.key.startsWith('algebra-simplify-'))
         .map(module => fullGroup(module.key, module.range + ' · 化简求值'))
-    ], ['algebra','math-variable-independent'], [calculation.sources[1]]),
+    ], ['algebra','math-monomial-coefficient-degree','math-variable-independent'], [calculation.sources[1]]),
     makeCourse('linear-equations', '一元一次方程', '按数量关系、行程、计费、比赛等情境列方程。', [
       ...models.sections.map((section, i) => sectionGroup(models, i)),
       ...equationApplicationModules.map(module => fullGroup(module.key)),

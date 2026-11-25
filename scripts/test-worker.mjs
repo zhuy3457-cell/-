@@ -541,6 +541,17 @@ test('friendly midpoint practice grades formulas, negative midpoints and all thr
   ]});
   assert.deepEqual(grades.results.map(result=>result.correct),[true,false,true,true,true,false]);
 });
+test('monomial practice treats pi and the constant power as coefficients',async ()=>{
+  const key = 'math-monomial-coefficient-degree';
+  const quiz = await good('draw_questions',{scope_id:'course:algebraic-expressions',group_id:key,count:3});
+  assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),[1,2,3].map(number=>key+'-'+number));
+  const cases = [[1,[3,3],true],[2,['5 pi^2',7],true],[2,['5π²',9],false],
+    [3,['6²⁰²⁶',0],true],[3,['6^(2026)',0],true],[3,[6,2026],false]];
+  const graded = await good('grade_homework',{record:false,submissions:cases.map(([number,answer])=>({
+    question_id:key+'-'+number,answer
+  }))});
+  assert.deepEqual(graded.results.map(result=>result.correct),cases.map(([, ,correct])=>correct));
+});
 test('division-power worksheet keeps its definition and grades exponent notation and equality',async ()=>{
   const scope_id = 'course:math-division-power';
   const course = await good('explain_topic',{query:'七上数学除方'});

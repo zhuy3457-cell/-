@@ -49,6 +49,31 @@ const mathPhotoTopics = [
         '代入后原式恒为 −1，确实与 x 无关。'
       ]}]
     }]
+  },
+  {
+    key:'math-monomial-coefficient-degree',title:'单项式的系数与次数',term:'上',
+    description:'辨认单项式的数字因数，区分字母指数、常数的指数和单项式次数。',
+    lesson:[
+      '单项式的系数是数字因数，次数是所有字母的指数之和。字母没有写指数时，指数是 1。',
+      'π 是常数。非零常数也是单项式，它的系数是它本身，次数是 0。',
+      '写出 −2ab³ 的系数与次数。','系数是 −2，次数是 4。','含符号的数字因数是 −2，字母的指数之和是 1+3=4。'
+    ],
+    questions:[{
+      id:'math-monomial-coefficient-degree-1',level:'basic',options:null,
+      prompt:'写出单项式 3x²y 的系数与次数。',
+      steps:[{label:'系数',answer:'3'},{label:'次数',answer:'3'}],correct:'3，3',
+      explanation:'数字因数是 3。x 的指数是 2，y 的指数是 1，所以次数是 2+1=3。'
+    },{
+      id:'math-monomial-coefficient-degree-2',level:'standard',options:null,
+      prompt:'写出单项式 5π²x³y⁴ 的系数与次数。',
+      steps:[{label:'系数（可用 pi^2 表示 π²）',answer:'5π²',text:'formula',aliases:['5π^(2)','5(π)^2']},{label:'次数',answer:'7'}],correct:'5π²，7',
+      explanation:'π 是常数，因此 5π² 是整个数字因数。次数只加字母 x、y 的指数，即 3+4=7。'
+    },{
+      id:'math-monomial-coefficient-degree-3',level:'standard',options:null,
+      prompt:'写出单项式 6²⁰²⁶ 的系数与次数。',
+      steps:[{label:'系数（保留幂的形式）',answer:'6^2026',text:'formula',aliases:['6^(2026)','6**2026']},{label:'次数',answer:'0'}],correct:'6^2026，0',
+      explanation:'6²⁰²⁶ 是一个非零常数，所以系数就是 6²⁰²⁶。式中没有字母，单项式次数为 0。'
+    }]
   }
 ];
 
