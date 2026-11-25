@@ -773,12 +773,31 @@ const englishClassroomModules = (() => {
     'Let’s have a look together.',
     'And some are green all year.'
   ];
-  const schoolAndDreams = module('classroom-u3-school-dreams','校园与梦想 · 英语学案 29–52','七上英语',
-    '练选词填空、短文填空、句子翻译和信息还原。第 48–52 题使用第 3 页的短文和第 4 页的六个选项。',[
+  const schoolAndDreams = module('classroom-u3-school-dreams','校园与梦想 · 英语学案 21–52','七上英语',
+    '练单选、选词填空、短文填空、句子翻译和信息还原。第 48–52 题使用第 3 页的短文和第 4 页的六个选项。',[
+    ['单选易混点','see sb. doing sth. 强调看见动作正在进行，see sb. do sth. 可表示看到一个完整动作或看到某人做某事。borrow 表示借入，lend 表示借出。a few 修饰可数名词复数，a little 修饰不可数名词。'],
     ['校园词组','show sb. around 带某人参观，care about 关心，take place 举行或发生。as well 表示“也”，常放句末。'],
     ['常考动词形式','everyone 作主语时，谓语用第三人称单数。let 或 make sb. do 后用动词原形，enjoy doing 和 spend time doing 后用动名词。'],
     ['信息还原','根据上下句判断空格是总领、补充、解释还是总结，留意 some、they、it 和 those trees 等指代。']
   ],[
+    ['choice','第 21–28 题 · 单项选择',[
+      choose('I often see Linda ____ ball games on the playground.（强调每次看到时，她正在打球。）',
+        ['playing','play','plays','to play'],0,'强调看见当时正在进行的动作，用 see sb. doing sth.，因此选 playing。原卷没有限定这个角度，play 用在 see sb. do sth. 中也符合语法，可描述看到她打球这件事。'),
+      choose('Which word has a different pronunciation for the letters in brackets?',
+        ['d[oo]r','l[oo]k','c[oo]k','b[oo]k'],0,'按本卷采用的英式读音，door 的 oo 对应 /ɔː/，look、cook 和 book 的 oo 都是 /ʊ/。'),
+      choose('The man over there is our teacher. He teaches ____ English.',
+        ['I','us','we','our'],1,'teach sb. sth. 表示“教某人某学科或内容”。sb. 在这里用宾格 us。'),
+      choose('Every year, ____ visitors come to Guilin to enjoy its beautiful mountains and rivers.',
+        ['five thousands of','thousands of','thousand of','five thousands'],1,'thousands of 表示“成千上万的”。说确切数量时用 five thousand visitors，thousand 后不加 -s 或 of。'),
+      choose('—What ____ do you want to eat?\n—Some beef and some orange juice.',
+        ['other','another','others','else'],3,'else 放在疑问词 what 等词后。What else? 可以改写为 What other things?，other 后要有它修饰的名词。'),
+      choose('He often spends half an hour ____ books before sleeping.',
+        ['to read','reading','read','reads'],1,'spend time doing sth. 表示“花时间做某事”，所以用 reading。'),
+      choose('—Could I ____ your bike?\n—Sorry, I ____ it to Alice this morning.',
+        ['borrow; kept','lend; borrowed','borrow; lent','lend; lent'],2,'从别人那里借来用 borrow，借给 Alice 用 lend sth. to Alice。this morning 在此指已经发生的事，lend 的过去式是 lent。'),
+      choose('Simon eats only ____ food for lunch. I think he may be hungry now.',
+        ['a few','few','a little','little'],2,'food 在句中是不可数名词。only a little food 表示“只有一点食物”。a few 和 few 后接可数名词复数。')
+    ],undefined,21],
     ['word-bank','第 29–35 题 · 校园介绍选词填空',[
       fill('Let me ____.','show you around','let sb. do sth. 中用动词原形。show sb. around 表示“带某人参观”。'),
       fill('You can find a ____ with a lot of classrooms and offices.','building','a 后接单数可数名词。下文的教室和办公室都在这栋楼里。'),

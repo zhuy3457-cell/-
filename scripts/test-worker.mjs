@@ -369,13 +369,13 @@ test('Unit 4 Integration worksheet includes both pages and preserves the origina
   }))});
   assert.deepEqual(grades.results.map(result=>result.correct),answers.map(([, , correct])=>correct));
 });
-test('school worksheet grades questions 29–52 and pairs the green-school passage with all six choices',async ()=>{
+test('school worksheet grades questions 21–52 and pairs the green-school passage with all six choices',async ()=>{
   const key = 'classroom-u3-school-dreams';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'english',scope_id});
-  assert.equal(course.question_count,24);
-  let next = 29;
-  for (const [group,count] of [['word-bank',7],['grammar',10],['translation',2],['restoration',5]]) {
+  assert.equal(course.question_count,32);
+  let next = 21;
+  for (const [group,count] of [['choice',8],['word-bank',7],['grammar',10],['translation',2],['restoration',5]]) {
     const quiz = await good('draw_questions',{scope_id,group_id:key+'-'+group,count});
     const ids = Array.from({length:count},(_,index)=>key+'-'+(next+index));
     assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),ids);
@@ -384,14 +384,17 @@ test('school worksheet grades questions 29–52 and pairs the green-school passa
       question.material.includes('[48]') && question.material.includes('[52]')));
   }
   const answers = [
+    ...['A','A','B','B','D','B','C','C'].map((answer,index)=>[21+index,answer,true]),
     [29,'show you around',true],[36,'has',true],[37,'work',true],[39,'so',true],[39,'but',false],[40,'like',true],
     [44,'chatting',true],[46,['In fact','cares about'],true],[47,['Exciting matches','take place'],true],
     ...['E','F','C','A','D'].map((answer,index)=>[48+index,answer,true])
   ];
-  const graded = await good('grade_homework',{record:false,submissions:answers.map(([number,answer])=>({
-    question_id:key+'-'+number,answer
-  }))});
-  assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
+  for (const batch of [answers.slice(0,8),answers.slice(8)]) {
+    const graded = await good('grade_homework',{record:false,submissions:batch.map(([number,answer])=>({
+      question_id:key+'-'+number,answer
+    }))});
+    assert.deepEqual(graded.results.map(result=>result.correct),batch.map(([, ,correct])=>correct));
+  }
 });
 test('midterm and weekend materials expose the new upper-term courses and targeted marking',async ()=>{
   for (const [subject,key,count] of [
