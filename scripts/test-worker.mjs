@@ -623,6 +623,22 @@ test('geography exam keeps pages 5 and 6, grades multi-select letters, and suppl
   }))});
   assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
 });
+test('Tiangong exam has its own page group and grades all six parts of question 39',async ()=>{
+  const key = 'geo-exam-earth-page-6';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'geography',scope_id});
+  assert.equal(course.question_count,19);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[5,8,6]);
+  const quiz = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-8',count:6});
+  assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),
+    Array.from({length:6},(_,index)=>key+'-39-'+(index+1)));
+  assert.ok(quiz.questions.every(question=>question.diagram?.url.endsWith('/geography-exam-tiangong.webp')));
+  const answers = ['亚欧',['北美洲','大洋洲'],'D','C','南极洲','北冰洋'];
+  const graded = await good('grade_homework',{record:false,submissions:answers.map((answer,index)=>({
+    question_id:key+'-39-'+(index+1),answer
+  }))});
+  assert.equal(graded.correct,6);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});

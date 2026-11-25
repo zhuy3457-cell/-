@@ -142,10 +142,12 @@ const courseCatalog = (() => {
     geography: {上: geoReviewModules.map(module => {
       if (!module.firstPageIds) return topicCourse(module.key);
       const laterPage = fullGroup(module.key,module.laterPageTitle);
-      laterPage.ids = laterPage.ids.filter(id=>!module.firstPageIds.includes(id));
+      const extraPages = module.extraPageGroups ?? [];
+      const separateIds = new Set([...module.firstPageIds,...extraPages.flatMap(group=>group.ids)]);
+      laterPage.ids = laterPage.ids.filter(id=>!separateIds.has(id));
       return makeCourse(module.key,module.title,module.description,[
         {key:module.key+'-page-'+module.firstPageNumber,title:module.firstPageTitle,ids:module.firstPageIds},
-        laterPage
+        laterPage,...extraPages
       ],[module.key]);
     })},
     biology: {上: biologyReviewModules.map(module => topicCourse(module.key))}

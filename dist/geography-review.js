@@ -1119,11 +1119,43 @@ geoReviewModules.push((() => {
     multi('32','读图 10 判断，距离秋分最近的两个节气分别是',
       ['立秋','白露','寒露','冬至'],'BC','秋分的前一个节气是白露，下一个节气是寒露。',solarTerms)
   ];
+  const tiangong = {
+    material:'天宫空间站是我国自主研发的空间站系统。根据图 16 中某时刻的位置和飞行轨迹，回答第 39 题。',
+    diagram:{src:"geography-exam-tiangong.webp",alt:'图 16。西半球图从左至右可见太平洋、美洲和大洋 C。B 标在墨西哥以北的大陆，E 指向连接南北美洲的狭窄地带。东半球图中，A 在亚洲西侧、非洲以北，D 标在印度洋和太平洋之间的大岛上。空间站标在南美洲，箭头指向东，下一站经过 C 所在海域。'}
+  };
+  const pageEight = [
+    question('39-1','亚洲大陆与图中 A 所在的大陆连成一体，合称为什么大陆？','亚欧大陆',
+      'A 位于欧洲。亚洲和欧洲在陆地上相连，合称亚欧大陆，也称欧亚大陆。',{
+        ...tiangong,steps:[{label:'大陆名称',answer:'亚欧大陆',aliases:['亚欧','欧亚大陆','欧亚'],text:true}]
+      }),
+    question('39-2','图中 B、D 分别代表哪个大洲？请按顺序填写。','北美洲、大洋洲',
+      'B 标在北美洲。D 标在澳大利亚大陆上，题目问的是大洲，应填大洋洲。',{
+        ...tiangong,steps:[{label:'B 大洲',answer:'北美洲',aliases:['北美'],text:true},
+          {label:'D 大洲',answer:'大洋洲',aliases:[],text:true}]
+      }),
+    question('39-3','沿图示飞行方向，天宫空间站接下来将飞过的大洋 C 是？','大西洋',
+      '沿轨迹从南美洲向东，下一段经过南美洲和非洲之间的大西洋，选 D。',{
+        ...tiangong,options:['印度洋','太平洋','北冰洋','大西洋']
+      }),
+    question('39-4','图中洲界 E 是？','巴拿马运河',
+      'E 位于中美洲。北美洲和南美洲通常以巴拿马运河为界，选 C。',{
+        ...tiangong,options:['乌拉尔山脉','苏伊士运河','巴拿马运河','白令海峡']
+      }),
+    question('39-5','跨经度最广、唯一没有人类定居的大洲是？','南极洲',
+      '南极洲横跨所有经度。科考人员会在这里工作和短期居住，但没有常住居民。',{
+        ...tiangong,steps:[{label:'大洲名称',answer:'南极洲',aliases:[],text:true}]
+      }),
+    question('39-6','按试卷的四大洋分类，面积最小的大洋是？','北冰洋',
+      '四大洋中，北冰洋的面积最小，主要位于北极地区。',{
+        ...tiangong,steps:[{label:'大洋名称',answer:'北冰洋',aliases:[],text:true}]
+      })
+  ];
   return {
-    key,title:'七上地理试卷第 5–6 页 · 地图与地球运动',range:'第 5–6 页 · 第 28–37 题（可独立作答的小题）',
-    description:'练习地图选用、比例尺、二十四节气、五带与北斗经纬网。多选题用字母填写，顺序不限。',
+    key,title:'七上地理试卷第 5、6、8 页 · 地图、地球运动与世界海陆',range:'第 5、6、8 页 · 第 28–37、39 题（可独立作答的小题）',
+    description:'练习地图选用、比例尺、二十四节气、五带、北斗经纬网和天宫轨迹图。多选题用字母填写，顺序不限。',
     firstPageIds:pageFive.map(item=>item.id),
     firstPageNumber:5,firstPageTitle:'第 5 页 · 观赛地图与二十四节气',laterPageTitle:'第 6 页 · 地球运动与经纬网',
+    extraPageGroups:[{key:key+'-page-8',title:'第 8 页 · 天宫空间站与世界海陆',ids:pageEight.map(item=>item.id)}],
     notes:[
       {label:'图上和实地距离',text:'先统一单位，再用图上距离除以实地距离。查导航时分开比较用时和距离。'},
       {label:'读经纬网',text:'用纬线确定纬度，再沿经线确定经度。赤道是南北半球的分界线。东、西半球的分界线是20°W和160°E。'},
@@ -1154,7 +1186,8 @@ geoReviewModules.push((() => {
       }),
       question('37-3','热带与南温带的分界线是哪里？','南回归线','热带南界是南回归线，约在23.5°S。',{
         steps:[{label:'分界线',answer:'南回归线',aliases:['23.5°S','南纬23.5°'],text:true}]
-      })
+      }),
+      ...pageEight
     ]
   };
 })());
