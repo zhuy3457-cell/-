@@ -1131,6 +1131,59 @@ function stepReview(question, submitted) {
       (ok?'':'<span>你的答案　'+(esc(value.trim())||'（空白）')+'</span>')+'<span>正确结果　'+esc(step.answer)+(step.unit?' '+esc(step.unit):'')+'</span></li>';
   }).join('')+'</ul>';
 }
+const answerAnimationTimers = new WeakMap();
+function answerAnimation(question) {
+  const frames = question.answerFrames;
+  return '<div class="answer-animation" data-answer-animation="'+esc(question.id)+'" data-frame="0">'+
+    diagramFigure(frames[0])+'<div class="answer-animation-controls" role="group" aria-label="分步动画">'+
+    '<button class="btn secondary" type="button" data-animation="previous" disabled>上一步</button>'+
+    '<button class="btn secondary" type="button" data-animation="play">播放动画</button>'+
+    '<button class="btn secondary" type="button" data-animation="next">下一步</button>'+
+    '<span data-animation-count role="status">第 1 / '+frames.length+' 步</span></div></div>';
+}
+function controlAnswerAnimation(button) {
+  const animation = button.closest('[data-answer-animation]');
+  if (!animation) return;
+  const frames = questionById.get(animation.dataset.answerAnimation).answerFrames;
+  const play = animation.querySelector('[data-animation="play"]');
+  const last = frames.length-1;
+  const show = index=>{
+    const frame = frames[index];
+    const image = animation.querySelector('img');
+    image.src = frame.src;
+    image.alt = frame.alt;
+    animation.querySelector('figcaption').textContent = frame.caption;
+    animation.dataset.frame = index;
+    animation.querySelector('[data-animation-count]').textContent = '第 '+(index+1)+' / '+frames.length+' 步';
+    animation.querySelector('[data-animation="previous"]').disabled = index===0;
+    animation.querySelector('[data-animation="next"]').disabled = index===last;
+  };
+  const wasPlaying = answerAnimationTimers.has(animation);
+  const pause = ()=>{
+    clearTimeout(answerAnimationTimers.get(animation));
+    answerAnimationTimers.delete(animation);
+    play.textContent = '播放动画';
+  };
+  pause();
+  const index = Number(animation.dataset.frame);
+  if (button.dataset.animation==='previous') {
+    show(Math.max(0,index-1));
+  } else if (button.dataset.animation==='next') {
+    show(Math.min(last,index+1));
+  } else if (!wasPlaying) {
+    if (index===last) show(0);
+    play.textContent = '暂停动画';
+    const advance = ()=>{
+      if (!animation.isConnected || animation.closest('details:not([open])')) return pause();
+      const next = Number(animation.dataset.frame)+1;
+      show(next);
+      if (next===last) pause();
+      else answerAnimationTimers.set(animation,setTimeout(advance,1800));
+    };
+    answerAnimationTimers.set(animation,setTimeout(advance,1800));
+  }
+}
+
 function answerExplanation(question) {
   const summary = question.explanation?.trim();
   const groups = question.solution ?? [];
@@ -1140,7 +1193,7 @@ function answerExplanation(question) {
     '<ol>'+lines.map(line=>'<li>'+esc(line)+'</li>').join('')+'</ol></section>').join('');
   return '<section class="worked-solution"><h2>'+title+'</h2>'+
     (summary?'<p class="solution-overview">'+esc(summary)+'</p>':'')+
-    parts+diagramFigure(question.answerDiagram)+'</section>';
+    parts+(question.answerFrames ? answerAnimation(question) : diagramFigure(question.answerDiagram))+'</section>';
 }
 function quizPage() {
   const s = state.session;
@@ -1236,7 +1289,9 @@ function render(moveFocus = false) {
 app.addEventListener('click',event => {
   const button = event.target.closest('button');
   if (!button) return;
-  if (button.dataset.term) {
+  if (button.dataset.animation) {
+    controlAnswerAnimation(button);
+  } else if (button.dataset.term) {
     state.term = button.dataset.term;
     save(); render();
     app.querySelector('[data-term="'+state.term+'"]')?.focus({preventScroll:true});

@@ -1081,3 +1081,24 @@ test('grading includes answer guidance for recall items that previously had no e
   assert.match(grade.results[0].explanation,/have \+ 餐名/);
   assert.match(grade.results[1].explanation,/暖和.*轻声/);
 });
+
+test('visual explanations are available only in feedback and ship their images',async ()=>{
+  const id = 'bio-summary-cell-division';
+  const practice = await good('draw_questions',{subject:'biology',scope_id:'course:bio-review-cells',count:6});
+  const question = practice.questions.find(item=>item.question_id===id);
+  assert.match(question.diagram.url,/bio-summary-cell-division\.webp$/);
+  assert.equal(question.answer_diagram,undefined);
+  assert.doesNotMatch(JSON.stringify(question),/answer-division-/);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:id,answer:'B'},
+    {question_id:'geo-124-weather-day',answer:'C'},
+    {question_id:'equation-app-parameters-6',answer:'C'}
+  ]});
+  assert.equal(grade.correct,3);
+  assert.match(grade.results[0].answer_diagram.url,/answer-division-3\.webp$/);
+  for (const {answer_diagram:{url}} of grade.results) {
+    const response = await request(new URL(url).pathname);
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('content-type'),'image/webp');
+  }
+});

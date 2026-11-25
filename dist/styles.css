@@ -331,3 +331,7 @@ dialog::backdrop{background:#23193968}
 .history-paging{justify-content:center}
 .record-options{padding-inline-start:2rem}
 .record-options li{padding:5px 0}
+.answer-animation{margin-block:12px}
+.answer-animation .question-figure{margin:0}
+.answer-animation-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.answer-animation-controls [role=status]{color:var(--muted);font-size:.86rem;font-variant-numeric:tabular-nums}

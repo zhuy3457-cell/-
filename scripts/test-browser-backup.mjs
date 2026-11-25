@@ -127,3 +127,12 @@ for (const id of ['classroom-u4-welcome-reading-1','chinese-weekend-two-review-1
 }
 assert.match(practice.run('answerExplanation(questionById.get("history-qin-han-evidence-6"))'),/沿箭头读年代/);
 console.log('全科答后思路覆盖，数学步骤、知识题解释、默写提示和讲评配图已验证。');
+
+const animated = practice.run('questionById.get("bio-summary-cell-division")');
+assert.equal(animated.answerFrames.length,3);
+assert.match(practice.run('answerExplanation(questionById.get("bio-summary-cell-division"))'),/播放动画.*下一步/);
+assert.match(practice.run('answerExplanation(questionById.get("geo-124-weather-day"))'),/气温|观测值/);
+if (process.argv[2]) {
+  for (const frame of animated.answerFrames) assert.match(frame.src,/^data:image\/webp;base64,/);
+}
+console.log('答后图片和三步动画已验证。');
