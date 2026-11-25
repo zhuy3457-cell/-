@@ -748,9 +748,73 @@ const englishClassroomModules = (() => {
       fill('Her school life is ____ (interest).','interesting','用 interesting 描述学校生活有趣。interested 常用于描述人的感受。')
     ],marySchoolDay]
   ]);
+  const schoolTour = [
+    'Word bank: as well, building, soon, show you around, large, quite, use',
+    'My school is big and beautiful. Let me [29].',
+    'If you walk along the road, you can find a [30] with a lot of classrooms and offices. There are many new computers in each classroom. Students can [31] them to find answers to their questions. We also have lessons and learn knowledge (知识) in it. In front of it, there’s a [32] and clean playground. Students like doing sports there after class. An exciting sports meeting will take place in it [33]. Our school has a modern library [34]. There are all different kinds of books in it. Many of the books are [35] interesting.',
+    'My school is also my home. I have a great time with my teachers and classmates.'
+  ].join('\n\n');
+  const teachingDream = [
+    'Do you have a dream? What are you going to be when you grow up? Almost everyone [36] (have) their own dreams in their life. Dreams are very important to them. Dreams can make them [37] (work) hard.',
+    'Wu Jun is studying in a school now. He enjoys [38] (read) books and learning new things. He likes to share his knowledge with others, [39] his dream is to become a teacher in West China. He wants to be a good teacher [40] Zhang Guimei, a great teacher from Yunnan Province.',
+    'Some places in West China [41] (real) need teachers. Being a teacher is great because he can help children learn [42] (many) about the world. He will be nice to his students and make friends [43] kids. He will spend time [44] (chat) with them. He will give them love and teach [45] (they) how to be a useful person. He thinks it is the greatest job in the world.'
+  ].join('\n\n');
+  const greenSchool = [
+    'Our school is a green school. What makes it green? [48]',
+    'First, we have a lot of trees. They are in front of and behind every building. Some trees are green only in spring and summer. [49] The trees make our school look like a green park.',
+    'And our school is a green one because we “go green”. How do we go green? [50] On green days, no students or teachers go to school by car. And we have Clean-up Day every month. That day, students go to pick up rubbish. Also, we have Tree-planting Day every spring. We plant young trees on hills. [51] They do many things like watering.',
+    'Green is not only a colour. [52] Please go green with us and make the world a more beautiful place.'
+  ].join('\n\n');
+  const greenSchoolOptions = [
+    'The students there look after those trees well.',
+    'Birds sing happily in the trees.',
+    'We have two green days every month.',
+    'It is also about life.',
+    'Let’s have a look together.',
+    'And some are green all year.'
+  ];
+  const schoolAndDreams = module('classroom-u3-school-dreams','校园与梦想 · 英语学案 29–52','七上英语',
+    '练选词填空、短文填空、句子翻译和信息还原。第 48–52 题使用第 3 页的短文和第 4 页的六个选项。',[
+    ['校园词组','show sb. around 带某人参观，care about 关心，take place 举行或发生。as well 表示“也”，常放句末。'],
+    ['常考动词形式','everyone 作主语时，谓语用第三人称单数。let 或 make sb. do 后用动词原形，enjoy doing 和 spend time doing 后用动名词。'],
+    ['信息还原','根据上下句判断空格是总领、补充、解释还是总结，留意 some、they、it 和 those trees 等指代。']
+  ],[
+    ['word-bank','第 29–35 题 · 校园介绍选词填空',[
+      fill('Let me ____.','show you around','let sb. do sth. 中用动词原形。show sb. around 表示“带某人参观”。'),
+      fill('You can find a ____ with a lot of classrooms and offices.','building','a 后接单数可数名词。下文的教室和办公室都在这栋楼里。'),
+      fill('Students can ____ them to find answers to their questions.','use','can 后接动词原形。them 指前文的 computers。'),
+      fill('There’s a ____ and clean playground.','large','large 和 clean 都是形容词，一起修饰 playground。'),
+      fill('An exciting sports meeting will take place in it ____.','soon','soon 意为“不久”，与将来时 will take place 呼应。'),
+      fill('Our school has a modern library ____.','as well','as well 表示“也”，通常位于句末。'),
+      fill('Many of the books are ____ interesting.','quite','quite 是副词，修饰形容词 interesting。')
+    ],schoolTour,29],
+    ['grammar','第 36–45 题 · 梦想短文填空',[
+      fill('Almost everyone ____ (have) their own dreams in their life.','has','主语 everyone 按第三人称单数处理。have 的第三人称单数是 has。'),
+      fill('Dreams can make them ____ (work) hard.','work','make sb. do sth. 表示“使某人做某事”，make 的宾补用动词原形。'),
+      fill('He enjoys ____ (read) books and learning new things.','reading','enjoy 后接动名词，reading 与 learning 并列。'),
+      fill('He likes to share his knowledge with others, ____ his dream is to become a teacher in West China.（填表示因果关系的连词）','so','前文是原因，后文是结果，用 so 表示“所以”。'),
+      fill('He wants to be a good teacher ____ Zhang Guimei.','like','此处用介词 like 表示“像……一样”，后面直接接人名。'),
+      fill('Some places in West China ____ (real) need teachers.','really','用副词 really 修饰动词 need。'),
+      fill('He can help children learn ____ (many) about the world.','more','many 的比较级是 more。learn more about 表示“更多地了解”。'),
+      fill('He will be nice to his students and make friends ____ kids.','with','make friends with sb. 表示“和某人交朋友”。'),
+      fill('He will spend time ____ (chat) with them.','chatting','spend time doing sth. 表示“花时间做某事”。chat 要双写 t 再加 -ing。'),
+      fill('He will give them love and teach ____ (they) how to be a useful person.','them','teach 后需要宾格，they 的宾格是 them。')
+    ],teachingDream,36],
+    ['translation','第 46–47 题 · 翻译句子',[
+      fill('事实上，我们的班主任非常关心我们。\n____, our form teacher ____ us a lot.',['In fact','cares about'],'In fact 表示“事实上”。form teacher 是第三人称单数，care about 用 cares about。'),
+      fill('体育节期间经常举行激动人心的比赛。\n____ often ____ during the sports festival.',['Exciting matches','take place'],'take place 表示“举行”，主语 matches 是复数，用 take。')
+    ],undefined,46],
+    ['restoration','第 48–52 题 · 绿色校园信息还原',[
+      choose('哪句话最适合第 48 空？',greenSchoolOptions,4,'前句提问 What makes it green?，后面分段介绍。Let’s have a look together. 承接问题并引出下文。'),
+      choose('哪句话最适合第 49 空？',greenSchoolOptions,5,'前一句说有些树只在春夏是绿色，接着补充另一些树全年常绿。'),
+      choose('哪句话最适合第 50 空？',greenSchoolOptions,2,'下一句以 On green days 开头。此处先介绍每月有两个绿色出行日。'),
+      choose('哪句话最适合第 51 空？',greenSchoolOptions,0,'those trees 指前文新种的小树。下一句 They do many things like watering. 说明学生怎样照顾树。'),
+      choose('哪句话最适合第 52 空？',greenSchoolOptions,3,'前句的 not only a colour 和下句 It is also about life 相呼应，最后一句号召大家践行绿色生活。')
+    ],greenSchool,48]
+  ]);
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
-    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams
   ];
 })();
 
