@@ -1071,3 +1071,13 @@ test('favorites sync carries legacy saves and removals across devices without re
   assert.equal((await post([], [{...add,ref:'c'.repeat(32)}])).status,200);
   assert.deepEqual(await read(owner),[other,id]);
 });
+
+test('grading includes answer guidance for recall items that previously had no explanation',async ()=>{
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'classroom-u4-welcome-reading-1',answer:['have breakfast','have lunch','have dinner']},
+    {question_id:'chinese-weekend-two-review-1',answer:'huo'}
+  ]});
+  assert.equal(grade.correct,2);
+  assert.match(grade.results[0].explanation,/have \+ 餐名/);
+  assert.match(grade.results[1].explanation,/暖和.*轻声/);
+});

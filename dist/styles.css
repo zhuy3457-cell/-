@@ -150,11 +150,14 @@ dialog::backdrop{background:#23193968}
 .result-review summary{cursor:pointer;line-height:1.55;overflow-wrap:anywhere}
 .result-review p{color:var(--muted);line-height:1.6;margin:7px 0 0 14px;font-size:.89rem;overflow-wrap:anywhere}
 .worked-solution{margin-top:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
-.worked-solution summary{cursor:pointer;color:var(--accent);font-weight:700}
+.worked-solution h2{font-size:1rem;color:var(--accent);margin:0 0 5px}
+#feedback{scroll-margin-top:16px}
+.worked-solution .solution-overview{margin:4px 0 0;white-space:pre-line}
 .solution-part{margin-top:10px}
 .solution-part+.solution-part{padding-top:9px;border-top:1px solid var(--line)}
 .solution-part h3{margin:0 0 4px;font-size:.94rem}
-.solution-part p{margin:3px 0 0;overflow-wrap:anywhere}
+.solution-part ol{margin:4px 0 0;padding-inline-start:1.5rem}
+.solution-part li{margin:3px 0;overflow-wrap:anywhere;white-space:pre-line}
 .result-status{border-radius:5px;font-size:.74rem;font-weight:750;padding:3px 6px;margin-right:7px;white-space:nowrap}
 .is-correct{color:#145940;background:#e4f6ec}
 .is-wrong{color:#8f2634;background:#ffebee}

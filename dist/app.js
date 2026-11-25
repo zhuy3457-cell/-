@@ -859,8 +859,7 @@ function recordPage(encodedRef, subject, page) {
     '<p>'+esc(item.date)+' · '+esc(topic.subject.name)+' · '+esc(topic.title)+' <span class="result-status '+(item.ok?'is-correct':'is-wrong')+'">'+
     (item.ok?'本次答对':'本次答错')+'</span></p><h1>'+esc(question.prompt)+'</h1>'+
     readingMaterial(question,true)+options+'<div class="feedback"><p><b>正确答案</b>　'+esc(question.correct)+'</p>'+
-    (question.explanation?'<p><b>解析</b>　'+esc(question.explanation)+'</p>':'')+
-    diagramFigure(question.answerDiagram)+workedSolution(question)+'</div>'+
+    answerExplanation(question)+'</div>'+
     '<div class="actions">'+actions+lessonLink(question.topic)+'</div></article></section>';
 }
 
@@ -1010,7 +1009,9 @@ function answer(current,currentQuestion) {
   rememberReadingView(current);
   save();
   render();
-  document.querySelector('#feedback')?.focus();
+  const feedback = document.querySelector('#feedback');
+  feedback?.focus({preventScroll:true});
+  feedback?.scrollIntoView({block:'start'});
 }
 function materialTable(table) {
   const columns = table.headers.map(header=>'<th scope="col">'+esc(header)+'</th>').join('');
@@ -1130,11 +1131,16 @@ function stepReview(question, submitted) {
       (ok?'':'<span>你的答案　'+(esc(value.trim())||'（空白）')+'</span>')+'<span>正确结果　'+esc(step.answer)+(step.unit?' '+esc(step.unit):'')+'</span></li>';
   }).join('')+'</ul>';
 }
-function workedSolution(question) {
-  if (!question.solution?.length) return '';
-  const groups = question.solution.map(({title,lines})=>'<section class="solution-part"><h3>'+esc(title)+'</h3>'+
-    lines.map(line=>'<p>'+esc(line)+'</p>').join('')+'</section>').join('');
-  return '<details class="worked-solution"><summary>查看完整解题过程</summary>'+groups+'</details>';
+function answerExplanation(question) {
+  const summary = question.explanation?.trim();
+  const groups = question.solution ?? [];
+  if (!summary && !groups.length && !question.answerDiagram) return '';
+  const title = groups.length ? '解题思路与步骤' : '解题思路';
+  const parts = groups.map(({title:heading,lines})=>'<section class="solution-part"><h3>'+esc(heading)+'</h3>'+
+    '<ol>'+lines.map(line=>'<li>'+esc(line)+'</li>').join('')+'</ol></section>').join('');
+  return '<section class="worked-solution"><h2>'+title+'</h2>'+
+    (summary?'<p class="solution-overview">'+esc(summary)+'</p>':'')+
+    parts+diagramFigure(question.answerDiagram)+'</section>';
 }
 function quizPage() {
   const s = state.session;
@@ -1159,8 +1165,7 @@ function quizPage() {
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
-      const explanation = question.explanation ? '<p>'+esc(question.explanation)+'</p>' : '';
-      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+explanation+diagramFigure(question.answerDiagram)+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+answerExplanation(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div>'+
       '<section class="result-review" id="answerReview" data-result-view="'+view+'"><div class="section-head result-review-head"><h2 class="group-title">本组答题回顾</h2>'+filter+'</div><ul id="answerReviewList">'+overview+'</ul></section></section>';
@@ -1179,8 +1184,7 @@ function quizPage() {
     }).join('')+'</div>'
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="整数、小数或分数（如 1/2）" autocomplete="off" maxlength="32" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
-  const explanation = q.explanation ? '<p><b>解析</b>　'+esc(q.explanation)+'</p>' : '';
-  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+explanation+diagramFigure(q.answerDiagram)+workedSolution(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
+  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+answerExplanation(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
@@ -1527,4 +1531,45 @@ window.addEventListener('hashchange',()=>render(true));
 window.addEventListener('pagehide',()=>{
   for (const audio of app.querySelectorAll('audio[data-listening-player]')) saveListeningPosition(audio,true);
 });
+const englishRecallPatterns = [
+  [/\benjoy (?:\w+ing|paper-cutting)\b/i,'enjoy 后接动作时用 -ing 形式，把动词和后面的活动一起记。'],
+  [/\bsee sb\. doing sth\./i,'see + 人 + doing 表示看见某人正在做某事。doing 对应题干中的“正在”。'],
+  [/\blearn how to\b/i,'用 learn how to + 动词原形表达“学习怎样做某事”。'],
+  [/\btake turns to\b/i,'用 take turns to + 动词原形表达“轮流做某事”。'],
+  [/\bthe key to \w+ing\b/i,'the key to 中的 to 是介词，后接动作时用 -ing 形式。'],
+  [/\b(?:in spring|in summer|in autumn|in winter)\b/i,'季节前通常用 in。写多个季节时，按题干顺序逐空核对。'],
+  [/\bhow many\b/i,'how many 用来问可数事物的数量，后面的名词用复数形式。'],
+  [/\b(?:have breakfast|have lunch|have dinner)\b/i,'表达“吃某一餐”时常用 have + 餐名，如 have breakfast。餐名在这种用法中通常不加冠词。'],
+  [/^(?:in|on|at) \b/i,'先确认题干表达的是时间还是地点，再把开头的介词和后面的词组一起检查。'],
+  [/^(?:a|an|the) \b/i,'先找中心名词，再核对前面的冠词和修饰词。a 或 an 的选择取决于下一个词的开头读音。']
+];
+function recallGuidance(question) {
+  const answer = question.steps[0].answer;
+  if (question.subject==='chinese') {
+    if (answer==='huo') return '把字放回词语“暖和”里读，第二个音节读轻声，写 huo 时不标声调。';
+    if (answer==='shang') return '按“衣裳”这个词的读法判断，“裳”在这里读轻声，写 shang 时不标声调。';
+    if (answer==='zhuó') return '先用“着落”确定多音字“着”的读音。这里表示有归处，读 zhuó。';
+    const tones = {'\u0304':'一','\u0301':'二','\u030c':'三','\u0300':'四'};
+    const tone = [...answer.normalize('NFD')].map(char=>tones[char]).find(Boolean);
+    return '把加注的字放回整个词语里读，再核对声母、韵母和声调。'+(tone ? '这个音节读第'+tone+'声。' : '轻声音节不标声调。');
+  }
+  if (question.prompt.includes('one 的序数词')) return '题目问顺序，one 要换成不规则的序数词 first。';
+  if (question.prompt.includes('的复数')) {
+    if (answer==='duties') return 'duty 以辅音字母加 y 结尾，变复数时先把 y 改成 i，再加 -es。';
+    if (answer==='videos') return 'video 的复数直接在词尾加 -s，写成 videos。';
+  }
+  const pattern = englishRecallPatterns.find(([test])=>test.test(question.correct));
+  if (pattern) return pattern[1];
+  if (question.steps.length>1) return '先把中文提示分成几部分，让每一部分与相应的空对应。填完后按题干顺序核对词组和拼写。';
+  if (question.prompt.includes('____')) return '把英文放回空格所在的句子里读一遍，检查前后词语能否搭配，以及词形能否保持句意完整。';
+  if (/^[a-z'-]+$/i.test(answer)) return '先根据中文词义和括号里的提示确定要写的词，再逐字母核对拼写和题目要求的词形。';
+  return '先弄清中文提示的意思，再把这组英文当作一个搭配来记。核对关键词、词序和词尾。';
+}
+for (const question of allQuestions) {
+  if (!question.explanation?.trim() && !question.solution?.length && question.steps?.length &&
+      (question.topic==='chinese-weekend-two-review' || question.steps.every(step=>step.text==='english'))) {
+    question.explanation = recallGuidance(question);
+  }
+}
+
 render();

@@ -93,7 +93,7 @@ await tablet.run('syncStudyRecords()');
 await second.run('syncStudyRecords()');
 assert.deepEqual(JSON.parse(second.run('JSON.stringify(state.favorites)')),tablet.context.seed.favorites);
 assert.equal(second.run('state.attempts.length'),3);
-assert.match(second.run('recordPage("restore-a","all",1)'),/本次答错.*解析/s);
+assert.match(second.run('recordPage("restore-a","all",1)'),/本次答错.*解题思路/s);
 
 tablet.run('const removed=state.favorites.shift(); queueFavoriteChange(removed,false)');
 await tablet.run('syncStudyRecords()');
@@ -110,3 +110,20 @@ await tablet.run('syncStudyRecords()');
 assert.equal(tablet.run('state.favorites.length'),2);
 assert.equal(second.run('Object.keys(state.favoriteChanges).length'),0);
 console.log('两台模拟设备同步旧收藏、取消与重试通过，答题明细可打开历史题目。');
+
+const practice = browser();
+assert.equal(practice.run("allQuestions.filter(q=>isActiveQuestion(q.id) && !answerExplanation(q)).length"),0);
+practice.run("const worked = allQuestions.find(q=>q.subject==='math' && q.solution?.length);"+
+  "state.session={key:'test',ids:[worked.id],label:'测试',back:'#home',index:0,answers:[],selected:''};");
+assert.doesNotMatch(practice.run('quizPage()'),/class="worked-solution"/);
+practice.run("state.session.answers[0]={id:worked.id,ok:true,raw:'合成答案',fields:[]};");
+assert.match(practice.run('quizPage()'),/正确(?:答案|结果).*<section class="worked-solution"><h2>解题思路与步骤<\/h2>.*<ol>/s);
+practice.run('state.session.index=1;');
+assert.match(practice.run('quizPage()'),/本组答题回顾.*解题思路与步骤/s);
+for (const id of ['classroom-u4-welcome-reading-1','chinese-weekend-two-review-1','geo-124-weather-day']) {
+  const html = practice.run('answerExplanation(questionById.get('+JSON.stringify(id)+'))');
+  assert.match(html,/<h2>解题思路<\/h2><p class="solution-overview">.+<\/p>/s);
+  assert.doesNotMatch(html,/<details/);
+}
+assert.match(practice.run('answerExplanation(questionById.get("history-qin-han-evidence-6"))'),/沿箭头读年代/);
+console.log('全科答后思路覆盖，数学步骤、知识题解释、默写提示和讲评配图已验证。');
