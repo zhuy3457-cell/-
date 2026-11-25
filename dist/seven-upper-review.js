@@ -7,9 +7,10 @@ const sevenUpperReview = (() => {
   });
   function topic(subject,key,title,description,notes,groups) {
     const questions = [];
+    let questionNumber = 1;
     const sections = groups.map(([keySuffix,stage,items,table])=>({
       key:keySuffix,title:stage,ids:items.map(item=>{
-        const id = key+'-'+(questions.length+1);
+        const id = item.id ?? key+'-'+questionNumber++;
         questions.push({...item,id,stage,...(table ? {table} : {})});
         return id;
       })
@@ -188,7 +189,13 @@ const sevenUpperReview = (() => {
         '定点 3 与 15 相距 12。两点之间距离和只有 12。',
         '在区间外，多出的 20−12=8 由两段相同的额外距离组成，所以近端点距离为 4。',
         '两侧分别得到 x=3−4=−1 和 x=15+4=19。'
-      ],axis([3,15]))
+      ],axis([3,15])),
+      {...multiple('已知 |a+3|+|a−5|=10，求 a 的所有值。',roots('a',-4,6),[
+        '把 |a+3| 看作 a 到 −3 的距离，把 |a−5| 看作 a 到 5 的距离。',
+        '−3 和 5 相距 8。在两点之间，距离和都是 8，因此解在线段外。',
+        '在线段外，两段距离合计多出 10−8=2，等于动点到较近端点距离的两倍，所以动点离较近端点 1 个单位。',
+        '向左得 a=−3−1=−4，向右得 a=5+1=6。代回，两组距离分别为 1、9 和 9、1，距离和都是 10。'
+      ],axis([-3,5])),id:'math-absolute-distance-review-distance-equation'}
     ]],
     ['minimum','绝对值之和的最小值',[
       multiple('求 |x+5|+|x−7|+|x−3| 的最小值及取最小值时的 x。',[['最小值',12],['x',3]],[

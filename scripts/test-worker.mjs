@@ -239,33 +239,37 @@ test('vocabulary and sentence sheets preserve order, marking and the Unit 1–2 
   assert.ok(u1.practice_groups.some(group=>group.group_id==='english-u12-sentence-dictation-friends'));
   assert.ok(u2.practice_groups.some(group=>group.group_id==='english-u2-vocab-dictation-forms'));
 });
-test('both math photo questions provide worked solutions and grade the exact numerical answers',async ()=>{
-  const absolute = await good('draw_questions',{query:'七上数学绝对值与非负性',count:1});
+test('math photo questions provide worked solutions and grade the exact numerical answers',async ()=>{
+  const absolute = await good('draw_questions',{query:'七上数学绝对值与非负性',count:2});
   const variable = await good('draw_questions',{query:'七上数学代数式与字母无关',count:1});
-  assert.equal(absolute.questions[0].question_id,'math-absolute-nonnegative-1');
-  assert.match(absolute.questions[0].prompt,/\(a−3\)²\|b\|/);
+  const original = absolute.questions.find(q=>q.question_id==='math-absolute-nonnegative-1');
+  const added = absolute.questions.find(q=>q.question_id==='math-absolute-nonnegative-2');
+  assert.match(original?.prompt,/\(a−3\)²\|b\|/);
+  assert.match(added?.prompt,/\|a−1\|=−\|b\+5\|/);
   assert.equal(variable.questions[0].question_id,'math-variable-independent-1');
   const graded = await good('grade_homework',{record:false,submissions:[
-    {question_id:absolute.questions[0].question_id,answer:5},
-    {question_id:variable.questions[0].question_id,answer:'−3'}
+    {question_id:original.question_id,answer:5},
+    {question_id:variable.questions[0].question_id,answer:'−3'},
+    {question_id:added.question_id,answer:-5}
   ]});
-  assert.equal(graded.correct,2);
+  assert.equal(graded.correct,3);
   assert.match(JSON.stringify(graded.results[0].solution),/\|b−2\|=0/);
   assert.match(JSON.stringify(graded.results[1].solution),/2y\+6=0/);
 });
 test('new absolute-value and segment exercises grade every root, endpoint and count',async ()=>{
   const course = await good('explain_topic',{query:'数学零点分段、距离与最小值'});
-  assert.equal(course.question_count,9);
-  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[2,1,5,1]);
+  assert.equal(course.question_count,10);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[2,2,5,1]);
   const drawn = await good('draw_questions',{scope_id:course.scope_id,group_id:'math-absolute-distance-review-minimum',count:5});
   assert.ok(drawn.questions.every(q=>q.number_line?.marks.length>=2));
   const expected = [[-7,13],[-7,3],[-1,19],[12,3],[17,1],[18,-3,4],[7,1],[4,-1,3],18];
   const graded = await good('grade_homework',{record:false,submissions:[
     ...expected.map((answer,i)=>({question_id:'math-absolute-distance-review-'+(i+1),answer})),
     {question_id:'math-bar-model-review-1',answer:[12,16]},
+    {question_id:'math-absolute-distance-review-distance-equation',answer:[-4,6]},
     {question_id:'math-absolute-distance-review-6',answer:[18,-3,5]}
   ]});
-  assert.equal(graded.correct,10);
+  assert.equal(graded.correct,11);
   assert.deepEqual(graded.results.at(-1).fields.map(field=>field.correct),[true,true,false]);
   assert.match(JSON.stringify(graded.results[9].solution),/28−22=6/);
 });
