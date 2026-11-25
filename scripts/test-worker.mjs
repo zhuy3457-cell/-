@@ -330,6 +330,27 @@ test('Unit 3–5 worksheets and Chinese classroom reviews are available on the u
   ]});
   assert.equal(graded.correct,5,JSON.stringify(graded.results));
 });
+test('parents’ meeting cloze and school-day grammar preserve worksheet numbers and accept valid forms',async ()=>{
+  const key = 'classroom-u4-parents-mary';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'english',scope_id});
+  assert.equal(course.term,'上');
+  assert.equal(course.question_count,16);
+  const cloze = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-cloze',count:6});
+  const grammar = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-grammar',count:10});
+  const questions = new Map([...cloze.questions,...grammar.questions].map(question=>[question.question_id,question]));
+  for (let number=19;number<=34;number++) {
+    assert.ok(questions.get(key+'-'+number)?.material?.includes(number<=24?'parents’ meetings':'Mary gets up at 5:30 a.m.'));
+  }
+  const answers = [
+    [19,'with',true],[21,'good',true],[25,'exercises',true],[27,'to be',true],[27,'is',false],
+    [29,'dancing',true],[31,'cleaning',true],[33,'playing',true],[33,'to play',false]
+  ];
+  const grades = await good('grade_homework',{record:false,submissions:answers.map(([number,answer])=>({
+    question_id:key+'-'+number,answer
+  }))});
+  assert.deepEqual(grades.results.map(result=>result.correct),answers.map(([, , correct])=>correct));
+});
 test('midterm and weekend materials expose the new upper-term courses and targeted marking',async ()=>{
   for (const [subject,key,count] of [
     ['english','classroom-u4-midterm-dictation',48],

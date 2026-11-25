@@ -10,11 +10,11 @@ const englishClassroomModules = (() => {
   function choose(prompt,options,correct,explanation) {
     return {prompt,options,correct:options[correct],explanation,level:'standard'};
   }
-  function module(key,title,range,description,notes,groups,sources = []) {
+  function module(key,title,range,description,notes,groups,sources = [],startNumber = 1) {
     const questions = [];
     const sections = groups.map(([keySuffix,stage,items,material])=>{
       const ids = items.map(item=>{
-        const number = questions.length+1;
+        const number = questions.length+startNumber;
         const id = key+'-'+number;
         questions.push({...item,id,stage,prompt:number+'. '+item.prompt,...(material ? {material} : {})});
         return id;
@@ -658,9 +658,47 @@ const englishClassroomModules = (() => {
       choose('哪组内容最能覆盖征文要求的四个要点？',['学校很大、楼很高、图书种类多、校园很新','喜欢的场所和理由、师友相处、喜欢的活动、自己的感受','朋友的年龄、住处、电话号码、家庭成员','学校的面积、校名变化、地理位置、建校年份'],1,'四部分分别回答最喜欢的地点、老师朋友、喜欢的活动以及自己的感受。')
     ]]
   ]);
+  const parentsMeeting = [
+    'At parents’ meetings, teachers talk [19] parents. These meetings are very short, maybe five or ten [20]. These face-to-face talks are very [21] for teachers, parents and students.',
+    'In our school, students can listen to the conversation. They can sit near their parents. [22] do you feel when you hear your teachers and parents talk about you? I really feel [23], because I am good at all my [24].',
+    'What about parents’ meetings at your school?'
+  ].join('\n\n');
+  const marySchoolDay = [
+    'On weekdays, Mary gets up at 5:30 a.m. She dresses, washes her face and does morning [25] (exercise). She has breakfast at 6:30 a.m. [26] sunny mornings, she always rides a bike to school.',
+    'She gets to school at about 7:15 a.m. every day. She doesn’t like [27] (be) late. Classes begin at 8:00 a.m. In class, she listens to her teachers carefully and studies hard at all her lessons. She usually has bread and [28] glass of milk in the middle of the day. Classes are over at 4:30 p.m. After class, she often chats with her classmates and practises [29] (dance). She also takes part [30] different kinds of activities.',
+    'Her classmates often take turns [31] (clean) the classroom. Sometimes, she throws a Frisbee with other classmates. She gets home at 5:30 p.m. Later, her parents come back from work. Mary usually helps [32] (they) with different chores.',
+    'In the evening, she does her homework. Sometimes, she watches TV or reads storybooks. She seldom spends time [33] (play) computer games. She goes to bed at ten. Her school life is [34] (interest).'
+  ].join('\n\n');
+  const parentsAndSchoolDay = module('classroom-u4-parents-mary','Unit 4 · 家长会完形与校园生活语法','七上 Unit 4',
+    '学案第 19–34 题。阅读家长会和 Mary 的校园生活两段短文，练习上下文判断与常见语法搭配。',[
+    ['家长会常用搭配','talk with sb. 与某人交谈，talk about sth. 谈论某事。be good for 表示“对……有益”，be good at 表示“擅长……”。'],
+    ['动词形式','like doing / like to do 都可用。practise doing 和 spend time doing 后接动名词。take turns to do 和 take turns doing 都可表示轮流做某事。'],
+    ['校园生活词组','do morning exercises 做早操，on sunny mornings 在晴朗的早晨，take part in an activity 参加活动，help sb. with sth. 在某方面帮助某人。']
+  ],[
+    ['cloze','第 19–24 题 · 家长会完形',[
+      choose('Teachers talk ____ parents.',['with','about','for','like'],0,'talk with sb. 表示“与某人交谈”。下文的 face-to-face talks 说明老师和家长面对面交谈。'),
+      choose('These meetings are very short, maybe five or ten ____.',['hours','minutes','days','seconds'],1,'根据 very short 和交谈的语境，选 minutes，表示五到十分钟。'),
+      choose('These face-to-face talks are very ____ for teachers, parents and students.',['sorry','polite','good','bright'],2,'be good for 表示“对……有益”，符合家长会的语境。'),
+      choose('____ do you feel when you hear your teachers and parents talk about you?',['Where','Which','Who','How'],3,'How do you feel? 用 how 询问感受。'),
+      choose('I really feel ____ . 请根据短文选出符合上下文的词。',['happy','worried','lazy','ready'],0,'后半句说自己各门课都学得好，因此这里选 happy。'),
+      choose('I am good at all my ____.',['sports','lessons','stories','dreams'],1,'家长会的语境涉及在校学习，all my lessons 指“我的所有课程”。')
+    ],parentsMeeting],
+    ['grammar','第 25–34 题 · 校园生活语法',[
+      fill('She does morning ____ (exercise).','exercises','do morning exercises 是“做早操”。这里 exercise 用复数形式，拼作 exercises。'),
+      fill('____ sunny mornings, she always rides a bike to school.','On','描述某一类具体的早晨用 on，如 on sunny mornings。句首写 On。'),
+      fill('She doesn’t like ____ (be) late.',[['being','to be']],'like 后可接动名词或不定式，being late 和 to be late 都成立。'),
+      fill('She usually has bread and ____ glass of milk.','a','a glass of milk 表示“一杯牛奶”。'),
+      fill('After class, she practises ____ (dance).','dancing','practise 后接动名词。dance 去掉词尾 e 后加 -ing。'),
+      fill('She also takes part ____ different kinds of activities.','in','take part in 表示“参加”某项活动。'),
+      fill('Her classmates often take turns ____ (clean) the classroom.',[['to clean','cleaning']],'take turns to do sth. 和 take turns doing sth. 都可表示“轮流做某事”。'),
+      fill('Mary usually helps ____ (they) with different chores.','them','helps 后接宾语。they 的宾格是 them。'),
+      fill('She seldom spends time ____ (play) computer games.','playing','spend time doing sth. 表示“花时间做某事”。'),
+      fill('Her school life is ____ (interest).','interesting','用 interesting 描述学校生活有趣。interested 常用于描述人的感受。')
+    ],marySchoolDay]
+  ],[],19);
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
-    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay
   ];
 })();
 
