@@ -436,14 +436,18 @@ function reviewEntry(route,collection) {
   return '<a class="pack-entry '+route+'-entry" href="#'+route+'"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span>'+
     '<span><strong>'+collection.title+'</strong><small>'+collection.modules.length+' '+(collection.unitLabel??'个主题')+' · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
 }
-let listeningAudioUrl = '';
+const listeningAudioUrls = new Map();
 function listeningPlayer() {
-  const source = listeningAudioUrl ? ' src="'+esc(listeningAudioUrl)+'"' : '';
-  return '<details class="geo-note listening-player"><summary>巩固练习 4 听力</summary>'+
-    '<audio id="listeningAudio" controls preload="metadata" aria-label="巩固练习 4 听力"'+source+'></audio>'+
-    '<p><label for="listeningFile">选择听力音频</label></p>'+
-    '<input id="listeningFile" type="file" accept="audio/*,.m4a">'+
-    '<p>音频在当前浏览器中播放。</p></details>';
+  return [2,4].map(number=>{
+    const url = listeningAudioUrls.get(number);
+    const source = url ? ' src="'+esc(url)+'"' : '';
+    const title = '巩固练习 '+number+' 听力';
+    return '<details class="geo-note listening-player"><summary>'+title+'</summary>'+
+      '<audio id="listeningAudio-'+number+'" controls preload="metadata" aria-label="'+title+'"'+source+'></audio>'+
+      '<p><label for="listeningFile-'+number+'">'+(url ? '更换音频' : '选择本地音频')+'</label></p>'+
+      '<input id="listeningFile-'+number+'" data-listening-track="'+number+'" type="file" accept="audio/*,.mp3,.m4a">'+
+      '<p>音频在当前浏览器中播放。</p></details>';
+  }).join('');
 }
 function reviewPage(route,key) {
   const collection = reviewCollections.get(route);
@@ -1121,12 +1125,15 @@ app.addEventListener('input',event=>{
   }
 });
 app.addEventListener('change',async event=>{
-  if (event.target.id==='listeningFile') {
+  if (event.target.dataset?.listeningTrack) {
+    const track = Number(event.target.dataset.listeningTrack);
     const file = event.target.files[0];
     if (!file) return;
-    if (listeningAudioUrl.startsWith('blob:')) URL.revokeObjectURL(listeningAudioUrl);
-    listeningAudioUrl = URL.createObjectURL(file);
-    document.querySelector('#listeningAudio').src = listeningAudioUrl;
+    const previous = listeningAudioUrls.get(track);
+    const url = URL.createObjectURL(file);
+    listeningAudioUrls.set(track,url);
+    document.querySelector('#listeningAudio-'+track).src = url;
+    if (previous?.startsWith('blob:')) URL.revokeObjectURL(previous);
     return;
   }
   if (event.target.id==='topicDifficulty') {

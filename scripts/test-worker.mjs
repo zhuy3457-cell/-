@@ -353,6 +353,37 @@ test('midterm and weekend materials expose the new upper-term courses and target
   ]});
   assert.deepEqual(grade.results.map(result=>result.correct),[true,false,true,true,true]);
 });
+test('Unit 1 and 3 morning review and Unit 3–4 writing are searchable upper-term material',async ()=>{
+  for (const [key,count] of [
+    ['classroom-u1-morning-reading',13],
+    ['classroom-u3-welcome-reading',35],
+    ['classroom-u3-midterm-dictation',60],
+    ['classroom-u3-u4-school-life',10]
+  ]) {
+    const scope_id = 'course:'+key;
+    const lesson = await good('explain_topic',{subject:'english',scope_id});
+    assert.equal(lesson.term,'上');
+    assert.equal(lesson.question_count,count);
+    const quiz = await good('draw_questions',{subject:'english',scope_id,count:2});
+    assert.ok(quiz.questions.every(question=>question.question_id.startsWith(key+'-')));
+  }
+  const unitOne = await good('explain_topic',{query:'英语第一单元'});
+  const unitThree = await good('explain_topic',{query:'英语第三单元'});
+  const unitFour = await good('explain_topic',{query:'英语第四单元'});
+  assert.ok(unitOne.practice_groups.some(group=>group.group_id==='classroom-u1-morning-reading-patterns'));
+  for (const unit of [unitThree,unitFour]) {
+    assert.ok(unit.practice_groups.some(group=>group.group_id==='classroom-u3-u4-school-life-writing'));
+  }
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'classroom-u3-welcome-reading-9',answer:['How is your new school?','What is your new school like?']},
+    {question_id:'classroom-u3-welcome-reading-34',answer:'ŋ'},
+    {question_id:'classroom-u3-midterm-dictation-11',answer:'large'},
+    {question_id:'classroom-u3-midterm-dictation-11',answer:'special'},
+    {question_id:'classroom-u3-midterm-dictation-34',answer:'like to play ping-pong together'},
+    {question_id:'classroom-u3-midterm-dictation-34',answer:'like play ping-pong together'}
+  ]});
+  assert.deepEqual(grade.results.map(result=>result.correct),[true,true,true,false,true,false]);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});

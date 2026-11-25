@@ -519,8 +519,148 @@ const englishClassroomModules = (() => {
       fill('和同学分享视频。\nShare the videos ____ classmates.',[['with','with your','with my','with our','with their']],'share sth. with sb. 是固定搭配。')
     ]]
   ]);
+  const unitOneMorning = module('classroom-u1-morning-reading','Unit 1 · 早读词形与同义表达','七上 Unit 1',
+    '根据 Unit 1 早读补练自我介绍、名词和动词词形、同义表达与固定搭配。',[
+    ['动词和词形','greet sb. 直接接宾语，introduce 的 -ing 形式是 introducing。hobby 的复数是 hobbies。call sb. + 名字可以和 go by + 名字对照。'],
+    ['固定搭配','let sb. do sth. 不加 to。be full of = be filled with。be good at doing = do well in doing。play the piano，play football，play chess。'],
+    ['人物与时间','other people = others。人对某事感兴趣用 interested，事物令人感兴趣用 interesting。here、there、home 作地点副词时可直接接在动词后，this / every / next / last 加时间名词前通常不用介词。']
+  ],[
+    ['forms','词形与班级',[
+      fill('用 greet 的适当形式。\nAmy often ____ her classmates with a smile.','greets','greet 作及物动词。Amy 对应第三人称单数 greets。'),
+      fill('用 introduce 的 -ing 形式。\nI am ____ myself to the class.','introducing','去掉末尾不发音的 e 再加 -ing。'),
+      fill('用 hobby 的复数。\nReading and chess are my two ____.','hobbies','词尾为辅音字母加 y，复数把 y 改成 i 再加 es。'),
+      fill('你在哪个班？用 Which 开头。\n____ are you in?','Which class','问班级用 Which class，答语可用 I’m in Class One。'),
+      fill('见到你，我很高兴。\nI’m ____ meet you.','glad to','be glad to do sth. 表示高兴做某事。')
+    ]],
+    ['patterns','句型与易错搭配',[
+      fill('Amy 也叫 Sunny。用 call 与 go by 各补一句。\nYou can ____ Sunny. She ____ Sunny.',['call her','goes by'],'call 后用宾格 her。she 后用 goes by。'),
+      fill('让他介绍自己。\nLet ____ himself.','him introduce','let 后用代词宾格加动词原形。'),
+      fill('公园里到处是花。按顺序填两种搭配。\nThe park is ____ flowers. = The park is ____ flowers.',['full of','filled with'],'be full of 与 be filled with 都可以表示充满。'),
+      fill('他擅长跑步。用 good 和 well 分别补全。\nHe is ____ running. = He ____ running.',['good at','does well in'],'be good at doing 对应 do well in doing。'),
+      fill('她乐于帮助别人。\nShe is ____.',[['ready to help others','ready to help other people']],'others 本身表示其他人，other 则可修饰 people。'),
+      fill('用 interested 或 interesting 填空。\nI am ____ in chess because it is ____.',['interested','interesting'],'interested 描述人的感受，interesting 描述引起兴趣的事物。'),
+      fill('分别用 have 和 with 描写她的长发。\nShe ____. = She is a girl ____.',['has long hair','with long hair'],'have 的第三人称单数是 has。with long hair 作后置修饰语。'),
+      choose('哪句表达正确？',['I play piano and the chess.','I go to home every Friday.','I play the piano and go home after class.','I play the football at next week.'],2,'乐器前用 the。home 在 go home 中作副词，不用 to。')
+    ]]
+  ]);
+
+  const unitThreeWelcome = module('classroom-u3-welcome-reading','Unit 3 · Welcome–Reading 默写卷','七上 Unit 3',
+    '按原卷顺序练学校设施、阅读词句与八个辅音音标。',[
+    ['校园设施与活动','gym、sports field、dining hall、a modern library、lab、building。on the sports field 表示在运动场上，其他室内场所常用 in。take place 表示活动举行。'],
+    ['观察与搭配','see sb. doing sth. 强调看见动作正在进行。see sb. do sth. 可强调看到整个动作，课内题也用来表达经常看见。spend time doing sth. 中用动词 -ing。']
+  ],[
+    ['welcome','Welcome · 原卷 1–10',[
+      ...words([
+        ['体育馆（以 g 开头）','gym'],['建筑物','building'],['体育场','sports field'],['学校餐厅（两词）','dining hall'],
+        ['最棒的部分','the best part'],['一个现代化的图书馆','a modern library'],['干净又明亮','clean and bright']
+      ]),
+      fill('我们也有一个实验室，用 as well。\nWe have ____.','a lab as well','as well 用在句末。'),
+      fill('你的新学校怎样？依次用 How 和 What 开头写两句。',['How is your new school?','What is your new school like?'],'What is … like? 可用来询问特点。'),
+      fill('你的学校有多少间教室？\n____ classrooms ____ your school ____?',['How many','does','have'],'classroom 可数，does 后使用 have。')
+    ]],
+    ['reading','Reading · 原卷 1–17',[
+      ...words([
+        ['所有人、每人（代词）',[['everyone','everybody']]],
+        ['很、真正地（以 r 开头）','really'],['马上、很快（以 s 开头）','soon'],['进行、发生','take place'],
+        ['许多绿地',[['lots of green spaces','a lot of green spaces','many green spaces']]],
+        ['花时间做某事',[['spend time doing sth.','spend time doing something']]],
+        ['和某人聊天',[['chat with sb.','chat with somebody','chat with someone']]],
+        ['看见某人正在做某事',[['see sb. doing sth.','see somebody doing something','see someone doing something']]],
+        ['看到某人做某事（用动词原形结构）',[['see sb. do sth.','see somebody do something','see someone do something']]],
+        ['在大门附近','near the gate'],['学校新闻','school news'],['榜样（复数）','role models'],
+        ['发现更多的好地方',[['find more great places','find more good places']]],['相信我','trust me']
+      ]),
+      fill('它们非常适合学习。\nThey are ____.','perfect for studying','介词 for 后接 studying。'),
+      fill('许多令人激动的体育比赛在此举行。\nLots of ____ on it.','exciting sports matches take place','matches 是复数主语，take 用原形。'),
+      fill('告示牌也展示了学生的绘画和照片。\nThe noticeboards ____ students’ ____ and ____.',['also show','paintings',['photos','photographs']],'also 一般放在实义动词前。')
+    ]],
+    ['pronunciation','Pronunciation · 原卷 8 题',sounds([['[k]ite','k'],['e[gg]','g'],['[wh]o','h'],['na[m]e','m'],['[y]ear','j'],['[r]ed','r'],['si[ng]','ŋ'],['s[w]im','w']])]
+  ]);
+
+  const unitThreeMidterm = module('classroom-u3-midterm-dictation','Unit 3 · 期中复习默写卷与早读','七上 Unit 3',
+    '按期中卷的词汇、短语、句型顺序练习，并补练早读中的词形、易混句型和词性。',[
+    ['词形与词性','build → building(s)，dine → dining，library → libraries，chat → chatting，excite → exciting，real → really，teach → teaches。news 不可数，The news is exciting.。'],
+    ['也、还有什么','as well、too 常用在肯定句句末。also 通常置于实义动词前、be 动词后。either 可用在否定句句末。What else…? 可换成 What other things…?。'],
+    ['数量与习惯搭配','two thousand 有具体数字时不加 s，表示不确定的大量时用 thousands of。borrow sth. from sb.，teach us English，be different from。'],
+    ['两处答案订正','词汇第 11 题学生卷的提示为“大的”，参考答案行误重复了 special，对应 large。短语第 17 题 like 后可用 playing 或 to play。']
+  ],[
+    ['words','原卷 · 单词 1–17',words([
+      ['部分','part'],['大门','gate'],['新闻、消息','news'],['例如、像（介词，以 l 开头）','like'],['更多','more'],
+      ['真正地','really'],['很快、马上','soon'],['演出、展览（以 s 开头的名词）','show'],['灰色的',[['grey','gray']]],
+      ['不同的','different'],['大的（以 l 开头）','large'],['相当、颇（以 q 开头）','quite'],['体育馆','gym'],
+      ['实验室',[['lab','laboratory']]],['楼房、建筑物','building'],['所有人、人人',[['everyone','everybody']]],
+      ['特别的、特殊的','special']
+    ])],
+    ['phrases','原卷 · 短语 1–24',words([
+      ['一个体育场','a sports field'],['两个餐厅',[['two dining halls','2 dining halls']]],
+      ['也（用 as 开头的短语）','as well'],['确切地说、事实上',[['in fact','as a matter of fact']]],
+      ['关心','care about'],['一个现代化的图书馆','a modern library'],
+      ['许多绿地',[['lots of green spaces','a lot of green spaces','many green spaces']]],
+      ['花时间做某事',[['spend time doing sth.','spend time doing something']]],
+      ['看到某人正在做某事',[['see sb. doing sth.','see someone doing something']]],
+      ['看到某人做某事（用动词原形结构）',[['see sb. do sth.','see someone do something']]],
+      ['相信我','trust me'],['教我们英语','teach us English'],
+      ['告诉某人关于某事',[['tell sb. about sth.','tell someone about something']]],
+      ['在校足球队',[['be in the school football team','be on the school football team']]],
+      ['跟某人问好',[['say hello to sb.','say hello to someone']]],
+      ['每次、一次（用 at）','at a time'],
+      ['喜欢一起打乒乓球',[['like playing ping-pong together','like to play ping-pong together','enjoy playing ping-pong together','like playing table tennis together','like to play table tennis together']]],
+      ['成千上万的','thousands of'],
+      ['从某人处借某物',[['borrow sth. from sb.','borrow something from someone','borrow from']]],
+      ['在顶楼','on the top floor'],['阅读报纸和杂志','read newspapers and magazines'],
+      ['因做某事感谢某人',[['thank sb. for doing sth.','thank someone for doing something']]],
+      ['一个重大事件',[['a major event','an important event','a big event','an event']]],['干净又明亮','clean and bright']
+    ])],
+    ['sentences','原卷 · 句型 1–4',[
+      fill('它们非常适合学习。\nThey are ____.','perfect for studying','for 是介词，后用 studying。'),
+      fill('许多令人激动的体育比赛在此举行。\nLots of ____ on it.','exciting sports matches take place','take place 表示举行。'),
+      fill('他经常和学生聊天，并帮助他们解决问题。\nHe often ____ the students and ____ their problems.',['chats with','helps them with'],'he 后用 chats 和 helps。help sb. with sth. 表示帮助某人处理某事。'),
+      fill('你还喜欢我们学校的哪些方面？\n____ about our school?',[['What else do you like','What other things do you like']],'else 紧跟疑问词，other 放在名词前。')
+    ]],
+    ['morning','早读 · 词形与译写',[
+      fill('写出 build 对应的单数名词，以及 dine 在 dining hall 中的形式。',['building','dining'],'building 是建筑物，dining hall 是食堂。'),
+      fill('写出 library 的复数和 chat 的 -ing 形式。',['libraries','chatting'],'library 复数变 y 为 i 加 es。chat 要双写 t。'),
+      fill('写出 excite 的形容词，形容比赛让人兴奋。\nan ____ match','exciting','exciting 描述事物带给人的感受。'),
+      fill('写出 many / much 的比较级和 real 的副词。',['more','really'],'many、much 的比较级相同。real 加 -ly。'),
+      fill('写出 teach 的第三人称单数。','teaches','teach 以 -ch 结尾，第三人称单数加 -es。'),
+      fill('填介词。\n____ the lab / ____ the sports field',['in','on'],'在实验室内部用 in，在运动场上用 on。'),
+      fill('分别写“两千”和“成千上万的”。',['two thousand','thousands of'],'具体数量 two thousand 不加 s。'),
+      fill('事实上，我们真的关心彼此。\n____, we really ____.',['In fact','care about each other'],'care about 后接关心的人或事。'),
+      fill('我们喜欢花时间和朋友聊天。\nWe enjoy ____ with our friends.','spending time chatting','enjoy 和 spend time 后都用 -ing。'),
+      fill('最好的部分是现代化图书馆，因为我们可以从那里借书。\nThe best part is the modern library because we can ____.','borrow books from it','borrow sth. from… 表示从某处借入。'),
+      fill('我们学校不大，但对我来说是个特别的地方。不能用 big。\nOur school ____, but it is ____ for me.',[
+        ["isn't large",'is not large'],'a special place'
+      ],'large 对应“大”，a special place 表示特别的地方。'),
+      fill('与……不同（用 different）。','be different from','常用介词 from。'),
+      fill('按顺序补两种“还有什么”。\nWhat ____? = What ____?',['else','other things'],'else 放在疑问词之后，other 修饰名词。'),
+      choose('哪一句正确？',['Everyone are there.','The news is exciting.','She teach us English.','I don’t like it as well.'],1,'everyone 和 news 作主语通常用单数谓语。否定句末的“也”可用 either。'),
+      choose('下面哪组词性和词义都正确？',['bright 副词，明亮地；soon 名词，消息','gate 动词，信任；trust 名词，大门','grey 形容词，灰色的；gate 名词，大门；quite 副词，相当','bright 名词，大门；soon 形容词，特殊的'],2,'bright 常用作形容词，soon 和 quite 是副词，trust 可作动词“信任”。')
+    ]]
+  ]);
+
+  const schoolLife = module('classroom-u3-u4-school-life','Unit 3–4 · My School Life 作文素材','七上 Unit 3–4',
+    '按约 80 词的征文要求，练最喜欢的场所、师友、活动和感受四个要点。',[
+    ['限时写作','以 My School Life 为题写约 80 词。写出一个喜欢的场所及理由，介绍老师和朋友，描述喜欢的活动，写明自己的感受。例文可用来核对结构。'],
+    ['基础范文','My school is big and nice. My favourite place is the school hall. We have meetings there. Our teachers are kind and often help us with our problems. My classmates are friendly and helpful. I like playing volleyball best. We also go on a field trip each term. I love picking apples because I can get close to nature. I enjoy my school life and I am happy to be a student here.'],
+    ['进阶范文','My school is not only large but also modern. I enjoy reading in our library because it is a perfect place to spend some quiet time. Our teachers care about us, and my classmates are always ready to help. My favourite field trip is planting trees in spring. We work in groups and try our best to make the school greener. These trips teach me the value of teamwork. I am glad to be a student here.'],
+    ['写后核对','四个要点各有具体内容，理由与活动相配。复查第三人称单数、可数名词和 like / enjoy 后面的动词形式。']
+  ],[
+    ['writing','四个作文要点 · 句型补练',[
+      fill('我的学校不仅大，而且很现代化。\nMy school is ____.','not only large but also modern','not only… but also… 连接同类成分。'),
+      fill('它是我们安静阅读的理想场所。\nIt’s a perfect place ____.','for us to read quietly','a place for sb. to do sth. 可写场所用途。'),
+      fill('我们可以从图书馆借各种书。\nWe can ____ the library.','borrow different kinds of books from','borrow sth. from… 表示从某处借。'),
+      fill('老师经常关心我们，同学们总是乐于助人。\nOur teachers often ____ us, and our classmates are always ____.',['care about','ready to help'],'care about 表示关心。be ready to help 表示乐于帮助。'),
+      fill('我最喜欢打排球，而且是校排球队的一员。\nI like ____ best and I am ____ the school volleyball team.',['playing volleyball',['in','on']],'like doing 表示喜爱的活动。in / on the team 都可表示是队员。'),
+      fill('我们每学期进行一次实地考察。\nWe have ____ each term.','a field trip','每学期一次，可用 a field trip each term。'),
+      fill('我很喜欢采苹果，因为我能亲近自然。\nI enjoy ____ because I can ____.',['picking apples','get close to nature'],'enjoy 后用动名词。get close to nature 写出喜欢活动的原因。'),
+      fill('大家都尽力使事情更好，这些旅行教会我团队合作的重要性。\nEverybody ____ to make things better, and these trips teach me the value of ____.',['tries their best','teamwork'],'Everybody 后用 tries。teamwork 表示团队合作。'),
+      fill('我很高兴能成为这里的一名学生。\nI’m ____ a student here.',[['glad to be','happy to be']],'可用 be glad/happy to do 写学校生活感受。'),
+      choose('哪组内容最能覆盖征文要求的四个要点？',['学校很大、楼很高、图书种类多、校园很新','喜欢的场所和理由、师友相处、喜欢的活动、自己的感受','朋友的年龄、住处、电话号码、家庭成员','学校的面积、校名变化、地理位置、建校年份'],1,'四部分分别回答最喜欢的地点、老师朋友、喜欢的活动以及自己的感受。')
+    ]]
+  ]);
   return [
-    introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm
+    introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife
   ];
 })();
 
