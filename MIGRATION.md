@@ -9,7 +9,7 @@
 | 聊天助手、答题与同步服务 | `worker/` |
 | D1 结构及变更顺序 | `drizzle/0000_chat_study.sql`、`drizzle/0001_homework_reference.sql` |
 | 现有 Sites 项目标识和绑定声明 | `.openai/hosting.json` |
-| 原始照片、电子原件、听力与个人数据 | 经用户授权的私有归档，凭证另行管理 |
+| 原始照片、电子原件、课件、听力、归档清单及经授权导出的学习备份 | `zhuy3457-cell/suxue-private-archive` 的 `main`，凭证另行管理 |
 
 公开源码仓库为 [zhuy3457-cell/-](https://github.com/zhuy3457-cell/-)。常用入口为 [苏学练习室](https://suxue-grade7-practice.myworkspace-8202.chatgpt.site)。运行环境中通过 Sites 登录和连接器提供身份，GitHub 中的项目 ID 和数据库绑定声明不会随克隆转移托管权限或真实记录。
 
