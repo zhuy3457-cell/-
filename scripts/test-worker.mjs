@@ -518,15 +518,25 @@ test('geography checklist preserves both pages and grades rotation, revolution a
   }))});
   assert.equal(graded.correct,answers.length);
 });
-test('geography scale worksheet preserves the original scale bars and grades unit conversion',async ()=>{
+test('map-reading checklist keeps its two pages separately available and grades the original blanks',async ()=>{
   const key = 'geo-checklist-4-page-8';
   const scope_id = 'course:'+key;
-  const quiz = await good('draw_questions',{subject:'geography',scope_id,count:4});
-  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  const pageSeven = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-7',count:9});
+  const pageEight = await good('draw_questions',{subject:'geography',scope_id,group_id:key,count:4});
+  assert.equal(pageSeven.questions.length,9);
+  assert.equal(pageEight.questions.length,4);
+  const questions = new Map([...pageSeven.questions,...pageEight.questions].map(question=>[question.question_id,question]));
+  assert.match(questions.get(key+'-direction').diagram.url,/geography-checklist-compass\.webp$/);
+  assert.match(questions.get(key+'-legend-a').diagram.url,/geography-checklist-legend\.webp$/);
   assert.equal(questions.get(key+'-3').fields[0].unit,'km');
   assert.match(questions.get(key+'-6a').diagram.alt,/800千米.*40千米/);
   assert.equal(questions.get(key+'-6a').table.rows.length,2);
   const answers = [
+    ['1',['符号','比例','平面'],true],['2',['比例尺','方向','图例'],true],
+    ['direction',['上北下南左西右东','正北','南北','东西'],true],
+    ['legend-a',['居民点','铁路','山峰','火山'],true],
+    ['5a',['图上距离','实地距离'],true],['5b',['图上距离/实地距离'],true],
+    ['5b',['实地距离÷图上距离'],false],
     ['3',['1/2'],true],['3',['500'],false],['4',['小','大',2,5],true],
     ['6a',['小','大','简略','大','小','详细'],true],['6b',['大','简略','小','详细'],true]
   ];

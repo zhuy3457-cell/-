@@ -141,10 +141,10 @@ const courseCatalog = (() => {
     history: {上: history},
     geography: {上: geoReviewModules.map(module => {
       if (!module.firstPageIds) return topicCourse(module.key);
-      const laterPage = fullGroup(module.key,'第 6 页 · 二分二至与地球五带');
+      const laterPage = fullGroup(module.key,module.laterPageTitle);
       laterPage.ids = laterPage.ids.filter(id=>!module.firstPageIds.includes(id));
       return makeCourse(module.key,module.title,module.description,[
-        {key:module.key+'-page-5',title:'第 5 页 · 自转、公转与四季',ids:module.firstPageIds},
+        {key:module.key+'-page-'+module.firstPageNumber,title:module.firstPageTitle,ids:module.firstPageIds},
         laterPage
       ],[module.key]);
     })},
