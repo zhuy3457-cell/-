@@ -195,14 +195,14 @@ const reviewCollections = new Map([
     start:'civics-cards', returnLabel:'道法课课贴', modules:civicsReviewModules, byTopic:civicsReviewByTopic
   }]
 ]);
-for (const id of ['geography','history','english','math']) {
+for (const id of new Set(sevenUpperReview.map(module=>module.subject))) {
   const subject = activeSubjectById.get(id);
   const modules = sevenUpperReview.filter(module=>module.subject===id);
   const route = id+'-upper-review';
   reviewCollections.set(route,{
     subject:id,name:subject.name,icon:subject.icon,tone:subject.tone,
     title:'七上复习 · '+subject.name,keywords:'七上 期末复习',
-    subtitle:'按截图可辨认的考点整理，分组复习后可直接做题。',
+    subtitle:'按考点分组，读完要点后可直接做对应练习。',
     start:route,returnLabel:subject.name+'七上复习',modules,
     byTopic:new Map(modules.map(module=>[module.key,module]))
   });
