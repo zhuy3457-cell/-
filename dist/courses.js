@@ -163,7 +163,9 @@ const courseCatalog = (() => {
     course:makeCourse(module.key,module.title,module.description,moduleGroups(module),[module.key])
   }));
   return new Map(activeSubjects.flatMap(subject => ['上', '下'].map(term => {
+    const extraPractice = upperExtraPractice[subject.id];
     const lessons = [...(namedCourses[subject.id]?.[term] ?? []),
+      ...(term==='上' && extraPractice ? [topicCourse(extraPractice)] : []),
       ...(term==='上' ? reviewLessons.filter(item=>item.subject===subject.id).map(item=>item.course) : [])];
     const topics = subject.topics.filter(topic => topic.term === term && lessonByTopic.has(topic.key) &&
       !groupedTopicKeys.has(topic.key)).map(topic => topicCourse(topic.key, '知识点练习'));

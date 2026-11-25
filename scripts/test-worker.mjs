@@ -541,6 +541,26 @@ test('friendly midpoint practice grades formulas, negative midpoints and all thr
   ]});
   assert.deepEqual(grades.results.map(result=>result.correct),[true,false,true,true,true,false]);
 });
+test('all four new upper-term practice sets are available and grade original questions',async ()=>{
+  const sets = [
+    ['history','history-qin-han-evidence','统一度量衡','设立西域都护'],
+    ['civics','civics-growth-scenarios','找出错因，重做原题后再做一道同类题检查','只把标准答案背下来'],
+    ['geography','geo-map-terrain-scenarios','600 米','6 千米'],
+    ['biology','bio-ecosystem-pond-scenarios','整个池塘中的生物及其生活环境','池塘中的所有鱼、虾和水草']
+  ];
+  for (const [subject,key,correct,incorrect] of sets) {
+    const scope_id = 'course:'+key;
+    const lesson = await good('explain_topic',{subject,scope_id});
+    assert.equal(lesson.term,'上');
+    assert.equal(lesson.question_count,6);
+    const quiz = await good('draw_questions',{scope_id,group_id:key,count:6});
+    assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),[1,2,3,4,5,6].map(number=>key+'-'+number));
+    const graded = await good('grade_homework',{subject,record:false,submissions:[correct,incorrect].map(answer=>({
+      question_id:key+'-1',answer
+    }))});
+    assert.deepEqual(graded.results.map(result=>result.correct),[true,false]);
+  }
+});
 test('monomial practice treats pi and the constant power as coefficients',async ()=>{
   const key = 'math-monomial-coefficient-degree';
   const quiz = await good('draw_questions',{scope_id:'course:algebraic-expressions',group_id:key,count:3});
