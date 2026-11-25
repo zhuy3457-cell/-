@@ -273,6 +273,32 @@ test('new absolute-value and segment exercises grade every root, endpoint and co
   assert.deepEqual(graded.results.at(-1).fields.map(field=>field.correct),[true,true,false]);
   assert.match(JSON.stringify(graded.results[9].solution),/28−22=6/);
 });
+test('new classroom materials stay in their own upper-term courses and grade worked answers',async ()=>{
+  for (const [subject,key,count] of [
+    ['math','math-equations-brackets-423',23],
+    ['math','math-happy-four',29],
+    ['math','math-happy-three',12],
+    ['biology','biology-environment-chapter-two',8],
+    ['biology','biology-ecosystem-types-review',7],
+    ['history','history-warring-states-lesson-six',7],
+    ['civics','civics-family-lesson-four',3]
+  ]) {
+    const scope_id = 'course:'+key;
+    const lesson = await good('explain_topic',{subject,scope_id});
+    assert.equal(lesson.term,'上');
+    assert.equal(lesson.question_count,count);
+    const quiz = await good('draw_questions',{subject,scope_id,term:'上',count:2});
+    assert.ok(quiz.questions.every(q=>q.term==='上' && q.question_id.startsWith(key+'-')));
+  }
+  const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:'math-equations-brackets-423-23',answer:'2/3'},
+    {question_id:'math-happy-four-24',answer:[0,12,54]},
+    {question_id:'math-happy-three-12',answer:[1.5,3.5]},
+    {question_id:'history-warring-states-lesson-six-7',answer:['都江堰','成都平原']}
+  ]});
+  assert.equal(graded.correct,4,JSON.stringify(graded.results));
+  assert.equal(graded.recorded,false);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});
