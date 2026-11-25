@@ -1075,6 +1075,59 @@ geoReviewModules.push((() => {
   };
 })());
 
+geoReviewModules.push((() => {
+  const key = 'geo-exam-earth-page-6';
+  const question = (number,prompt,correct,explanation,extra = {})=>({
+    id:key+'-'+number,prompt:number.replace(/-(\d)$/, '（$1）')+' '+prompt,correct,explanation,level:'basic',...extra
+  });
+  const multi = (number,prompt,options,correct,explanation)=>{
+    const reversed = [...correct].reverse().join('');
+    const aliases = [correct,reversed].flatMap(pair=>['',' ',',','、','/'].map(separator=>[...pair].join(separator)));
+    const choices = options.map((option,index)=>String.fromCharCode(65+index)+'. '+option).join('　');
+    return question(number,prompt+'（多选，填写全部正确选项的字母。）\n'+choices,correct,explanation,{
+      steps:[{label:'正确选项的字母',answer:correct,aliases,text:true}]
+    });
+  };
+  const beidou = {
+    material:'北斗卫星导航系统（BDS）是中国自主研制的全球卫星导航系统。根据图 12 的经纬网，判断甲、乙、丙三地的位置。',
+    diagram:{src:"geography-exam-beidou.webp",alt:'图 12 经纬网。甲是标为 90°E 的经线与 30°N 纬线的交点。乙是标为 150°E 的经线与同一纬线的交点。丙在标为 120°E 的经线与 0° 纬线的交点。'}
+  };
+  return {
+    key,title:'七上地理试卷第 6 页 · 地球运动与经纬网',range:'第 6 页 · 第 33–37 题（可独立作答的小题）',
+    description:'练习二分二至、极昼、地球五带和北斗经纬网读图。多选题用字母填写，顺序不限。',
+    notes:[
+      {label:'读经纬网',text:'用纬线确定纬度，再沿经线确定经度。赤道是南北半球的分界线。东、西半球的分界线是20°W和160°E。'},
+      {label:'比较日出先后',text:'在同一条纬线上，通常越偏东，越先看到日出。经度同为东经时，度数越大，位置越偏东。'}
+    ],
+    questions:[
+      multi('33','一年中，地球上能拍摄到“日不落”景观的地区是',
+        ['北极地区','南极地区','淮安市','热带地区'],'AB','“日不落”指极昼。南北极圈内在各自的夏半年都可能发生极昼。'),
+      multi('34','当地球公转到北半球夏至、冬至位置时，太阳直射点分别在哪里？',
+        ['北极圈','北回归线','南回归线','赤道'],'BC','以北半球节气为准，夏至直射北回归线，冬至直射南回归线。'),
+      multi('35','当地球公转到春分位置时，可能出现的现象有哪些？',
+        ['北半球昼长夜短','北极圈有极夜现象','全球昼夜平分','北半球春暖花开'],'CD','按教材模型，春分直射赤道，全球昼夜平分。北半球进入春季，一些地区可能春暖花开。'),
+      question('36-1','图中北斗系统一个卫星的定点位置为甲地，其经纬度是？','（30°N，90°E）',
+        '甲在30°N纬线与90°E经线的交点，选 B。',{
+          ...beidou,options:['（30°E，90°S）','（30°N，90°E）','（30°W，90°N）','（30°S，90°W）']
+        }),
+      question('36-2','下列关于丙地的说法，正确的是？','从丙地一直向正北前进会到达北极',
+        '丙在赤道上，处于南北半球的分界线。沿丙所在的经线向正北可到达北极，所以选 C。',{
+          ...beidou,options:['位于北半球','处在东西半球分界线上','从丙地一直向正北前进会到达北极','丙与甲在同一条纬线上']
+        }),
+      question('36-3','顺着地球自转的方向，甲、乙两地中，哪一地先看到日出？','乙',
+        '两地同在30°N纬线上。乙位于150°E，比90°E的甲偏东，因此乙先看到日出。',{
+          ...beidou,steps:[{label:'填甲或乙',answer:'乙',aliases:['乙地'],text:true}]
+        }),
+      question('37-1','地球上五带的划分依据是？','各地获得太阳光热的多少','五带根据各地获得太阳光热的多少划分，选 B。',{
+        options:['有无明显的昼夜现象','各地获得太阳光热的多少','人口数量的多少','发展水平的差异']
+      }),
+      question('37-3','热带与南温带的分界线是哪里？','南回归线','热带南界是南回归线，约在23.5°S。',{
+        steps:[{label:'分界线',answer:'南回归线',aliases:['23.5°S','南纬23.5°'],text:true}]
+      })
+    ]
+  };
+})());
+
 const geoReviewByTopic = new Map(geoReviewModules.map(module=>[module.key,module]));
 const geographySubject = subjects.find(subject=>subject.id==='geography');
 for (const module of geoReviewModules) {

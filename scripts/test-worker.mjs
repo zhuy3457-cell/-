@@ -599,6 +599,24 @@ test('map-reading checklist keeps its two pages separately available and grades 
   }))});
   assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
 });
+test('earth-motion exam grades multi-select letters and carries the Beidou grid',async ()=>{
+  const key = 'geo-exam-earth-page-6';
+  const scope_id = 'course:'+key;
+  const quiz = await good('draw_questions',{subject:'geography',scope_id,count:8});
+  assert.equal(quiz.questions.length,8);
+  const reading = quiz.questions.filter(question=>question.question_id.startsWith(key+'-36-'));
+  assert.equal(reading.length,3);
+  assert.ok(reading.every(question=>question.diagram?.url.endsWith('/geography-exam-beidou.webp')));
+  const answers = [
+    ['33','BA',true],['33','A',false],['34','Ｂ，Ｃ',true],['35','D C',true],['35','AB',false],
+    ['36-1','B',true],['36-2','C',true],['36-2','A',false],['36-3','乙地',true],
+    ['37-1','B',true],['37-3','南纬23.5°',true]
+  ];
+  const graded = await good('grade_homework',{record:false,submissions:answers.map(([id,answer])=>({
+    question_id:key+'-'+id,answer
+  }))});
+  assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});
