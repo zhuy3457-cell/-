@@ -868,9 +868,74 @@ const englishClassroomModules = (() => {
       choose('We read English ____ the morning every day.',['on','in','at','of'],1,'泛指早晨用 in the morning，点明某天的早晨可用 on，如 on Monday morning。')
     ]]
   ]);
+  const tomIntroduction = [
+    'I have a classmate called Tom. Let me [6] (introduce) him to you. We all like Tom very much. He is [7] (friend) to everyone around him. And he is always ready [8] (help) people when they have problems.',
+    'Both Tom and I [9] (be) members of the School Football Club because we are [10] (interest) in different kinds of outdoor activities. Everyone in our club [11] (call) Tom “Lightning” because of his amazing speed. He is good at [12] (play) football and always practises hard after school. After doing his homework, he often watches exciting football [13] (match). His dream is [14] (become) a football player.',
+    'Tom has lots of lessons every day, [15] he still spends much time training (训练). I really hope his dream can come true.'
+  ].join('\n\n');
+  const wildWood = [
+    'Summer passes, then autumn comes. After that winter arrives. Rat and Mole are at home all day. Mole is bored. He says, “I want to visit Badger.” But Rat tells him, “Badger lives in the middle of the Wild Wood. It’s a long way to go in winter.”',
+    'But Mole still wants to go. When Rat is asleep (睡着的), he puts on his coat and goes into the Wild Wood. It is cold and the sky is grey. At first it is fun. But then it gets dark. Mole sees strange little faces in the wood. The faces have sharp teeth. Then he remembers the animals in the Wild Wood, the stoats and weasels: they are dangerous (危险的). He hears strange noises and he panics. Poor Mole runs and runs through the wood. Then he sees a hole inside a tree and he hides (躲藏) there.',
+    'When Rat wakes up at home, he calls, “Mole, Mole!” But Mole doesn’t answer. Rat looks around the house for Mole. But Mole isn’t there. And Mole’s coat isn’t there. Rat thinks, “Mole is visiting Badger. Oh, no! Mole is in the Wild Wood!” He puts on his coat and puts a gun in his pocket. He goes along the path to the Wild Wood. He sees the strange little faces with sharp teeth. But they see Rat’s gun, and go away. Rat calls and calls, “Mole, where are you? It’s me—Rat.”',
+    'At last Mole answers. “Rat, I’m here! In the tree! I am very frightened (害怕的)!” he says in a little voice. “Don’t worry, Mole,” says Rat. “Let’s go home now!”',
+    'But Mole is very tired. He wants to sleep, so Rat sits and waits. While Mole is sleeping, it begins to snow. The snow is white and it covers all the paths.',
+    'Later, Mole wakes up. Then the two friends set off through the white woods. Everything is different with the snow and soon Rat and Mole are lost. They walk for hours but they cannot find the way home. They are tired, and cold, and hungry.',
+    '—The Wind in the Willows, Chapter 6（学案节选）'
+  ].join('\n\n');
+  const unitOneReview = module('classroom-u1-midterm-review-paper','Unit 1 · 期中复习练习卷','七上 Unit 1',
+    '两页共 32 题，含词汇、短文语法、句型转换、翻译、单选和《柳林风声》阅读。',[
+    ['主谓一致','both A and B 作主语用复数谓语。everyone 作主语用第三人称单数。主语后加 with 短语时，谓语与主语一致。'],
+    ['动词搭配','let sb. do，be ready to do，be interested in doing，be good at doing。'],
+    ['阅读定位','按故事经过核对事件顺序，用人物的言行和故事中的因果关系判断选项。']
+  ],[
+    ['words','第 1–5 题 · 词汇',[
+      fill('You ____ (只有，仅) have a few minutes left. You need to hurry up.','only','only 在这里表示“只有，仅仅”。'),
+      fill('It is helpful of Daniel to help his friends with their Maths ____ (难题).','problems','help sb. with their Maths problems 表示“帮某人解决数学难题”。'),
+      fill('One of my favourite ____ (hobby) is playing volleyball with my classmates.','hobbies','one of 后接可数名词复数，hobby 的复数是 hobbies。'),
+      fill('Sandy is very kind and often ____ (greet) me with a smile when we meet.','greets','主语 Sandy 是第三人称单数，动词用 greets。'),
+      fill('My mum with my grandparents ____ (stay) healthy by jogging together every day.','stays','主语是 My mum，with my grandparents 是附加成分，谓语用第三人称单数 stays。')
+    ]],
+    ['grammar','第 6–15 题 · 同学介绍语法填空',[
+      fill('Let me ____ (introduce) him to you.','introduce','let sb. do sth. 中用动词原形。'),
+      fill('He is ____ (friend) to everyone around him.','friendly','be friendly to sb. 表示“对某人友好”。'),
+      fill('He is always ready ____ (help) people.','to help','be ready to do sth. 表示“乐意做某事”或“准备好做某事”。'),
+      fill('Both Tom and I ____ (be) members of the School Football Club.','are','both A and B 作主语时指两个人，be 动词用 are。'),
+      fill('We are ____ (interest) in different kinds of outdoor activities.','interested','be interested in 表示“对……感兴趣”。'),
+      fill('Everyone in our club ____ (call) Tom “Lightning”.','calls','everyone 作主语时，谓语动词用第三人称单数 calls。'),
+      fill('He is good at ____ (play) football.','playing','at 是介词，后接动名词 playing。'),
+      fill('He often watches exciting football ____ (match).','matches','match 的复数形式是 matches。'),
+      fill('His dream is ____ (become) a football player.','to become','这里用不定式 to become 说明梦想的内容。'),
+      fill('Tom has lots of lessons every day, ____ he still spends much time training.',[['but','yet']],'前后表示转折，“课很多，但仍用很多时间训练”，可用 but 或 yet。')
+    ],tomIntroduction],
+    ['conversion','第 16–19 题 · 句型转换',[
+      fill('改为一般疑问句。\nThere are some maps and pictures on the wall.\n____ there ____ maps ____ pictures on the wall?',['Are','any',['or','and']],'There are 改一般疑问句时把 Are 提前，some 常改成 any。用 or 问是否有其中一类，用 and 可问是否两类都有。'),
+      fill('改为一般疑问句并作肯定回答。\nOur English teacher is Mr. Lin.\n—____ English teacher Mr. Lin? —Yes, ____.',['Is your','he is'],'把 is 提到句首。提问时将 our 改为 your。Mr. Lin 用 he 指代，肯定简答用 Yes, he is。'),
+      fill('对 Class 34 提问。\nHe is in Class 34.\n____ is he ____?',[['Which class','What class'],'in'],'问在哪个班可用 Which class is he in?'),
+      fill('改为同义句。\nMillie, this is my friend Chen Dan, and you can call him Daniel.\nMillie, this is my friend Chen Dan, and he ____ Daniel.','goes by','go by 加名字表示“以某名字为人所知、别人称他为……”。主语是 he，用 goes。')
+    ]],
+    ['translation','第 20–22 题 · 句子翻译',[
+      fill('我们都喜欢和 Tom 交朋友，因为他每天满是活力。\nWe all like to ____ Tom because he is ____ every day.',['make friends with','full of energy'],'make friends with sb. 表示“与某人交朋友”。be full of energy 表示“充满活力”。'),
+      fill('我的英语老师喜欢在周末和学生下中国象棋。\nMy English teacher enjoys ____ with students ____.',['playing Chinese chess',['at the weekend','at weekends','on the weekend','on weekends','on the weekends']],'enjoy 后用动名词。at the weekend 和 on weekends 等都表示“在周末”。'),
+      fill('Millie 和 Simon 在相同的年级，并且他们经常互相帮助。\nMillie and Simon are ____ and they often ____.',['in the same grade','help each other'],'in the same grade 表示“在同一个年级”，help each other 表示“互相帮助”。')
+    ]],
+    ['choice','第 23–27 题 · 单项选择',[
+      choose('Which word has a different sound for the letter in brackets?',['th[o]se','n[o]','st[o]p','h[o]me'],2,'按英式读音，stop 中 o 发 /ɒ/，其他三项的 o 发 /əʊ/。'),
+      choose('—Are you new students in our school?\n—____.',['Yes, I am.','No, I’m not.','Yes, we are.','No, we are.'],2,'students 是复数，回答用 we。肯定回答用 Yes, we are，否定回答要用 aren’t。'),
+      choose('Simon can answer all the English questions quickly. He is very ____.',['shy','polite','smart','pretty'],2,'能快速回答所有问题说明 Simon 很聪明，smart 符合语境。'),
+      choose('—What about her ____?\n—She is slim and wears a pair of glasses.',['character','hobby','age','looks'],3,'slim 和戴眼镜描述的是外貌，因此选 looks。'),
+      choose('—We have a basketball match with Class 11 tomorrow.\n—____',['Glad to see you.','Have a good time.','Good luck!','You’re welcome.'],2,'对方即将参加比赛，可以用 Good luck! 祝对方好运。')
+    ]],
+    ['reading','第 28–32 题 · 《柳林风声》阅读',[
+      choose('What does the word “panics” mean in Paragraph 2?',['恐慌','期待','放松','怀疑'],0,'Mole 听到奇怪的声音后不停地跑，最后躲进树洞。panics 表示“惊慌、恐慌”。'),
+      choose('Which of the following is true?',['Rat takes a gun to protect himself.','Rat wants to visit Badger in winter.','Rat can’t find his way before Mole finds him.','Mole goes to the Wild Wood together with Rat.'],0,'Rat 想到 Mole 可能在树林里，就带枪出发。在树林中，那些陌生动物看到 Rat 的枪后离开了。'),
+      choose('Which of the following shows the right order of the story?\n① Rat takes his gun to look for Mole.\n② Mole feels afraid and hides in a hole.\n③ Rat finds Mole and helps him get out.\n④ Mole goes into the Wild Wood when Rat is sleeping.',['④①②③','④②①③','③①④②','③②④①'],1,'先是 Mole 独自进树林（④），接着因害怕躲进树洞（②），然后 Rat 带枪寻找 Mole（①），最后找到他（③）。'),
+      choose('Why does the writer write about the snow falling according to the last paragraph?',['To show winter is beautiful with white snow.','To show it’s harder for Rat and Mole to go home.','To show how cold the winter in the Wild Wood is.','To show there will be a good harvest next year.'],1,'雪盖住了所有小路，两人认不出方向，走了几个小时仍找不到回家的路，所以选 B。'),
+      choose('What is Rat like according to the passage?',['Rat is smart and funny.','Rat is brave but not helpful.','Rat is brave, smart and caring.','Rat is afraid and shy.'],2,'Rat 根据外套不见了判断 Mole 的去向，勇敢进树林找他，找到后安慰并等他休息，体现机智、勇敢和关心朋友。')
+    ],wildWood]
+  ]);
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
-    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview,unitOneReview
   ];
 })();
 

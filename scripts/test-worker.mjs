@@ -396,6 +396,31 @@ test('school worksheet grades questions 21–52 and pairs the green-school passa
     assert.deepEqual(graded.results.map(result=>result.correct),batch.map(([, ,correct])=>correct));
   }
 });
+test('Unit 1 review paper preserves all 32 questions and grades both pages',async ()=>{
+  const key = 'classroom-u1-midterm-review-paper';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'english',scope_id});
+  assert.equal(course.question_count,32);
+  let next = 1;
+  for (const [group,count] of [['words',5],['grammar',10],['conversion',4],['translation',3],['choice',5],['reading',5]]) {
+    const quiz = await good('draw_questions',{scope_id,group_id:key+'-'+group,count});
+    const numbers = quiz.questions.map(question=>Number(question.question_id.split('-').at(-1))).sort((a,b)=>a-b);
+    assert.deepEqual(numbers,Array.from({length:count},(_,index)=>next+index));
+    if (group==='reading') assert.ok(quiz.questions.every(question=>question.material.includes('he panics') &&
+      question.material.includes('they cannot find the way home')));
+    next += count;
+  }
+  const answers = [
+    [5,'stays'],[9,'are'],[11,'calls'],[14,'to become'],[15,'but'],[17,['Is your','he is']],
+    [18,['Which class','in']],[21,['playing Chinese chess','at the weekend']],
+    [22,['in the same grade','help each other']],
+    [23,'C'],[24,'C'],[26,'D'],[28,'A'],[29,'A'],[30,'B'],[31,'B'],[32,'C']
+  ];
+  const graded = await good('grade_homework',{record:false,submissions:answers.map(([number,answer])=>({
+    question_id:key+'-'+number,answer
+  }))});
+  assert.equal(graded.correct,answers.length);
+});
 test('Unit 4 review paper preserves all 22 original question numbers and grades the corrected forms',async ()=>{
   const key = 'classroom-u4-midterm-review-paper';
   const scope_id = 'course:'+key;
