@@ -923,3 +923,19 @@ test('restored supplemental questions preserve prior IDs and grade the new foldi
   ]});
   assert.equal(graded.correct,3);
 });
+
+test('history worksheet supplement keeps lesson groups and grades multi-blank historical answers',async ()=>{
+  const key = 'history-upper-cloze-supplement';
+  const scope_id = 'course:'+key;
+  const lesson = await good('explain_topic',{subject:'history',scope_id});
+  assert.equal(lesson.question_count,36);
+  assert.equal(lesson.practice_groups.length,14);
+  const quiz = await good('draw_questions',{scope_id,group_id:key+'-lesson-14',count:1});
+  const question = quiz.questions[0];
+  assert.equal(question.fields.length,3);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:question.question_id,answer:['阳关、玉门关','大月氏','１３８']},
+    {question_id:question.question_id,answer:['玉门关和阳关','匈奴','138']}
+  ]});
+  assert.deepEqual(grade.results.map(result=>result.correct),[true,false]);
+});
