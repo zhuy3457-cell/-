@@ -137,7 +137,8 @@ async function gradeHomework(env,request,args) {
     const explanation = question?.explanation ?? (item.explanation===undefined ? saved?.explanation ?? '' : textValue(item.explanation,'讲评',1200));
     const grade = question ? gradeBankQuestion(question,answer) : gradeReference(answer,reference);
     return {
-      result:{question_id:id,prompt,...grade,explanation,solution:question?.solution},
+      result:{question_id:id,prompt,...grade,explanation,solution:question?.solution,
+        ...(question?.answerDiagram ? {answer_diagram:publicDiagram(question.answerDiagram)} : {})},
       row:{ref:'chat:'+ref+':'+index,id,subject:itemSubject,term:itemTerm,ok:grade.correct,
         date:calendarDate.format(now),time:now.getTime(),prompt:question ? null : prompt,
         reference,explanation:question ? null : explanation}

@@ -942,3 +942,34 @@ test('history worksheet supplement keeps lesson groups and grades multi-blank hi
   ]});
   assert.deepEqual(grade.results.map(result=>result.correct),[true,false,true,true,true]);
 });
+
+test('teaching images reach question cards and keep the history timeline in feedback',async ()=>{
+  const geography = await good('draw_questions',{subject:'geography',scope_id:'course:geo-map-terrain-scenarios',count:6});
+  assert.equal(geography.questions.filter(question=>question.diagram).length,5);
+
+  const biology = await good('draw_questions',{subject:'biology',scope_id:'course:biology-chapter-one-review',
+    group_id:'biology-chapter-one-review-microscope',count:6});
+  const onionId = 'biology-chapter-one-review-onion-image';
+  const onion = biology.questions.find(question=>question.question_id===onionId);
+  assert.match(onion.diagram.alt,/长条状/);
+  assert.match(onion.diagram.credit,/CC0/);
+
+  const history = await good('draw_questions',{subject:'history',scope_id:'course:history-qin-han-evidence',count:6});
+  const timelineId = 'history-qin-han-evidence-6';
+  const timeline = history.questions.find(question=>question.question_id===timelineId);
+  assert.equal(timeline.answer_diagram,undefined);
+  assert.equal(timeline.diagram,undefined);
+
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:onionId,answer:'C'},
+    {question_id:timelineId,answer:'A'}
+  ]});
+  assert.equal(grade.correct,2);
+  const timelineImage = grade.results[1].answer_diagram;
+  assert.match(timelineImage.alt,/公元前221年.*公元前202年.*公元前138年/);
+  for (const {url} of [onion.diagram,timelineImage,...geography.questions.flatMap(question=>question.diagram ?? [])]) {
+    const response = await request(new URL(url).pathname);
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('content-type'),'image/webp');
+  }
+});

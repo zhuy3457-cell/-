@@ -169,6 +169,11 @@ function poolFor(args,requireScope = false) {
   }
   return {subject,term,scope,group,pool,excluded:new Set(excluded)};
 }
+function publicDiagram(diagram) {
+  return {url:publicLink(diagram.src),alt:diagram.alt,
+    ...(diagram.caption ? {caption:diagram.caption} : {}),
+    ...(diagram.source ? {source_url:diagram.source,credit:diagram.credit} : {})};
+}
 function questionView(question) {
   const topic = topics.get(question.topic);
   return {
@@ -184,7 +189,7 @@ function questionView(question) {
     material:question.material,
     table:question.table,
     number_line:question.numberLine,
-    ...(question.diagram ? {diagram:{url:publicLink(question.diagram.src),alt:question.diagram.alt}} : {})
+    ...(question.diagram ? {diagram:publicDiagram(question.diagram)} : {})
   };
 }
 function sample(pool,count) {

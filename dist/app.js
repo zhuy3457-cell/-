@@ -954,12 +954,18 @@ function rememberReadingView(session, panel = app.querySelector('[data-reading-b
   session.readingView = {key,open:panel.open};
   return true;
 }
+function diagramFigure(diagram) {
+  if (!diagram) return '';
+  const source = diagram.source ? ' <a class="crumb" href="'+esc(diagram.source)+'" target="_blank" rel="noopener">'+esc(diagram.credit ?? '图片来源')+'</a>' : '';
+  const caption = diagram.caption || source ? '<figcaption>'+esc(diagram.caption ?? '')+source+'</figcaption>' : '';
+  return '<figure class="question-figure"><img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'">'+caption+'</figure>';
+}
 function readingMaterial(question, expanded = false, block = null) {
   const diagram = question.diagram;
   const line = question.numberLine;
   if (!question.material && !question.table && !diagram && !line) return '';
   const title = line ? '查看数轴' : diagram ? '查看示意图' : question.stage==='找规律' ? '查看图形与数据' : question.table ? '查看数据表' : '阅读材料';
-  const figure = line ? numberLineFigure(line) : diagram ? '<img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'" width="720" height="360">' : '';
+  const figure = line ? numberLineFigure(line) : diagramFigure(diagram);
   const key = block ? ' data-reading-block="'+esc(block.key)+'"' : '';
   const progress = block ? '<span class="reading-progress">本篇 '+block.number+' / '+block.total+' 题</span>' : '';
   return '<details class="reading-material" '+(expanded?'open':'')+key+'><summary>'+title+progress+'</summary>'+
@@ -1062,7 +1068,7 @@ function quizPage() {
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
       const explanation = question.explanation ? '<p>'+esc(question.explanation)+'</p>' : '';
-      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+explanation+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+explanation+diagramFigure(question.answerDiagram)+workedSolution(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div>'+
       '<section class="result-review" id="answerReview" data-result-view="'+view+'"><div class="section-head result-review-head"><h2 class="group-title">本组答题回顾</h2>'+filter+'</div><ul id="answerReviewList">'+overview+'</ul></section></section>';
@@ -1072,7 +1078,7 @@ function quizPage() {
   const level = questionLevel(q);
   const submitted = s.answers[s.index];
   const block = readingBlock(s,q);
-  const expanded = block ? s.readingView?.key!==block.key || s.readingView.open : !submitted;
+  const expanded = block ? s.readingView?.key!==block.key || s.readingView.open : !submitted || !!q.diagram?.caption;
   const value = submitted?.raw ?? s.selected;
   const options = q.steps ? stepInputs(q,s.selected,submitted) : q.blanks ? dictationInputs(q,s.selected,submitted) : q.options
     ? '<div class="options">'+q.options.map((option,i)=>{
@@ -1082,7 +1088,7 @@ function quizPage() {
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="整数、小数或分数（如 1/2）" autocomplete="off" maxlength="32" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
   const explanation = q.explanation ? '<p><b>解析</b>　'+esc(q.explanation)+'</p>' : '';
-  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+explanation+workedSolution(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
+  const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+explanation+diagramFigure(q.answerDiagram)+workedSolution(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {

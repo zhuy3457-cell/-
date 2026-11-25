@@ -21,7 +21,7 @@ const upperExtraPractice = {
       ['推广儒学教育', '统一度量衡', '设立西域都护', '推行推恩令'], 1, '铜权是衡器，诏文和器物相互印证，能直接说明秦朝统一度量衡。'],
     ['秦统一后，某地的郡守由朝廷任免，职位不能由子孙世袭。这体现了哪项制度？',
       ['分封制', '禅让制', '科举制', '郡县制'], 3, '郡县长官由中央任免，有利于中央直接管理地方。'],
-    ['秦代一处遗址出土了半两钱。仅凭这一枚钱币，可以确认哪项信息？',
+    ['观察图中的半两钱。仅凭其中一枚实物，可以确认哪项信息？',
       ['这枚钱币的形制和铭文', '秦朝每个地区的物价', '所有居民每天的交易额', '秦朝再也没有使用其他货币'], 0, '单件实物可直接提供形制与铭文，物价、交易额和货币使用范围还需其他证据。'],
     ['汉武帝时，诸侯王可将封地分给多个子弟，分出的封国变小。这项措施的主要作用是什么？',
       ['恢复西周分封制度', '减轻农民的兵役负担', '削弱诸侯王势力，加强中央集权', '促进丝绸之路上的商品交换'], 2, '推恩令使诸侯王的封地逐渐分割，削弱了地方诸侯王对中央的威胁。'],
@@ -53,7 +53,7 @@ const upperExtraPractice = {
       ['东北', '西北', '东南', '西南'], 3, '左边是西，下方是南，左下方就是西南。'],
     ['同一幅等高线图上，两条上山路线的起终点海拔分别相同。甲路线等高线较疏，乙路线等高线较密。哪条路线整体坡度较缓？',
       ['乙路线', '甲路线', '两条路线坡度相同', '等高线疏密与坡度无关'], 1, '等高距一定时，等高线较疏，表示相同高差分布在更长的水平距离上，坡度较缓。'],
-    ['一组闭合等高线由外向内依次标注 200 米、250 米、300 米。它最可能表示什么地形部位？',
+    ['图中闭合等高线的标高由外向内升高。它最可能表示什么地形部位？',
       ['山谷', '鞍部', '山峰', '陡崖'], 2, '闭合线的海拔向内逐渐升高，说明中间高、四周低，符合山峰特征。'],
     ['一组等高线穿过小河时向海拔较高的一侧弯曲。这个位置最符合哪种地形部位？',
       ['山谷', '山脊', '山顶', '陡崖'], 0, '山谷处等高线向高处凸出，小河通常沿谷底从高处向低处流。']
@@ -63,7 +63,7 @@ const upperExtraPractice = {
       ['池塘中的所有鱼、虾和水草', '池塘中的水、底泥和阳光', '池塘中的所有动物及其食物', '整个池塘中的生物及其生活环境'], 3, '生态系统包含一定区域内的全部生物及其生活的非生物环境。'],
     ['池塘中的绿藻能利用光能制造有机物。它在生态系统中属于哪种成分？',
       ['消费者', '生产者', '分解者', '非生物成分'], 1, '绿藻通过光合作用制造有机物，是生产者。'],
-    ['某池塘里小虾以绿藻为食，小鱼以小虾为食。哪条食物链书写正确？',
+    ['根据图中的池塘食物网，哪一条经过小虾的食物链书写正确？',
       ['小鱼 → 小虾 → 绿藻', '绿藻 → 小鱼 → 小虾', '绿藻 → 小虾 → 小鱼', '水 → 绿藻 → 小虾'], 2, '食物链从生产者开始，箭头由食物指向取食者。'],
     ['池底的落叶逐渐分解。参与这一过程的许多细菌和真菌主要起什么作用？',
       ['把落叶中的有机物分解成可进入物质循环的简单物质', '利用光能制造有机物', '把池水全部变成氧气', '使能量在池塘内反复循环使用'], 0, '分解者把有机物分解为水、二氧化碳和无机盐等，促进生态系统的物质循环。'],
@@ -205,3 +205,59 @@ const historyCourseChecks = [
 ].map(([number, title, description, items]) =>
   addCourseQuestions('history', 'history-course-' + number, '第 ' + number + ' 课 · ' + title, description, items)
 );
+
+{
+  const usgs = 'https://www.usgs.gov/publications/finding-your-way-map-and-compass';
+  const nasa = 'https://spaceplace.nasa.gov/seasons/en/';
+  const noaa = 'https://www.noaa.gov/education/resource-collections/marine-life/aquatic-food-webs';
+  const openstax = 'https://openstax.org/books/biology-2e/pages/4-3-eukaryotic-cells';
+  const museum = 'https://www.chnmuseum.cn/portals/0/web/zt/gudai/detail4.html';
+  const makeDiagram = (name, alt, caption, source, credit = '制图依据') =>
+    ({src:name+'.webp',alt,caption,source,credit});
+  const campus = makeDiagram('geo-teach-campus',
+    '上方为北。校门位于图书馆左下方，校门到体育馆的蓝色线段图上长3厘米，比例尺为1比20000。',
+    '校园平面图（教学情境）',usgs);
+  const contours = makeDiagram('geo-teach-contours',
+    '同一座山的闭合等高线由外向内是200、250、300、350米。甲线经过的各等高线间距较大，乙线经过的各等高线间距较小。',
+    '两条路线均由200米处上升到350米处。',usgs);
+  const valley = makeDiagram('geo-teach-valley',
+    '河流穿过三条等高线，从300米流向250米再到200米。等高线在河道处向高处弯曲。',
+    '绿线为等高线，蓝箭头指示河流流向。',usgs);
+  const seasons = makeDiagram('geo-teach-seasons',
+    '左图春分太阳直射赤道，右图北半球夏至直射北回归线。',
+    '用太阳直射点的位置比较春分和夏至。',nasa);
+  const pond = makeDiagram('bio-teach-pond',
+    '绿藻分别指向小虾和水蚤，小虾和水蚤均指向小鱼。箭头表示能量从食物流向取食者。',
+    '简化的池塘食物网。',noaa);
+  const bubbles = makeDiagram('bio-teach-bubbles',
+    '柱形图横轴为光照组和遮光组，气泡数分别是30和2。两组观察时间相同。',
+    '题设示例数据。',null);
+  const magnification = makeDiagram('bio-teach-magnification',
+    '同一装片的两个等大圆形视野。低倍下细胞图像较小且可见数量较多，高倍下细胞图像较大且可见数量较少。',
+    '低倍和高倍显微视野对比（示意图）。',openstax);
+  const onion = makeDiagram('bio-teach-onion',
+    '洋葱表皮显微照片，视野中可见许多并排的长条状细胞，有清楚的外侧边界。',
+    '洋葱鳞片叶表皮的显微照片。',
+    'https://commons.wikimedia.org/wiki/File:Living_cells_of_onion_epidermis_(34062338020).jpg',
+    'Berkshire Community College Bioscience Image Library · CC0');
+  const coin = makeDiagram('history-teach-banliang',
+    '三枚外形近圆、中心呈方孔的钱币，方孔两侧有铭文。',
+    '半两钱实物参照（照片中的钱币用于观察形制）。',
+    'https://commons.wikimedia.org/wiki/File:Qin_State_Qin_Dynasty_Banliang_Coins_(9930897714).jpg',
+    'Gary Todd · CC0');
+  const timeline = makeDiagram('history-teach-timeline',
+    '从早到晚：公元前221年秦统一六国、公元前202年西汉建立、公元前138年张骞首次出使西域。',
+    '沿箭头读年代，公元前的年份数值由大到小。',museum);
+
+  const questions = new Map(subjects.flatMap(subject=>subject.topics.flatMap(topic=>
+    topic.questions.map(question=>[question.id,question]))));
+  for (const [id,diagram] of [
+    ['geo-map-terrain-scenarios-1',campus],['geo-map-terrain-scenarios-3',campus],
+    ['geo-map-terrain-scenarios-4',contours],['geo-map-terrain-scenarios-5',contours],
+    ['geo-map-terrain-scenarios-6',valley],['geo-month1-motion-shadow',seasons],
+    ['bio-ecosystem-pond-scenarios-3',pond],['bio-ecosystem-pond-scenarios-6',bubbles],
+    ['biology-chapter-one-review-3',magnification],['biology-chapter-one-review-onion-image',onion],
+    ['history-qin-han-evidence-3',coin]
+  ]) questions.get(id).diagram = diagram;
+  questions.get('history-qin-han-evidence-6').answerDiagram = timeline;
+}

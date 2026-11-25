@@ -221,6 +221,9 @@ dialog::backdrop{background:#23193968}
 .reading-progress{margin-inline-start:10px;color:var(--muted);font-size:.84rem;font-weight:600;font-variant-numeric:tabular-nums}
 .reading-material>div{margin-top:7px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 .material-diagram{display:block;width:100%;max-width:540px;height:auto;margin-top:9px;border:1px solid var(--line);border-radius:8px}
+.question-figure{margin:0}
+.question-figure figcaption{margin-top:6px;color:var(--muted);font-size:.875rem;line-height:1.55;overflow-wrap:anywhere}
+.question-figure figcaption a{text-decoration:underline;text-underline-offset:3px}
 .number-line{box-sizing:border-box;max-width:520px;margin:9px 0 0;padding:30px 12px;height:76px;color:#283343}
 .number-line-axis{position:relative;display:block;border-top:2px solid currentColor}
 .number-line-axis::after{content:"";position:absolute;right:0;top:-5px;width:8px;height:8px;border-top:2px solid;border-right:2px solid;transform:rotate(45deg)}
