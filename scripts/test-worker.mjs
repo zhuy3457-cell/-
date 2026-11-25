@@ -628,8 +628,8 @@ test('Tiangong exam has its own page group and grades all six parts of question 
   const key = 'geo-exam-earth-page-6';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'geography',scope_id});
-  assert.equal(course.question_count,32);
-  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[6,5,9,6,6]);
+  assert.equal(course.question_count,40);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[8,6,5,9,6,6]);
   const quiz = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-8',count:6});
   assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),
     Array.from({length:6},(_,index)=>key+'-39-'+(index+1)));
@@ -667,6 +667,19 @@ test('page 4 supplies sea-land charts and latitude diagrams with correct single 
     question_id:key+'-'+id,answer
   }))});
   assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
+});
+test('page 3 preserves figures 6 and 7 and grades the height and shared-map questions',async ()=>{
+  const key = 'geo-exam-earth-page-6';
+  const quiz = await good('draw_questions',{subject:'geography',scope_id:'course:'+key,group_id:key+'-page-3',count:8});
+  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  assert.equal(questions.size,8);
+  for (const number of [15,16,17]) assert.match(questions.get(key+'-'+number).diagram.url,/geography-exam-meridians\.webp$/);
+  for (const number of [18,19]) assert.match(questions.get(key+'-'+number).diagram.url,/geography-exam-elevation\.webp$/);
+  assert.match(questions.get(key+'-21').material,/共享实时位置/);
+  const graded = await good('grade_homework',{record:false,submissions:['C','D','D','A','C','D','B','A'].map((answer,index)=>({
+    question_id:key+'-'+(14+index),answer
+  }))});
+  assert.equal(graded.correct,8);
 });
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
