@@ -19,9 +19,13 @@ function matchesNumber(raw, expected) {
 }
 const normalizeStepText = value => value.normalize('NFKC').trim().toLowerCase();
 const normalizeEnglish = value => normalizeStepText(value).replace(/[’‘ʼ]/g,"'").replace(/[,，.。?!？！‐‑-]+/g,' ').replace(/\s+/g,' ').trim();
+const normalizeFormula = value => normalizeStepText(value).replace(/\s+/g,'')
+  .replace(/[−–—]/g,'-').replace(/[⁄∕÷]/g,'/').replace(/\bpi\b|(?<=\d)pi\b/g,'π')
+  .replace(/(?<=[\d)])[×·*](?=[a-zπ(])/g,'');
 function matchesStep(step,value) {
   if (step.text) {
-    const normalize = step.text === 'english' ? normalizeEnglish : normalizeStepText;
+    const normalize = step.text === 'english' ? normalizeEnglish :
+      step.text === 'formula' ? normalizeFormula : normalizeStepText;
     const entered = normalize(value);
     return [step.answer,...(step.aliases ?? [])].some(answer=>normalize(answer)===entered);
   }

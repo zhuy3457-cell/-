@@ -412,6 +412,23 @@ test('Unit 4 handout uses its own numbering and grades the original phrase group
   ]});
   assert.equal(graded.correct,10);
 });
+test('friendly midpoint practice grades formulas, negative midpoints and all three motion times',async ()=>{
+  const scope_id = 'course:math-friendly-midpoint';
+  const lesson = await good('explain_topic',{query:'七上数学友好邻点'});
+  assert.equal(lesson.scope_id,scope_id);
+  assert.equal(lesson.question_count,4);
+  const motion = await good('draw_questions',{scope_id,group_id:'math-friendly-midpoint-motion',count:1});
+  assert.equal(motion.questions[0].fields.length,3);
+  const grades = await good('grade_homework',{subject:'math',record:false,submissions:[
+    {question_id:'math-friendly-midpoint-1',answer:[3,-3.5]},
+    {question_id:'math-friendly-midpoint-1',answer:[3,-4.5]},
+    {question_id:'math-friendly-midpoint-2',answer:'（b + a）÷ 2'},
+    {question_id:'math-friendly-midpoint-3',answer:'-2 - 2 * pi'},
+    {question_id:'math-friendly-midpoint-4',answer:['8/3','14/3','44/9']},
+    {question_id:'math-friendly-midpoint-4',answer:['8/3','24/5','44/9']}
+  ]});
+  assert.deepEqual(grades.results.map(result=>result.correct),[true,false,true,true,true,false]);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});

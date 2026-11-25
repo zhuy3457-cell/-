@@ -239,6 +239,38 @@ const sevenUpperReview = (() => {
       ]),level:'basic',material:'原来（28 个）：[ 一半苹果 ][ 另一半苹果 ][ 梨 ]\n剩下（22 个）：[ 另一半苹果 ][ 梨 ]'}
     ]]
   ]);
+  const midpoint = topic('math','math-friendly-midpoint','数轴上的友好邻点 · 第 25 题','按原题四问练中点坐标、圆滚动和分段动点。',[
+    ['友好邻点','题中的“友好邻点”是两个不同点的中点：它严格位于两点之间，到两端距离相等。两端坐标为 a、b，中点坐标为 (a+b)/2。'],
+    ['分段动点','方向决定坐标的增减。动点到终点后，坐标在停留期间固定。先按运动规则写出每段的坐标，再对每个中点候选列式和检验。']
+  ],[
+    ['midpoint','第 25 题（1）–（3） · 中点坐标',[
+      multiple('第 25 题（1）。数轴上 M、N、E、F 的坐标分别为 1、5、−5、−2，依次填写 M 与 N、E 与 F 的友好邻点坐标。',
+        [['M 与 N 的中点',3],['E 与 F 的中点','-7/2']],[
+          'M 与 N 的中点为 (1+5)÷2=3。',
+          'E 与 F 的中点为 (−5−2)÷2=−7/2，即 −3.5。'
+        ],axis([-5,-2,0,1,5])),
+      {...answer('第 25 题（2）。数轴上 A 在 B 左侧，坐标分别为 a、b。C 是两点的友好邻点，用含 a、b 的式子表示 C 的坐标。用斜杠写除法。','(a+b)/2',[
+        '设 C 的坐标为 c，则 a<c<b，AC=c−a，BC=b−c。',
+        '由 AC=BC 得 c−a=b−c，即 2c=a+b，因此 c=(a+b)/2。'
+      ]),steps:[{label:'C 的坐标',answer:'(a+b)/2',aliases:['(b+a)/2','a/2+b/2','b/2+a/2','a+(b-a)/2','b-(b-a)/2','(1/2)(a+b)','0.5(a+b)'],text:'formula'}]},
+      {...answer('第 25 题（3）。半径为 1 的圆从原点向右沿数轴无滑动滚动一周，接触点从 H 移到 H′。坐标为 −1 的 K 是 W 与 H′ 的友好邻点，求 W 的坐标。圆周率可输入 π 或 pi。','-2-2π',[
+        '圆向右滚动一周移动一个周长，H′ 的坐标为 2π。',
+        '设 W 的坐标为 w。由 (w+2π)/2=−1，得 w=−2−2π。',
+        '检验：w<−1<2π，且 K 到 W、H′ 的距离都是 1+2π。'
+      ]),steps:[{label:'W 的坐标',answer:'-2-2π',aliases:['-2π-2','-2(1+π)','-2(π+1)','-(2+2π)','-(2π+2)'],text:'formula'}]}
+    ]],
+    ['motion','第 25 题（4） · 停留与折返',[
+      multiple('第 25 题（4）。D、E、F 的坐标依次为 −2、6、10。P 从 D 以每秒 2 个单位向 F 移动，到 F 停止。Q 同时从 E 以每秒 1 个单位向 F 移动，到 F 停 0.5 秒后以每秒 8 个单位返回 E，随后停止。E、P、Q 中恰有一点是其余两点的友好邻点时，求所有时间 t（秒），从小到大填。',[
+        ['最小的 t','8/3'],['中间的 t','14/3'],['最大的 t','44/9']
+      ],[
+        '设 P、Q 的坐标为 p、q。P 在 6 秒内满足 p=−2+2t。Q 前 4 秒满足 q=6+t，接着在 F 停留至 4.5 秒，再于 4.5 至 5 秒内满足 q=10−8(t−4.5)=46−8t，5 秒后 q=6。',
+        '0<t<4 时，P<E<Q，E 是唯一可能的中点。由 p+q=12，得 t=8/3，符合区间。',
+        '4<t≤4.5 时，E<P<Q，若 P 是中点，则 p=8，解得 t=5，超出这一段。',
+        '4.5<t<5 时，P、Q 在 t=24/5 相遇。相遇前 E<P<Q，由 2p=6+q 得 t=14/3（小于 24/5）。相遇后 E<Q<P，由 2q=6+p 得 t=44/9（大于 24/5 且小于 5）。',
+        't=0、t=4、t=24/5 以及 t≥5 时，至少有两点重合，不满足严格位于另外两点之间的要求。所有解为 8/3、14/3、44/9 秒。'
+      ],axis([-2,6,10]))
+    ]]
+  ]);
   const microscope = topic('biology','biology-chapter-one-review','生物第一章考前读背','复习生物的特征、普通光学显微镜和科学探究。',[
     ['生物的特征','生物能生长发育、繁殖后代，对刺激作出反应，并与环境相互作用。多数生物由细胞构成，病毒没有细胞结构。观察和实验是科学研究的基本方法。'],
     ['显微镜顺序','取镜时一手握镜臂，一手托镜座。先用低倍物镜对光，依次调转换器、遮光器和反光镜。镜筒下降时从侧面看物镜，接近玻片后再看目镜，缓慢升镜筒找像，用细准焦螺旋调清晰。'],
@@ -821,7 +853,7 @@ const sevenUpperReview = (() => {
     ],bambooMaterial]
   ]);
   return [
-    geography,history,grammar,take,math,absolute,quantities,microscope,ecology,civicsMidterm,civicsExam,
+    geography,history,grammar,take,math,absolute,quantities,midpoint,microscope,ecology,civicsMidterm,civicsExam,
     brackets,happyFour,happyThree,environment,ecosystem,warringStates,family,narrative,hollowTree,weeklyChinese,
     weekendChinese,practiceChinese,chineseHoliday,chinesePaper
   ];
