@@ -212,40 +212,40 @@ const historyCourseChecks = [
   const noaa = 'https://www.noaa.gov/education/resource-collections/marine-life/aquatic-food-webs';
   const openstax = 'https://openstax.org/books/biology-2e/pages/4-3-eukaryotic-cells';
   const museum = 'https://www.chnmuseum.cn/portals/0/web/zt/gudai/detail4.html';
-  const makeDiagram = (name, alt, caption, source, credit = '制图依据') =>
-    ({src:name+'.webp',alt,caption,source,credit});
-  const campus = makeDiagram('geo-teach-campus',
+  const makeDiagram = (src, alt, caption, source, credit = '制图依据') =>
+    ({src,alt,caption,source,credit});
+  const campus = makeDiagram('geo-teach-campus.webp',
     '上方为北。校门位于图书馆左下方，校门到体育馆的蓝色线段图上长3厘米，比例尺为1比20000。',
     '校园平面图（教学情境）',usgs);
-  const contours = makeDiagram('geo-teach-contours',
+  const contours = makeDiagram('geo-teach-contours.webp',
     '同一座山的闭合等高线由外向内是200、250、300、350米。甲线经过的各等高线间距较大，乙线经过的各等高线间距较小。',
     '两条路线均由200米处上升到350米处。',usgs);
-  const valley = makeDiagram('geo-teach-valley',
+  const valley = makeDiagram('geo-teach-valley.webp',
     '河流穿过三条等高线，从300米流向250米再到200米。等高线在河道处向高处弯曲。',
     '绿线为等高线，蓝箭头指示河流流向。',usgs);
-  const seasons = makeDiagram('geo-teach-seasons',
+  const seasons = makeDiagram('geo-teach-seasons.webp',
     '左图春分太阳直射赤道，右图北半球夏至直射北回归线。',
     '用太阳直射点的位置比较春分和夏至。',nasa);
-  const pond = makeDiagram('bio-teach-pond',
+  const pond = makeDiagram('bio-teach-pond.webp',
     '绿藻分别指向小虾和水蚤，小虾和水蚤均指向小鱼。箭头表示能量从食物流向取食者。',
     '简化的池塘食物网。',noaa);
-  const bubbles = makeDiagram('bio-teach-bubbles',
+  const bubbles = makeDiagram('bio-teach-bubbles.webp',
     '柱形图横轴为光照组和遮光组，气泡数分别是30和2。两组观察时间相同。',
     '题设示例数据。',null);
-  const magnification = makeDiagram('bio-teach-magnification',
+  const magnification = makeDiagram('bio-teach-magnification.webp',
     '同一装片的两个等大圆形视野。低倍下细胞图像较小且可见数量较多，高倍下细胞图像较大且可见数量较少。',
     '低倍和高倍显微视野对比（示意图）。',openstax);
-  const onion = makeDiagram('bio-teach-onion',
+  const onion = makeDiagram('bio-teach-onion.webp',
     '洋葱表皮显微照片，视野中可见许多并排的长条状细胞，有清楚的外侧边界。',
     '洋葱鳞片叶表皮的显微照片。',
     'https://commons.wikimedia.org/wiki/File:Living_cells_of_onion_epidermis_(34062338020).jpg',
     'Berkshire Community College Bioscience Image Library · CC0');
-  const coin = makeDiagram('history-teach-banliang',
+  const coin = makeDiagram('history-teach-banliang.webp',
     '三枚外形近圆、中心呈方孔的钱币，方孔两侧有铭文。',
     '半两钱实物参照（照片中的钱币用于观察形制）。',
     'https://commons.wikimedia.org/wiki/File:Qin_State_Qin_Dynasty_Banliang_Coins_(9930897714).jpg',
     'Gary Todd · CC0');
-  const timeline = makeDiagram('history-teach-timeline',
+  const timeline = makeDiagram('history-teach-timeline.webp',
     '从早到晚：公元前221年秦统一六国、公元前202年西汉建立、公元前138年张骞首次出使西域。',
     '沿箭头读年代，公元前的年份数值由大到小。',museum);
 
