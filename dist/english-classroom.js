@@ -12,9 +12,9 @@ const englishClassroomModules = (() => {
   }
   function module(key,title,range,description,notes,groups,sources = []) {
     const questions = [];
-    const sections = groups.map(([keySuffix,stage,items,material])=>{
-      const ids = items.map(item=>{
-        const number = questions.length+1;
+    const sections = groups.map(([keySuffix,stage,items,material,startNumber])=>{
+      const ids = items.map((item,index)=>{
+        const number = startNumber===undefined ? questions.length+1 : startNumber+index;
         const id = key+'-'+number;
         questions.push({...item,id,stage,prompt:number+'. '+item.prompt,...(material ? {material} : {})});
         return id;
@@ -227,8 +227,25 @@ const englishClassroomModules = (() => {
     'Toad invites Rat and Mole on a trip in a horse-drawn caravan. They enjoy the slow journey at first. Then a fast motorcar rushes past. Their horse is frightened, and the caravan goes off the road.',
     'Rat is angry, but Toad can hardly think about the caravan. He is amazed by the speed of the car. The trip was his big plan before the accident. Now his new dream is to drive a motorcar.'
   ].join('\n\n');
+  const toadHall = [
+    '“Is Toad (蛤蟆) a nice animal?” asked Mole (鼹鼠), as Rat (河鼠) rowed the boat.',
+    '“Yes,” replied Rat. “Toad is very kind. But he’s not very clever. And he is a little, well... boastful (自吹自擂的), but I like Toad very much.”',
+    'They travelled along the river. Rat sang a song about ducks. Soon, they saw Toad Hall, Toad’s house. It was a lovely old house near the river with beautiful gardens.',
+    '“There’s Toad’s Hall,” said Rat. “Toad is very rich, you know.” Rat and Mole found Toad in the garden. He was looking at a big map.',
+    '“Mole and Rat!” he cried. “Oh, it’s great to see you. And you can help me—it’s very important.”',
+    '“Do you want help with your boat?” asked Rat.',
+    '“Boat? Oh, no,” said Toad. “Boats are stupid (愚蠢的). I hate boats. I have a new thing now. Come and see.”',
+    'Rat and Mole went with Toad to the back of the house. There they saw the new thing—it was a Gypsy caravan (大篷车). It was yellow and green with red wheels.',
+    '“Look, look!” cried Toad. Mole was very excited. Mole went up the steps into the caravan with Toad. It was very small, but very nice. There were three little beds. There was a little table, a cooker, bookshelves and a bird cage with a bird in it.',
+    '“It’s perfect,” said Toad. He opened a cupboard. “Look,” he cried. “Food, drink, paper and cards. It’s ready for our journey this afternoon.”',
+    '“What?” said Rat. “Our journey and this afternoon?”',
+    '“Now, Rat,” said Toad. “Please, please come with me. We can see the world—together.”',
+    '“No,” said Rat. “I don’t want to see the world. I want to stay on my river. And Mole wants to stay on the river too. Don’t you, Mole?”',
+    '“Er... Yes, of course,” said Mole, sadly. He looked at the yellow and green caravan. Then he looked at Toad.',
+    '—Adapted from The Wind in the Willows'
+  ].join('\n\n');
   const willows = module('english-wind-willows','《柳林风声》The Wind in the Willows','七上 · 英语课外阅读',
-    '读两段七年级难度的原著情节改写，练人物关系、事件顺序和情绪变化。',[
+    '读三篇情节改写，练人物判断、事件排序和最佳标题，含学案第 53–57 题。',[
     ['河畔角色','Mole 是初到河边的鼹鼠，Water Rat 是熟悉划船的水鼠。留意谁贸然拿起船桨、谁帮了忙。'],
     ['路上发生了什么','把马车旅行、汽车驶过、马受惊和 Toad 改变兴趣按时间排序。Rat 与 Toad 对同一事件反应不同。']
   ],[
@@ -243,9 +260,17 @@ const englishClassroomModules = (() => {
       choose('Why does the caravan go off the road?',['They are looking for a picnic spot.','The horse is tired.','The horse is frightened by a fast motorcar.','Toad wants to stop and swim.'],2,'汽车飞驰而过后，马受惊，马车离开了道路。'),
       choose('How does Toad react to the motorcar?',['He is amazed by its speed.','He wants to keep driving the caravan.','He is angry with Rat.','He never wants to travel again.'],0,'Toad 被汽车的速度吸引，之后开始梦想开汽车。'),
       choose('Which change is shown most clearly in the passage?',['Rat decides to learn to swim.','Mole decides to buy a horse.','The friends change a car into a caravan.','Toad changes from planning a caravan trip to wanting to drive a motorcar.'],3,'结尾对比了 Toad 事故前的马车计划和事故后的新梦想。')
-    ],road]
+    ],road],
+    ['toad-hall','拜访蛤蟆庄园 · 学案 53–57',[
+      choose('What did Rat think of Toad?',['Noisy but clever.','Clever and rich.','Kind but boastful.','Stupid and unfriendly.'],2,'Rat 说 Toad 很善良（very kind），也有点爱自夸（a little boastful）。'),
+      choose('How did Toad feel when seeing Mole and Rat?',['Excited.','Worried.','Afraid.','Lucky.'],0,'Toad 一见面就喊出他们的名字，并说 “it’s great to see you”，表现出兴奋。'),
+      choose('Which of the following shows the right order of the story?\n(a) Toad opened a cupboard.\n(b) Rat sang a song about ducks.\n(c) Toad was looking at a big map.\n(d) Mole went up the steps into the caravan with Toad.',
+        ['a-c-b-d','b-c-d-a','b-c-a-d','a-d-b-c'],1,'Rat 在路上唱歌（b），到达庄园后他们在花园看到 Toad 正看地图（c），接着 Mole 登上大篷车（d），最后 Toad 打开柜子（a）。'),
+      choose('Which of the following is TRUE about Toad?',['His house was very far from the river.','His caravan was in front of the house.','He always wanted to stay on the river.','He planned a journey with Mole and Rat.'],3,'Toad 已为下午的旅行做好准备，还邀请两位朋友一起去。房子靠河，大篷车在屋后，想留在河上的是 Rat。'),
+      choose('Which can be the best title for this passage?',['A Visit to Toad Hall','Three Good Friends','Toad’s New Caravan','A Happy Boat Trip'],0,'全文写 Rat 和 Mole 去拜访 Toad，从划船抵达、在花园见面，写到看大篷车和谈旅行。A 能概括完整经过，C 只概括其中一个情节。')
+    ],toadHall,53]
   ],[{title:'Project Gutenberg · The Wind in the Willows',url:'https://www.gutenberg.org/files/289/289-h/289-h.htm',
-    note:'Kenneth Grahame 原著。阅读材料根据第 1、2 章的情节简写，问题为本练习编写。'}]);
+    note:'Kenneth Grahame 原著。前两组为情节简写与配套练习，拜访蛤蟆庄园一组来自学案照片。'}]);
 
   const ruby = [
     'A little Swallow is on his way to Egypt. One night he rests below the statue of the Happy Prince high above a city. Drops of water fall on him, but there are no clouds. He looks up and sees that the Prince is crying.',

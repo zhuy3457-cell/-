@@ -145,7 +145,7 @@ test('uploaded English worksheets and both book units work through the chat tool
     ['英语问候与自我介绍学案','course:classroom-u1-intro',30],
     ['英语1.3 Grammar','course:classroom-u1-grammar',43],
     ['英语 Unit 2 Grammar Integration 默写与翻译','course:classroom-u2-integration',31],
-    ['英语柳林风声','course:english-wind-willows',8],
+    ['英语柳林风声','course:english-wind-willows',13],
     ['英语快乐王子','course:english-happy-prince',8]
   ];
   for (const [query,scopeId,count] of courses) {
@@ -163,6 +163,11 @@ test('uploaded English worksheets and both book units work through the chat tool
     [29,30,31,32,33,34,35,36,37,38]);
   const dialogue = await good('draw_questions',{query:'英语1.3 Grammar',group_id:'classroom-u1-grammar-dialogue',count:5});
   assert.ok(dialogue.questions.every(question=>question.options.length===6));
+  const hall = await good('draw_questions',{query:'英语柳林风声',group_id:'english-wind-willows-toad-hall',count:5});
+  assert.deepEqual(hall.questions.map(question=>question.question_id).sort(),
+    [53,54,55,56,57].map(number=>'english-wind-willows-'+number));
+  assert.ok(hall.questions.every(question=>question.material.includes('Rat sang a song about ducks') &&
+    question.material.includes('Then he looked at Toad') && question.options.length===4));
   const graded = await good('grade_homework',{record:false,submissions:[
     {question_id:'classroom-u1-intro-8',answer:'C'},
     {question_id:'classroom-u1-intro-15',answer:'to listen'},
@@ -171,19 +176,20 @@ test('uploaded English worksheets and both book units work through the chat tool
     {question_id:'classroom-u1-grammar-26',answer:'D'},
     {question_id:'classroom-u1-grammar-42',answer:'E'},
     {question_id:'classroom-u2-integration-23',answer:'would like to'},
-    {question_id:'classroom-u2-integration-31',answer:'I often visit museums in my free time.'}
+    {question_id:'classroom-u2-integration-31',answer:'I often visit museums in my free time.'},
+    ...['C','A','B','D','A'].map((answer,index)=>({question_id:'english-wind-willows-'+(53+index),answer}))
   ]});
   assert.equal(graded.correct,graded.count);
   const unitOne = await good('explain_topic',{query:'英语第一单元'});
   const unitTwo = await good('explain_topic',{query:'英语第二单元'});
   assert.ok(unitOne.practice_groups.some(group=>group.group_id==='classroom-u1-intro-sounds'));
   assert.ok(unitTwo.practice_groups.some(group=>group.group_id==='classroom-u2-integration-sentences'));
-  for (const query of ['英语柳林风声','英语快乐王子']) {
+  for (const [query,count,passages] of [['英语柳林风声',13,3],['英语快乐王子',8,2]]) {
     const book = await good('explain_topic',{query});
     assert.match(book.sources[0].url,/^https:\/\/www\.gutenberg\.org\//);
-    const questions = await good('draw_questions',{query,count:8});
-    assert.equal(questions.questions.length,8);
-    assert.equal(new Set(questions.questions.map(question=>question.material)).size,2);
+    const questions = await good('draw_questions',{query,count});
+    assert.equal(questions.questions.length,count);
+    assert.equal(new Set(questions.questions.map(question=>question.material)).size,passages);
   }
 });
 test('upper grade review exposes all four subjects and preserves reading tables and worked answers',async ()=>{
