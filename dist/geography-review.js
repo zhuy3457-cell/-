@@ -1092,6 +1092,36 @@ geoReviewModules.push((() => {
     material:'北斗卫星导航系统（BDS）是中国自主研制的全球卫星导航系统。根据图 12 的经纬网，判断甲、乙、丙三地的位置。',
     diagram:{src:"geography-exam-beidou.webp",alt:'图 12 经纬网。甲是标为 90°E 的经线与 30°N 纬线的交点。乙是标为 150°E 的经线与同一纬线的交点。丙在标为 120°E 的经线与 0° 纬线的交点。'}
   };
+  const lunarIntroduction = '2024 年 9 月 28 日，我国首次公开展示自主研发的登月服外观。图 1 表示太阳、地球与月球的关系，图 2 介绍登月服的功能。';
+  const earthMoon = {material:lunarIntroduction,diagram:{
+    src:"geography-exam-earth-moon.webp",
+    alt:'图 1。太阳位于大轨道中央，地球位于大轨道上。月球在以地球为中心的小轨道上。'
+  }};
+  const pageOne = [
+    question('1','读图 1，在宇宙中地球属于哪一类天体？','行星',
+      '地球绕太阳运行，属于行星。太阳是恒星，月球是地球的天然卫星，选 B。',{
+        ...earthMoon,options:['恒星','行星','卫星','流星']
+      }),
+    question('2','地球围绕太阳公转一圈约需多久？','一年',
+      '地球公转一圈约为一年，自转一圈约为一天，选 D。',{
+        ...earthMoon,options:['一天','一周','一月','一年']
+      }),
+    question('3','根据图 2 中登月服的功能，能够推测月球有什么特点？','重力较小',
+      '图中说明登月服适应月球低重力环境，因此选 A。防护面料应对的是较大的昼夜温差。生命维持系统供给航天员氧气和淡水，不能据此推断月面有液态水或氧气充足。',{
+        material:lunarIntroduction,
+        diagram:{src:"geography-exam-lunar-suit.webp",alt:'图 2。登月服设有全景防眩光面窗、长短焦距摄像机、多功能集成控制台和能提供氧气与淡水的生命维持系统。整体质量较轻，适应月球低重力环境。防护面料可应对月球表面超过 300℃ 的昼夜温差。'},
+        options:['重力较小','温差较小','存在液态水','氧气充足']
+      }),
+    question('4','我国发展载人登月、开展太空探索的意义有哪些？\n① 探索生命的起源　② 占有月球生物资源　③ 了解宇宙的演化　④ 推动我国科技进步','①③④',
+      '太空探索可以为生命起源、天体和宇宙演化等科学问题提供研究资料，也能推动科技进步。题目没有占有月球生物资源的依据，选 C。',{
+        options:['①②③','①②④','①③④','②③④']
+      }),
+    question('5','下列天体系统关系图中，哪幅能正确表示地球在太空中的位置？','③',
+      '由大到小依次是银河系、太阳系、地月系。太阳系属于银河系，地月系属于太阳系，选 C。',{
+        diagram:{src:"geography-exam-celestial-systems.webp",alt:'四幅关系图均为三个由外到内的嵌套区域。① 太阳系、银河系、地月系。② 地月系、太阳系、银河系。③ 银河系、太阳系、地月系。④ 银河系、地月系、太阳系。'},
+        options:['①','②','③','④']
+      })
+  ];
   const launchSites = {
     material:'2025 年 10 月 31 日 23 时 44 分，“神舟二十一号”载人飞船在酒泉卫星发射中心成功发射。读图 4，回答第 10–12 题。',
     diagram:{src:"geography-exam-launch-sites.webp",alt:'图 4。酒泉与太原位于 30°N 以北，西昌与文昌位于 30°N 以南。文昌比酒泉纬度低、经度偏东。图上标有 100°E 和 110°E 两条经线。'}
@@ -1300,11 +1330,12 @@ geoReviewModules.push((() => {
       })
   ];
   return {
-    key,title:'七上地理试卷第 2–8 页 · 地图、地球运动与世界海陆',range:'第 2–8 页 · 第 6–39 题',
-    description:'练习地图选用、等高线、二十四节气、五带、北斗经纬网和天宫轨迹图。多选题用字母填写，顺序不限。',
+    key,title:'七上地理期中综合练习（2）',range:'第 1–8 页 · 第 1–39 题',
+    description:'按原卷分八页练习太空探索、经纬网、地图、地球运动和世界海陆。多选题用字母填写，顺序不限。',
     firstPageIds:pageFive.map(item=>item.id),
     firstPageNumber:5,firstPageTitle:'第 5 页 · 观赛地图与二十四节气',laterPageTitle:'第 6 页 · 地球运动与经纬网',
     extraPageGroups:[
+      {key:key+'-page-1',pageNumber:1,title:'第 1 页 · 登月与天体系统',ids:pageOne.map(item=>item.id)},
       {key:key+'-page-2',pageNumber:2,title:'第 2 页 · 太空探索、发射基地与自转',ids:pageTwo.map(item=>item.id)},
       {key:key+'-page-3',pageNumber:3,title:'第 3 页 · 自转、经线与海拔',ids:pageThree.map(item=>item.id)},
       {key:key+'-page-4',pageNumber:4,title:'第 4 页 · 电子地图、海陆比例与纬线',ids:pageFour.map(item=>item.id)},
@@ -1318,6 +1349,7 @@ geoReviewModules.push((() => {
       {label:'比较日出先后',text:'在同一条纬线上，通常越偏东，越先看到日出。经度同为东经时，度数越大，位置越偏东。'}
     ],
     questions:[
+      ...pageOne,
       ...pageTwo,
       ...pageThree,
       ...pageFour,

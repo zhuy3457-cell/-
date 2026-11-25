@@ -628,8 +628,8 @@ test('Tiangong exam has its own page group and grades all six parts of question 
   const key = 'geo-exam-earth-page-6';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'geography',scope_id});
-  assert.equal(course.question_count,48);
-  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[8,8,6,5,9,6,6]);
+  assert.equal(course.question_count,53);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[5,8,8,6,5,9,6,6]);
   const quiz = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-8',count:6});
   assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),
     Array.from({length:6},(_,index)=>key+'-39-'+(index+1)));
@@ -693,6 +693,19 @@ test('page 2 preserves its planetary, launch-center and rotation figures and mar
     question_id:key+'-'+(6+index),answer
   }))});
   assert.equal(graded.correct,8);
+});
+test('the named geography midterm includes page 1 and grades the five astronomy questions',async ()=>{
+  const key = 'geo-exam-earth-page-6';
+  const quiz = await good('draw_questions',{query:'七上地理期中综合练习（2）',group_id:key+'-page-1',count:5});
+  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  assert.equal(questions.size,5);
+  for (const [number,image] of [[1,'earth-moon'],[3,'lunar-suit'],[5,'celestial-systems']]) {
+    assert.ok(questions.get(key+'-'+number).diagram.url.endsWith('/geography-exam-'+image+'.webp'));
+  }
+  const graded = await good('grade_homework',{record:false,submissions:['B','D','A','C','C'].map((answer,index)=>({
+    question_id:key+'-'+(1+index),answer
+  }))});
+  assert.equal(graded.correct,5);
 });
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
