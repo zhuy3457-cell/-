@@ -665,6 +665,9 @@ const englishClassroomModules = (() => {
 })();
 
 const englishClassroomByTopic = new Map(englishClassroomModules.map(module=>[module.key,module]));
+const classroomUnitOf = module => Number(/^classroom-u([1-5])-/.exec(module.key)?.[1]) || null;
+const classroomModulesForUnit = unit => englishClassroomModules.filter(module=>
+  classroomUnitOf(module)===unit || (unit===4 && module.key==='classroom-u3-u4-school-life'));
 const classroomEnglish = subjects.find(subject=>subject.id==='english');
 for (const module of englishClassroomModules) {
   classroomEnglish.topics.push({

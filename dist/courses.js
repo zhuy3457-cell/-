@@ -34,8 +34,7 @@ const courseCatalog = (() => {
     const index = unit.unit - 1;
     const check = englishCourseChecks[index];
     const grammar = grammarByUnit[index];
-    const classroom = englishClassroomModules.filter(module=>module.key.startsWith('classroom-u'+unit.unit+'-') ||
-      (unit.unit===4 && module.key==='classroom-u3-u4-school-life'));
+    const classroom = classroomModulesForUnit(unit.unit);
     const vocab = vocabByUnit[index];
     return makeCourse('unit-' + unit.unit, unit.title, topics.get(check).description,
       [fullGroup(check, '随堂小测'), ...unit.sections.map((section, i) => sectionGroup(unit, i)),

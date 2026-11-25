@@ -255,7 +255,14 @@ dialog::backdrop{background:#23193968}
 .geo-note{border:1px solid var(--line);background:#fff;border-radius:11px;padding:13px 15px}
 .geo-note summary{color:#214d48;font-weight:720;cursor:pointer;line-height:1.55}
 .geo-note p{margin-top:8px;line-height:1.72;color:var(--muted);overflow-wrap:anywhere}
-.listening-player{margin-bottom:14px}
+.classroom-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.classroom-nav a[aria-current=page]{background:#5c42b7;border-color:#5c42b7;color:white}
+.classroom-section+.classroom-section{margin-top:22px}
+.classroom-section h2{margin-bottom:9px}
+.classroom-card{display:flex;flex-direction:column;gap:7px}
+.classroom-card .actions{margin-top:auto;padding-top:5px}
+.classroom-listening-help{color:var(--muted);margin-bottom:12px}
+.listening-player h2{font-size:1rem;color:#214d48}
 .listening-player input,.listening-player audio{display:block;max-width:100%;margin-top:8px}
 .geo-references{margin-top:17px}
 .geo-references summary{color:var(--accent);cursor:pointer;font-size:.9rem;font-weight:700}

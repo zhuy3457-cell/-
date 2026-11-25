@@ -437,16 +437,68 @@ function reviewEntry(route,collection) {
     '<span><strong>'+collection.title+'</strong><small>'+collection.modules.length+' '+(collection.unitLabel??'个主题')+' · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
 }
 const listeningAudioUrls = new Map();
+const listeningFileKeys = new Map();
+const listeningPositions = new Map();
+const listeningKey = track => listeningFileKeys.get(track) ?? 'suxue-listening-'+track+'-offline';
+function listeningPosition(key) {
+  if (!listeningPositions.has(key)) {
+    try {
+      const saved = Number(localStorage.getItem(key));
+      if (Number.isFinite(saved) && saved>0) listeningPositions.set(key,saved);
+    } catch {}
+  }
+  return listeningPositions.get(key) ?? 0;
+}
+function saveListeningPosition(audio, force = false) {
+  const track = Number(audio.dataset?.listeningPlayer);
+  if (!listeningAudioUrls.has(track) || !Number.isFinite(audio.duration) || audio.duration<=0) return;
+  const key = listeningKey(track);
+  const position = audio.ended ? 0 : audio.currentTime;
+  if (!Number.isFinite(position) || (!force && Math.abs(position-listeningPosition(key))<5)) return;
+  listeningPositions.set(key,position);
+  try { localStorage.setItem(key,String(position)); } catch {}
+}
 function listeningPlayer() {
   return [2,4].map(number=>{
     const url = listeningAudioUrls.get(number);
     const source = url ? ' src="'+esc(url)+'"' : '';
     const title = '巩固练习 '+number+' 听力';
-    return '<details class="geo-note listening-player"><summary>'+title+'</summary>'+
-      '<audio id="listeningAudio-'+number+'" controls preload="metadata" aria-label="'+title+'"'+source+'></audio>'+
-      '<p><label for="listeningFile-'+number+'">'+(url ? '更换音频' : '选择本地音频')+'</label></p>'+
+    return '<section class="geo-note listening-player"><h2>'+title+'</h2>'+
+      '<audio id="listeningAudio-'+number+'" data-listening-player="'+number+'" controls preload="metadata" aria-label="'+title+'"'+source+'></audio>'+
+      '<p><label for="listeningFile-'+number+'">选择或更换本地音频</label></p>'+
       '<input id="listeningFile-'+number+'" data-listening-track="'+number+'" type="file" accept="audio/*,.mp3,.m4a">'+
-      '<p>音频在当前浏览器中播放。</p></details>';
+      '<p id="listeningStatus-'+number+'" role="status">'+(url ? '' : '请先选择对应的音频文件。')+'</p></section>';
+  }).join('');
+}
+function englishClassroomPage(key, done, current) {
+  const base = '#english-classroom';
+  const tabs = [['','全部'],...[1,2,3,4,5].map(number=>['unit-'+number,'Unit '+number]),
+    ['extra','专项与课外阅读'],['listening','听力']];
+  const filter = tabs.some(([id])=>id===key) ? key : '';
+  const nav = '<nav class="classroom-nav" aria-label="英语学案分类">'+tabs.map(([id,label])=>
+    '<a class="btn secondary" href="'+base+(id?'/'+id:'')+'"'+(id===filter?' aria-current="page"':'')+'>'+label+'</a>').join('')+'</nav>';
+  const heading = '<div class="page-head"><a class="crumb" href="#subject/english">返回英语</a><h1>七上英语学案与听力</h1></div>'+nav;
+  if (filter==='listening') return heading+'<p class="classroom-listening-help">选择对应的文件即可播放。同一音频可接着上次位置收听。</p><div class="pack-grid">'+listeningPlayer()+'</div>';
+  const sections = filter
+    ? tabs.filter(([id])=>id===filter)
+    : tabs.slice(1,-1);
+  const extra = englishClassroomModules.filter(module=>classroomUnitOf(module)===null);
+  const back = base+(filter?'/'+filter:'');
+  return heading+sections.map(([id,label])=>{
+    const unit = Number(id.slice(5));
+    const modules = id==='extra' ? extra : filter ? classroomModulesForUnit(unit) :
+      englishClassroomModules.filter(module=>classroomUnitOf(module)===unit);
+    const cards = modules.map(module=>{
+      const correct = module.questions.filter(question=>done.has(question.id)).length;
+      const title = module.title.replace(/^Unit \d+ · /,'');
+      const practice = current?.topic===module.key
+        ? '<a class="btn primary" href="#quiz">继续练习</a>'
+        : startButton('topic/'+module.key,'直接练习','secondary','',back);
+      return '<article class="pack-card classroom-card"><h3>'+esc(title)+'</h3>'+
+        '<p>'+esc(module.description)+'</p><p>已答对 '+correct+' / '+module.questions.length+' 题</p>'+
+        '<div class="actions"><a class="btn secondary" href="'+base+'/'+module.key+'">看要点与题组</a>'+practice+'</div></article>';
+    }).join('');
+    return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
   }).join('');
 }
 function reviewPage(route,key) {
@@ -457,6 +509,7 @@ function reviewPage(route,key) {
   const session = state.session;
   const current = session && !endOfSession(session) ? questionById.get(session.ids[session.index]) : null;
   if (!unit) {
+    if (route==='english-classroom') return englishClassroomPage(key,done,current);
     const total = collection.modules.reduce((count,module)=>count+module.questions.length,0);
     const cards = collection.modules.map(module=>{
       const correct = module.questions.filter(question=>done.has(question.id)).length;
@@ -471,7 +524,7 @@ function reviewPage(route,key) {
       : startButton(collection.start,practiceName);
     return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
       '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>'+studyTip+'</p></div><div class="section-actions">'+practice+'</div></div>'+
-      (route==='english-classroom' ? listeningPlayer() : '')+'<div class="pack-grid">'+cards+'</div>';
+      '<div class="pack-grid">'+cards+'</div>';
   }
   const branches = collection.noteHeading ? ' review-branches' : '';
   const notes = unit.notes.map(note=>'<details class="geo-note"><summary>'+esc(note.label)+'</summary>'+
@@ -1011,6 +1064,7 @@ function quizPage() {
   return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
+  for (const audio of app.querySelectorAll?.('audio[data-listening-player]') ?? []) saveListeningPosition(audio,true);
   const [page,subjectId,courseKey] = location.hash.slice(1).split('/');
   const subject = activeSubjectById.get(subjectId);
   const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
@@ -1107,6 +1161,30 @@ app.addEventListener('toggle',event=>{
   const panel = event.target;
   if (panel.dataset?.readingBlock && app.contains(panel) && rememberReadingView(state.session,panel)) save();
 },true);
+app.addEventListener('loadedmetadata',event=>{
+  const audio = event.target;
+  const track = Number(audio.dataset?.listeningPlayer);
+  if (!listeningAudioUrls.has(track)) return;
+  const position = listeningPosition(listeningKey(track));
+  const resume = position>0 && position<audio.duration-1;
+  if (resume) audio.currentTime = position;
+  const status = document.querySelector('#listeningStatus-'+track);
+  if (status) {
+    const seconds = Math.floor(position);
+    status.textContent = resume ? '已定位到 '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0') : '音频已就绪。';
+  }
+},true);
+for (const eventName of ['timeupdate','pause','seeked','ended']) {
+  app.addEventListener(eventName,event=>{
+    if (event.target.dataset?.listeningPlayer) saveListeningPosition(event.target,eventName!=='timeupdate');
+  },true);
+}
+app.addEventListener('error',event=>{
+  const track = Number(event.target.dataset?.listeningPlayer);
+  if (!listeningAudioUrls.has(track)) return;
+  const status = document.querySelector('#listeningStatus-'+track);
+  if (status) status.textContent = '音频无法播放，请选择可播放的 MP3 或 M4A 文件。';
+},true);
 app.addEventListener('input',event=>{
   const index = event.target.dataset.answerField;
   if (index !== undefined) {
@@ -1129,10 +1207,15 @@ app.addEventListener('change',async event=>{
     const track = Number(event.target.dataset.listeningTrack);
     const file = event.target.files[0];
     if (!file) return;
+    const audio = document.querySelector('#listeningAudio-'+track);
+    saveListeningPosition(audio,true);
     const previous = listeningAudioUrls.get(track);
     const url = URL.createObjectURL(file);
+    listeningFileKeys.set(track,'suxue-listening-'+track+'-'+JSON.stringify([file.name,file.size,file.lastModified]));
     listeningAudioUrls.set(track,url);
-    document.querySelector('#listeningAudio-'+track).src = url;
+    const status = document.querySelector('#listeningStatus-'+track);
+    if (status) status.textContent = '正在读取音频…';
+    audio.src = url;
     if (previous?.startsWith('blob:')) URL.revokeObjectURL(previous);
     return;
   }
@@ -1288,4 +1371,7 @@ window.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('hashchange',()=>render(true));
+window.addEventListener('pagehide',()=>{
+  for (const audio of app.querySelectorAll('audio[data-listening-player]')) saveListeningPosition(audio,true);
+});
 render();
