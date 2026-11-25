@@ -518,6 +518,23 @@ test('geography checklist preserves both pages and grades rotation, revolution a
   }))});
   assert.equal(graded.correct,answers.length);
 });
+test('geography scale worksheet preserves the original scale bars and grades unit conversion',async ()=>{
+  const key = 'geo-checklist-4-page-8';
+  const scope_id = 'course:'+key;
+  const quiz = await good('draw_questions',{subject:'geography',scope_id,count:4});
+  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  assert.equal(questions.get(key+'-3').fields[0].unit,'km');
+  assert.match(questions.get(key+'-6a').diagram.alt,/800千米.*40千米/);
+  assert.equal(questions.get(key+'-6a').table.rows.length,2);
+  const answers = [
+    ['3',['1/2'],true],['3',['500'],false],['4',['小','大',2,5],true],
+    ['6a',['小','大','简略','大','小','详细'],true],['6b',['大','简略','小','详细'],true]
+  ];
+  const graded = await good('grade_homework',{record:false,submissions:answers.map(([id,answer])=>({
+    question_id:key+'-'+id,answer
+  }))});
+  assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});

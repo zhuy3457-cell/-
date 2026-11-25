@@ -983,6 +983,54 @@ geoReviewModules.push((() => {
   };
 })());
 
+geoReviewModules.push((() => {
+  const key = 'geo-checklist-4-page-8';
+  const word = (label,answer,...aliases)=>({label,answer,aliases,text:true});
+  const number = (label,answer,unit)=>({label,answer,unit});
+  const fill = (id,prompt,steps,explanation,media = {})=>({
+    id:key+'-'+id,level:'basic',prompt,steps,correct:steps.map(step=>step.answer).join('、'),
+    explanation,...media
+  });
+  return {
+    key,title:'地理知识清单（4）· 地图比例尺',range:'第 8 页',
+    description:'按原页练习比例尺的表示方法、单位换算，以及比例尺大小与范围、详略的关系。',
+    notes:[
+      {label:'表示方法和单位',text:'比例尺可用数字式、文字式或线段式表示。1米等于100厘米，1千米等于100000厘米。'},
+      {label:'比例尺大小',text:'把比例尺统一写成分子为1的分数，分母越大，比例尺越小。同样大小的图幅上，比例尺越大，能表示的范围越小，内容通常越详细。'}
+    ],
+    questions:[
+      fill('3','（3）补全文字式。比例尺为 1∶50 000，图上 1 cm 代表实地距离多少千米？',[
+        number('实地距离',0.5,'km')
+      ],'图上 1 cm 对应实地 50 000 cm。50 000 cm＝500 m＝0.5 km。',{
+        table:{caption:'同一比例尺的三种表示方法',headers:['类型','表示'],
+          rows:[['数字式','1∶50 000 或 1/50 000'],['文字式','图上 1 cm 代表实地距离 ____ km'],['线段式','比例尺线段的两端分别标 0 和 500 m']]}
+      }),
+      fill('4','（4）比较比例尺大小，并填写厘米换成米、厘米换成千米时小数点向左移动的位数。',[
+        word('分子为1，分母越大，比例尺越','小','较小'),
+        word('分子为1，分母越小，比例尺越','大','较大'),
+        number('厘米换成米，小数点向左移',2,'位'),
+        number('厘米换成千米，小数点向左移',5,'位')
+      ],'分子相同，分母越大的分数越小。1 m＝100 cm，厘米换米除以100。1 km＝100 000 cm，厘米换千米除以100 000。'),
+      fill('6a','6a 根据原图的比例尺刻度，比较中国地图和北京地图。两幅图图幅相同，比例尺线段等长。',[
+        word('中国地图 · 比例尺','较小','小','更小'),word('中国地图 · 表示范围','较大','大','更大'),
+        word('中国地图 · 内容','较简略','简略','更简略','粗略','较粗略','略'),
+        word('北京地图 · 比例尺','较大','大','更大'),word('北京地图 · 表示范围','较小','小','更小'),
+        word('北京地图 · 内容','较详细','详细','更详细','详尽','较详尽','详')
+      ],'同样长的比例尺线段在中国地图上表示800千米，在北京地图上表示40千米。相同图上距离对应的实地距离越大，比例尺越小。中国地图范围更大、内容较简略。北京地图范围较小、内容较详细。',{
+        diagram:{src:"geography-checklist-scale.webp",alt:'两幅图的比例尺线段等长。中国地图标0到800千米，北京地图标0到40千米。'},
+        table:{caption:'两幅地图比较',headers:['地图','比例尺','表示范围','内容'],
+          rows:[['中国地图','____','____','____'],['北京地图','____','____','____']]}
+      }),
+      fill('6b','6b 补全结论。在图幅相同的情况下，比例尺越小或越大，表示范围和内容详略怎样变化？',[
+        word('比例尺小 · 表示范围','大','较大','更大','广','较广','广阔'),
+        word('比例尺小 · 内容更','简略','较简略','粗略','略'),
+        word('比例尺大 · 表示范围','小','较小','更小'),
+        word('比例尺大 · 内容更','详细','较详细','详尽','详')
+      ],'图幅相同时，比例尺小的地图表示范围较大，内容更简略。比例尺大的地图表示范围较小，内容更详细。')
+    ]
+  };
+})());
+
 const geoReviewByTopic = new Map(geoReviewModules.map(module=>[module.key,module]));
 const geographySubject = subjects.find(subject=>subject.id==='geography');
 for (const module of geoReviewModules) {
