@@ -239,6 +239,33 @@ const sevenUpperReview = (() => {
       ]),level:'basic',material:'原来（28 个）：[ 一半苹果 ][ 另一半苹果 ][ 梨 ]\n剩下（22 个）：[ 另一半苹果 ][ 梨 ]'}
     ]]
   ]);
+  const repeatedDivision = '本题规定：把 n 个相同的非零有理数 a 依次相除（从左到右算）记作 aⓝ，读作“a 的 n 次商”。圆圈内是参与运算的数的个数。例如 2③=2÷2÷2。';
+  const divisionPower = topic('math','math-division-power','有理数新运算 · 除方第 24 题','按原题四问练连除、归纳通式、比较和乘方化简。',[
+    ['读记号','圆圈内的 n 表示有 n 个相同的数，除号一共有 n−1 个。连除按从左到右的顺序计算。普通乘方的指数没有圆圈。'],
+    ['化为乘方','前两个相同的非零数相除得 1，余下除以 a 的操作各变为乘 1/a。n≥3 时，a 的 n 次商等于 (1/a)^(n−2)。']
+  ],[
+    ['rule','第 24 题（1）–（2） · 初步探究与归纳',[
+      multiple('第 24 题（1）。依次计算 5② 和 (−4/3)③。',
+        [['5 的二次商',1],['−4/3 的三次商','-3/4']],[
+          '5②=5÷5=1。',
+          '(−4/3)③=(−4/3)÷(−4/3)÷(−4/3)=1÷(−4/3)=−3/4。'
+        ]),
+      {...answer('第 24 题（2）。当 a≠0、n≥3 时，把 aⓝ 写成乘方形式。输入 ^ 表示乘方。','(1/a)^(n-2)',[
+        'n 个 a 连除，前两个 a 相除得 1。',
+        '剩下 n−2 个除数。每次除以 a 都等于乘以 1/a，所以 aⓝ=(1/a)^(n−2)。'
+      ]),steps:[{label:'乘方形式',answer:'(1/a)^(n-2)',aliases:['1/a^(n-2)','1/(a^(n-2))','a^(2-n)','a^(-(n-2))'],text:'formula'}]}
+    ],repeatedDivision],
+    ['application','第 24 题（3）–（4） · 比较与计算',[
+      {...answer('第 24 题（3）。比较 (−2)⑧ 与 4⑤，填写 >、< 或 =。','=',[
+        '(−2)⑧=(−1/2)^6=1/64。',
+        '4⑤=(1/4)^3=1/64，因此两边相等。'
+      ]),steps:[{label:'比较符号',answer:'=',symbol:true}]},
+      {...answer('第 24 题（4）。计算 (−1/2)㊾ + 2⁴⁶。第一项是 49 次商，第二项是普通乘方。可用 ^ 输入乘方。','-2^46',[
+        '(−1/2)㊾=(−2)^(49−2)=(−2)^47=−2^47。',
+        '−2^47+2^46=2^46(−2+1)=−2^46。'
+      ]),steps:[{label:'结果',answer:'-2^46',aliases:['-(2^46)','-70368744177664','-1*2^46'],text:'formula'}]}
+    ],repeatedDivision]
+  ]);
   const midpoint = topic('math','math-friendly-midpoint','数轴上的友好邻点 · 第 25 题','按原题四问练中点坐标、圆滚动和分段动点。',[
     ['友好邻点','题中的“友好邻点”是两个不同点的中点：它严格位于两点之间，到两端距离相等。两端坐标为 a、b，中点坐标为 (a+b)/2。'],
     ['分段动点','方向决定坐标的增减。动点到终点后，坐标在停留期间固定。先按运动规则写出每段的坐标，再对每个中点候选列式和检验。']
@@ -853,7 +880,7 @@ const sevenUpperReview = (() => {
     ],bambooMaterial]
   ]);
   return [
-    geography,history,grammar,take,math,absolute,quantities,midpoint,microscope,ecology,civicsMidterm,civicsExam,
+    geography,history,grammar,take,math,absolute,quantities,divisionPower,midpoint,microscope,ecology,civicsMidterm,civicsExam,
     brackets,happyFour,happyThree,environment,ecosystem,warringStates,family,narrative,hollowTree,weeklyChinese,
     weekendChinese,practiceChinese,chineseHoliday,chinesePaper
   ];

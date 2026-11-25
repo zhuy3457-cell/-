@@ -429,6 +429,26 @@ test('friendly midpoint practice grades formulas, negative midpoints and all thr
   ]});
   assert.deepEqual(grades.results.map(result=>result.correct),[true,false,true,true,true,false]);
 });
+test('division-power worksheet keeps its definition and grades exponent notation and equality',async ()=>{
+  const scope_id = 'course:math-division-power';
+  const course = await good('explain_topic',{query:'七上数学除方'});
+  assert.equal(course.scope_id,scope_id);
+  assert.equal(course.question_count,4);
+  const quiz = await good('draw_questions',{scope_id,count:4});
+  assert.ok(quiz.questions.every(question=>question.material.includes('从左到右')));
+  const grades = await good('grade_homework',{record:false,submissions:[
+    {question_id:'math-division-power-1',answer:[1,-0.75]},
+    {question_id:'math-division-power-2',answer:'（1 ÷ a） ^ (n − 2)'},
+    {question_id:'math-division-power-2',answer:'(1/a)^(n-1)'},
+    {question_id:'math-division-power-3',answer:'＝'},
+    {question_id:'math-division-power-4',answer:'−(2^46)'},
+    {question_id:'math-division-power-4',answer:'−2⁴⁶'},
+    {question_id:'math-division-power-4',answer:-70368744177664},
+    {question_id:'math-division-power-4',answer:'(-2)^46'},
+    {question_id:'math-division-power-4',answer:-246}
+  ]});
+  assert.deepEqual(grades.results.map(result=>result.correct),[true,true,false,true,true,true,true,false,false]);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});

@@ -19,7 +19,8 @@ function matchesNumber(raw, expected) {
 }
 const normalizeStepText = value => value.normalize('NFKC').trim().toLowerCase();
 const normalizeEnglish = value => normalizeStepText(value).replace(/[’‘ʼ]/g,"'").replace(/[,，.。?!？！‐‑-]+/g,' ').replace(/\s+/g,' ').trim();
-const normalizeFormula = value => normalizeStepText(value).replace(/\s+/g,'')
+const normalizeFormula = value => normalizeStepText(value.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,exponent=>'^'+exponent.normalize('NFKC')))
+  .replace(/\s+/g,'')
   .replace(/[−–—]/g,'-').replace(/[⁄∕÷]/g,'/').replace(/\bpi\b|(?<=\d)pi\b/g,'π')
   .replace(/(?<=[\d)])[×·*](?=[a-zπ(])/g,'');
 function matchesStep(step,value) {
