@@ -29,7 +29,7 @@ const courseCatalog = (() => {
   }));
   const [unitOneVocab,unitTwoVocab,sentenceSheet] = englishVocabModules;
   const vocabByUnit = [unitOneVocab,unitTwoVocab];
-  const sentenceGroups = [[sectionGroup(sentenceSheet,0),sectionGroup(sentenceSheet,2)],[sectionGroup(sentenceSheet,1)]];
+  const sentenceGroups = [[0,2,3].map(index=>sectionGroup(sentenceSheet,index)),[sectionGroup(sentenceSheet,1)]];
   const english = englishPhraseModules.map(unit => {
     const index = unit.unit - 1;
     const check = englishCourseChecks[index];

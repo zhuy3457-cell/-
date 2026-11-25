@@ -218,7 +218,7 @@ test('vocabulary and sentence sheets preserve order, marking and the Unit 1–2 
   assert.deepEqual(one.practice_groups.map(group=>group.question_count),[10,10,10,10]);
   assert.equal(two.scope_id,'course:english-u2-vocab-dictation');
   assert.deepEqual(two.practice_groups.map(group=>group.question_count),[10,10,10,10,4,10,6]);
-  assert.deepEqual(sentences.practice_groups.map(group=>group.question_count),[4,5,1]);
+  assert.deepEqual(sentences.practice_groups.map(group=>group.question_count),[4,5,1,1]);
   assert.match(JSON.stringify(one.teaching),/ɡriːt/);
   const drawn = await good('special_practice',{scope_id:two.scope_id,group_id:'english-u2-vocab-dictation-words-1',count:10});
   const change = drawn.questions.find(question=>question.question_id==='english-u2-vocab-dictation-word-7');
@@ -329,6 +329,29 @@ test('Unit 3–5 worksheets and Chinese classroom reviews are available on the u
     {question_id:'chinese-weekly-one-review-8',answer:['学而不思则罔','思而不学则殆']}
   ]});
   assert.equal(graded.correct,5,JSON.stringify(graded.results));
+});
+test('midterm and weekend materials expose the new upper-term courses and targeted marking',async ()=>{
+  for (const [subject,key,count] of [
+    ['english','classroom-u4-midterm-dictation',48],
+    ['chinese','chinese-weekend-two-review',29],
+    ['chinese','chinese-integrated-practice-midterm',11],
+    ['chinese','chinese-holiday-review',11],
+    ['chinese','chinese-autumn-midterm-paper',14]
+  ]) {
+    const lesson = await good('explain_topic',{subject,scope_id:'course:'+key});
+    assert.equal(lesson.term,'上');
+    assert.equal(lesson.question_count,count);
+  }
+  const unit = await good('explain_topic',{query:'英语第四单元'});
+  assert.ok(unit.practice_groups.some(group=>group.group_id==='classroom-u4-midterm-dictation-morning'));
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'english-u12-sentence-dictation-would-10',answer:"I'd like to make friends with you."},
+    {question_id:'english-u12-sentence-dictation-would-10',answer:'I want to make friends with you.'},
+    {question_id:'classroom-u4-midterm-dictation-35',answer:['usually do housework','enjoy myself']},
+    {question_id:'chinese-weekend-two-review-2',answer:'zhuo2'},
+    {question_id:'chinese-weekend-two-review-23',answer:['茵','茵']}
+  ]});
+  assert.deepEqual(grade.results.map(result=>result.correct),[true,false,true,true,true]);
 });
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});

@@ -466,8 +466,61 @@ const englishClassroomModules = (() => {
       ],'回答可指出每个周末，也可按题意说明一周两天。')
     ]]
   ]);
+  const unitFourMidterm = module('classroom-u4-midterm-dictation','Unit 4 · 期中复习默写卷与早读','七上 Unit 4',
+    '按期中默写卷的词汇、短语、句型顺序练习，附早读里的词形和易混句型。',[
+    ['词形','activity → activities，duty → duties，video → videos，one → first，usual → usually，live → living，good/well → better。amazing、tiring 通常描述事物带给人的感受，amazed、tired 通常描述感受者。'],
+    ['时间和频率','时间点用 at。泛指早晨用 in the morning，某天的上午或下午用 on。频率问 How often。never、seldom 带有否定或近似否定意义，许多相应语境中用 any、or。'],
+    ['三个问题','What is Tom like? 问特点。What does Tom like? 问喜好。What does Tom look like? 问外貌。'],
+    ['活动与搭配','take part in 或 join in 后可接活动，join a club 指加入组织。take care of 与 look after 都表示照顾，care about 表示关心。keep our area clean 用 keep + 宾语 + 形容词。']
+  ],[
+    ['words','原卷 · 词汇 1–14',words([
+      ['家庭作业（名词）','homework'],['开始、着手（动词）',[['start','begin']]],['one 的序数词','first'],
+      ['学期','term'],['很少（以 s 开头）','seldom'],['（使）生长','grow'],['video 的复数','videos'],
+      ['团队合作','teamwork'],['累人的（描述事情）','tiring'],['duty 的复数','duties'],
+      ['生物学','biology'],['采、摘、挑选（以 p 开头）','pick'],['参观、旅行（以 t 开头的名词）','tour'],
+      ['令人大为惊奇的（以 a 开头）','amazing']
+    ])],
+    ['phrases','原卷 · 短语 1–18',words([
+      ['在工作日','on weekdays'],['起床','get up'],
+      ['参加课外活动',[['take part in after-school activities','join in after-school activities']]],
+      ['去短距离慢跑','go for a short jog'],['读一会书',[['read a little','read for a little while']]],
+      ['生物（活的东西）','living things'],['很多著名作家的作品','the works of many famous writers'],
+      ['亲近大自然','get close to nature'],
+      ['练习打网球',[['practise playing tennis','practice playing tennis']]],
+      ['动身去一个农场','leave for a farm'],
+      ['进行一次实地考察',[['have a field trip','go on a field trip']]],['当然','of course'],
+      ['喜欢待在外面',[['enjoy being outside','like being outside','like to be outside']]],
+      ['学习如何照顾植物',[['learn how to take care of plants','learn how to look after plants']]],
+      ['倒空一个垃圾桶','empty a bin'],['在学校网站上','on the school website'],
+      ['保持我们学校区域干净','keep our school area clean'],['在周五下午','on Friday afternoon']
+    ])],
+    ['sentences','原卷 · 句型 1–3',[
+      fill('小组合作并且轮流做不同的日常事务很棒。\nIt’s good to ____ and ____ do different chores.',['work in groups','take turns to'],'work in groups 是小组合作，take turns to do sth. 是轮流做某事。'),
+      fill('每个人都尽力让事情变得更好。\nEverybody ____ to ____.',['tries their best','make things better'],'Everybody 作主语，谓语用 tries。make things better 中 better 作宾语补足语。'),
+      fill('我通常在周末做家务并且玩得很开心。\nI ____ at the weekend and ____.',['usually do housework','enjoy myself'],'按主语选反身代词，此处为 myself。')
+    ]],
+    ['morning','早读 · 词形与句型补练',[
+      fill('写出 activity 的复数、usual 的副词。',['activities','usually'],'activity 变复数时把 y 改成 i 加 es。usual 是形容词，usually 是副词。'),
+      fill('按顺序填 I 的反身代词与形容词性物主代词。',['myself','my'],'enjoy myself 和 my first term 分别用这两种形式。'),
+      fill('选用 amaze、live 的适当形式。\nWe saw many ____ things on the trip. It was an ____ day.',['living','amazing'],'living things 是生物，amazing 修饰令人惊奇的事物。'),
+      fill('填 good 和 well 的比较级。\nThe plan is ____ now, and we work ____ together.',['better','better'],'good 和 well 的比较级都是 better。'),
+      fill('写出“一个作家的”和“多位作家的”，都用 writer。',[
+        ['a writer’s',"a writer's"],['writers’',"writers'"]
+      ],'单数所有格加 ’s，已加 s 的规则复数在 s 后加撇号。'),
+      fill('你们多久做一次早操？\n____ do you do morning exercises?','How often','问频率用 How often，问具体钟点常用 What time。'),
+      fill('我先做早操。\nI do morning exercises ____.','first','这里 first 作副词，表示先做。'),
+      fill('学习怎样种苹果，以及在哪里植树。\nLearn ____ and ____.',['how to grow apples','where to plant trees'],'how / where + to do 可分别表达方式和地点。'),
+      fill('我喜欢待在户外，因为我能亲近大自然。\nI like ____ because I can ____.',[['being outside','to be outside'],'get close to nature'],'like 可接 doing 或 to do。get close to 表示亲近。'),
+      choose('要问汤姆长什么样，用哪一句？',['What does Tom like?','What is Tom like?','What does Tom look like?','What time does Tom get up?'],2,'look like 指外貌。What does Tom like? 问喜好。'),
+      choose('下面哪项最适合表达“她几乎不吃蛋糕或糖果”？',['She seldom eats cakes or sweets.','She always eats cakes and sweets.','She often eats cakes or sweets.','She never seldom eats cakes.'],0,'seldom 表示很少。or 在此连接两个很少吃的食物。'),
+      fill('去农场旅行（用 trip），再写“参观博物馆”（用 tour）。',[
+        ['take a trip to a farm','have a trip to a farm'],['have a tour of the museum','take a tour of the museum']
+      ],'trip 常搭配 to + 目的地，tour of 可表示参观某地。'),
+      fill('和同学分享视频。\nShare the videos ____ classmates.',[['with','with your','with my','with our','with their']],'share sth. with sb. 是固定搭配。')
+    ]]
+  ]);
   return [
-    introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase
+    introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm
   ];
 })();
 

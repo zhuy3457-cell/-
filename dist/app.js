@@ -127,7 +127,7 @@ const reviewCollections = new Map([
   ['english-classroom', {
     subject:'english', name:'英语', icon:'letters', tone:'blue',
     title:'Unit 1–5 学案、默写与课外阅读', keywords:'自我介绍 Grammar Integration Welcome Reading 同义句 早读 新学校 柳林风声 快乐王子',
-    subtitle:'按单元练学案、词句默写、音标、写作与同义转换，也可做英文课外阅读。',
+    subtitle:'按单元练词句默写、音标、写作与同义转换。这里也有课外阅读和听力播放器。',
     start:'english-classroom', returnLabel:'英语学案与课外阅读', modules:englishClassroomModules, byTopic:englishClassroomByTopic
   }],
   ['english-vocab-review', {
@@ -436,6 +436,15 @@ function reviewEntry(route,collection) {
   return '<a class="pack-entry '+route+'-entry" href="#'+route+'"><span class="subject-icon '+collection.tone+'">'+icon(collection.icon)+'</span>'+
     '<span><strong>'+collection.title+'</strong><small>'+collection.modules.length+' '+(collection.unitLabel??'个主题')+' · '+total+' 道练习 · 七年级上册</small></span><span class="pack-entry-label">查看复习资料</span></a>';
 }
+let listeningAudioUrl = '';
+function listeningPlayer() {
+  const source = listeningAudioUrl ? ' src="'+esc(listeningAudioUrl)+'"' : '';
+  return '<details class="geo-note listening-player"><summary>巩固练习 4 听力</summary>'+
+    '<audio id="listeningAudio" controls preload="metadata" aria-label="巩固练习 4 听力"'+source+'></audio>'+
+    '<p><label for="listeningFile">选择听力音频</label></p>'+
+    '<input id="listeningFile" type="file" accept="audio/*,.m4a">'+
+    '<p>音频在当前浏览器中播放。</p></details>';
+}
 function reviewPage(route,key) {
   const collection = reviewCollections.get(route);
   const base = '#'+route;
@@ -458,7 +467,7 @@ function reviewPage(route,key) {
       : startButton(collection.start,practiceName);
     return pageHead(collection.name+'上册 · '+collection.title,collection.subtitle,'<a class="crumb" href="#subject/'+collection.subject+'">返回'+collection.name+'</a>')+
       '<div class="section-head geo-review-head"><div><h2>按主题复习</h2><p>'+studyTip+'</p></div><div class="section-actions">'+practice+'</div></div>'+
-      '<div class="pack-grid">'+cards+'</div>';
+      (route==='english-classroom' ? listeningPlayer() : '')+'<div class="pack-grid">'+cards+'</div>';
   }
   const branches = collection.noteHeading ? ' review-branches' : '';
   const notes = unit.notes.map(note=>'<details class="geo-note"><summary>'+esc(note.label)+'</summary>'+
@@ -1112,6 +1121,14 @@ app.addEventListener('input',event=>{
   }
 });
 app.addEventListener('change',async event=>{
+  if (event.target.id==='listeningFile') {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (listeningAudioUrl.startsWith('blob:')) URL.revokeObjectURL(listeningAudioUrl);
+    listeningAudioUrl = URL.createObjectURL(file);
+    document.querySelector('#listeningAudio').src = listeningAudioUrl;
+    return;
+  }
   if (event.target.id==='topicDifficulty') {
     state.difficulty = cleanLevel(event.target.value);
     save();

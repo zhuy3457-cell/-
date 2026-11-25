@@ -229,13 +229,19 @@ const englishVocabModules = (() => {
 
   const sentenceSheet = {
     key:'english-u12-sentence-dictation',title:'Unit 1–2 · 10 句默写',range:'七上 Unit 1–2 · 中译英',
-    description:'按默写练习和参考答案合并成一套 10 句练习，包含自我介绍、爱好、梦想和交友。',
+    description:'练习自我介绍、爱好、梦想和交友的原有 10 句，附第 10 句 would 版本。',
     notes:[{label:'默写检查',text:'写完核对 13-year-old、be friendly to、help sb. with sth.、be interested in、come true 和 make friends with。'}],
     questions:[],sections:[]
   };
   addWritten(sentenceSheet,'intro','自我介绍 · 原题 1–4',sentences.slice(0,4),0,'英文整句');
   addWritten(sentenceSheet,'interests','爱好与梦想 · 原题 5–9',sentences.slice(4,9),4,'英文整句');
   addWritten(sentenceSheet,'friends','交朋友 · 原题 10',sentences.slice(9),9,'英文整句');
+  addWritten(sentenceSheet,'would','交朋友 · 第 10 句 would 版本',[
+    ['我想要和你们交朋友。（用 would）',[
+      'I would like to make friends with you.',"I'd like to make friends with you.",
+      'I would like to make friends with you all.',"I'd like to make friends with you all."
+    ],'用 would like to do sth. 表达想做某事。make friends with 后接交友的对象。']
+  ],9,'英文整句');
   return [one,two,sentenceSheet];
 })();
 
