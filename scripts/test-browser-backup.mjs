@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -12,12 +13,13 @@ const sources = process.argv[2]
 assert.ok(sources.length);
 if (process.argv[2]) assert.doesNotMatch(html,/<script\s[^>]*src=|<link rel="stylesheet"/);
 
-function browser() {
+function browser(fetch) {
   const saved = new Map();
   const node = {innerHTML:'',addEventListener(){}};
   const context = vm.createContext({
     document:{querySelectorAll:()=>[],querySelector:()=>node},
-    window:{addEventListener(){}},location:{hash:'#home'},
+    window:{addEventListener(){}},location:{hash:'#home',protocol:fetch?'https:':'file:'},
+    crypto:webcrypto,fetch,
     localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)}
   });
   for (const source of sources) vm.runInContext(source,context);
@@ -46,3 +48,65 @@ assert.deepEqual(restored.mistakes,{[restored.favorites[0]]:{count:1,time:1}});
 assert.throws(()=>target.run('mergeBackup({})'),/无法识别备份格式/);
 assert.equal(target.run('state.attempts.length'),3);
 console.log('浏览器备份验证通过：答题记录、收藏、错题重建、重复导入与无效文件保护。');
+
+assert.match(target.run('historyList("",1)'),/答题明细.*#record\/restore-c\/all\/1/s);
+assert.match(target.run('recordPage("restore-a","all",1)'),/本次答错.*正确答案.*再练这题/s);
+assert.match(target.run('recordPage("restore-c","all",1)'),/本次答对/);
+assert.match(target.run('recordPage("%","all",1)'),/找不到这条答题记录/);
+assert.match(target.run('state.attempts = Array.from({length:21},(_,i)=>({id:state.favorites[0],'+
+  'ref:"page-"+i,ok:true,date:"2026-11-25",time:i})); historyList("",2)'),/page-0\/all\/2.*上一页/s);
+
+const attempts = new Map();
+const bookmarks = new Map();
+const events = new Set();
+let duringFetch = null;
+const fetchStudy = async (path, options)=>{
+  if (path==='/api/study-sync') {
+    if (!options) return Response.json({attempts:[...attempts.values()],next:null});
+    let added = 0;
+    for (const item of JSON.parse(options.body).attempts) {
+      if (attempts.has(item.ref)) continue;
+      attempts.set(item.ref,item);
+      added++;
+    }
+    return Response.json({added});
+  }
+  assert.equal(path,'/api/study-favorites');
+  if (!options) {
+    duringFetch?.();
+    return Response.json({favorites:[...bookmarks].filter(([,selected])=>selected).map(([id])=>id)});
+  }
+  const {legacy,changes} = JSON.parse(options.body);
+  for (const id of legacy) if (!bookmarks.has(id)) bookmarks.set(id,true);
+  for (const {id,selected,ref} of changes) if (!events.has(ref)) {
+    events.add(ref);
+    bookmarks.set(id,selected);
+  }
+  return Response.json({saved:true});
+};
+
+const tablet = browser(fetchStudy);
+const second = browser(fetchStudy);
+tablet.context.seed = JSON.parse(payload);
+tablet.run('state.attempts=seed.attempts; state.favorites=seed.favorites;');
+await tablet.run('syncStudyRecords()');
+await second.run('syncStudyRecords()');
+assert.deepEqual(JSON.parse(second.run('JSON.stringify(state.favorites)')),tablet.context.seed.favorites);
+assert.equal(second.run('state.attempts.length'),3);
+assert.match(second.run('recordPage("restore-a","all",1)'),/本次答错.*解析/s);
+
+tablet.run('const removed=state.favorites.shift(); queueFavoriteChange(removed,false)');
+await tablet.run('syncStudyRecords()');
+await second.run('syncStudyRecords()');
+assert.deepEqual(JSON.parse(second.run('JSON.stringify(state.favorites)')),tablet.context.seed.favorites.slice(1));
+
+duringFetch = ()=>second.run('state.favorites.push(state.attempts[0].id);queueFavoriteChange(state.attempts[0].id,true)');
+await second.run('syncStudyRecords()');
+duringFetch = null;
+assert.equal(second.run('state.favorites.length'),2);
+assert.equal(second.run('Object.keys(state.favoriteChanges).length'),1);
+await second.run('syncStudyRecords()');
+await tablet.run('syncStudyRecords()');
+assert.equal(tablet.run('state.favorites.length'),2);
+assert.equal(second.run('Object.keys(state.favoriteChanges).length'),0);
+console.log('两台模拟设备同步旧收藏、取消与重试通过，答题明细可打开历史题目。');

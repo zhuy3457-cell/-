@@ -46,7 +46,7 @@ const difficultyLevels = new Map([
   ['challenge', ['挑战','综合多个条件、比较方案，或完成两步及以上的推理。']]
 ]);
 const cleanLevel = value => difficultyLevels.has(value) ? value : 'all';
-let state = {term:'上', difficulty:'all', attempts:[], mistakes:{}, favorites:[], session:null};
+let state = {term:'上', difficulty:'all', attempts:[], mistakes:{}, favorites:[], favoriteChanges:{}, session:null};
 try {
   const saved = JSON.parse(localStorage.getItem(storageKey));
   if (saved) state = {...state, ...saved};
@@ -71,6 +71,25 @@ const dateKey = (date = new Date()) => [date.getFullYear(), String(date.getMonth
 const mistakeIds = () => Object.keys(state.mistakes).filter(isActiveQuestion);
 const favoriteIds = () => state.favorites.filter(isActiveQuestion);
 const retainedFavoriteIds = () => state.favorites.filter(id=>questionById.has(id));
+function newStudyRef() {
+  return Array.from(crypto.getRandomValues(new Uint32Array(4)),number=>number.toString(16).padStart(8,'0')).join('');
+}
+function queueFavoriteChange(id,selected) {
+  state.favoriteChanges[id] = {id,selected,ref:newStudyRef()};
+}
+function applyCloudFavorites(favorites,sent) {
+  for (const {id,ref} of sent) {
+    if (state.favoriteChanges[id]?.ref===ref) delete state.favoriteChanges[id];
+  }
+  const merged = new Set(favorites.filter(id=>questionById.has(id)));
+  for (const {id,selected} of Object.values(state.favoriteChanges)) {
+    if (!questionById.has(id)) continue;
+    if (selected) merged.add(id);
+    else merged.delete(id);
+  }
+  state.favorites = [...merged];
+  save();
+}
 const correctQuestionIds = () => {
   const latest = new Map();
   for (const attempt of state.attempts) latest.set(attempt.id,attempt.ok);
@@ -630,7 +649,7 @@ function favoriteButton(id) {
 }
 function favoritePage() {
   const ids = favoriteIds().reverse();
-  return pageHead('题目收藏','把想再练的题收藏起来，答对后也可以继续保留。',homeLink)+(ids.length
+  return pageHead('题目收藏','把想再练的题收藏起来，答对后也可以继续保留。',homeLink)+studySyncPanel()+(ids.length
     ? '<div class="section-head"><h2>已收藏 · '+ids.length+' 题</h2>'+startButton('favorites','练习全部收藏')+'</div><div class="topic-list">'+ids.map(id=>{
       const question = questionById.get(id);
       const topic = topicByKey.get(question.topic);
@@ -684,8 +703,10 @@ function mergeBackup(data) {
     attempts.push({id, ok, date, ref, time});
   }
   for (const id of data.favorites) {
-    if (questionById.has(id)) bookmarks.add(id);
-    else unknown++;
+    if (!questionById.has(id)) { unknown++; continue; }
+    if (bookmarks.has(id)) continue;
+    bookmarks.add(id);
+    queueFavoriteChange(id,true);
   }
   const added = attempts.length - initialAttempts;
   if (added) {
@@ -715,8 +736,8 @@ function studyBackup() {
 function studySyncPanel() {
   if (location.protocol!=='https:') return '';
   const signIn = syncNeedsSignIn ? '<a class="btn secondary" href="/signin-with-chatgpt?return_to=%2F%23stats" target="_top">用 ChatGPT 账号登录</a>' : '';
-  return '<section class="backup-panel"><div><h2>同步到七年级学习助手</h2>'+
-    '<p>把本浏览器的答题结果与同一 ChatGPT 账号合并，方便在聊天里查询进度和错题。</p></div>'+
+  return '<section class="backup-panel"><div><h2>跨设备同步</h2>'+
+    '<p>用同一 ChatGPT 账号同步答题记录、错题和收藏。换设备后也可在这里同步。</p></div>'+
     '<div class="saved-actions">'+signIn+'<button class="btn secondary" type="button" data-study-sync '+(syncingStudy?'disabled':'')+
     '>'+(syncingStudy?'正在同步…':'同步学习记录')+'</button></div>'+
     '<p class="backup-status" role="status">'+esc(syncNotice)+'</p></section>';
@@ -727,8 +748,8 @@ async function syncStudyRecords() {
   syncNotice = '';
   syncNeedsSignIn = false;
   render();
-  async function requestSync(path = '',options) {
-    const response = await fetch('/api/study-sync'+path,options);
+  async function requestSync(path,options) {
+    const response = await fetch(path,options);
     if (response.status===401 || response.redirected) {
       syncNeedsSignIn = true;
       throw new Error('请先用同一 ChatGPT 账号登录，再同步。');
@@ -739,24 +760,38 @@ async function syncStudyRecords() {
   }
   try {
     const backup = backupPayload();
-    let page = await requestSync();
+    const changes = Object.values(state.favoriteChanges);
+    const sentIds = new Set(changes.map(item=>item.id));
+    const legacy = backup.favorites.filter(id=>!sentIds.has(id));
+    const post = data=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     let uploaded = 0;
     for (let start=0;start<backup.attempts.length;start+=200) {
       const attempts = backup.attempts.slice(start,start+200);
-      const {added} = await requestSync('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempts})});
+      const {added} = await requestSync('/api/study-sync',post({attempts}));
       uploaded += added;
     }
+    let page = await requestSync('/api/study-sync');
     const attempts = page.attempts.slice();
     while (page.next!==null) {
-      page = await requestSync('?after='+encodeURIComponent(page.next));
+      page = await requestSync('/api/study-sync?after='+encodeURIComponent(page.next));
       attempts.push(...page.attempts);
     }
-    syncNotice = '已上传 '+uploaded+' 条答题记录。'+mergeBackup({...backup,attempts,favorites:[]});
+    for (let start=0;start<legacy.length;start+=200) {
+      await requestSync('/api/study-favorites',post({legacy:legacy.slice(start,start+200),changes:[]}));
+    }
+    for (let start=0;start<changes.length;start+=200) {
+      await requestSync('/api/study-favorites',post({legacy:[],changes:changes.slice(start,start+200)}));
+    }
+    const {favorites} = await requestSync('/api/study-favorites');
+    const before = state.attempts.length;
+    mergeBackup({...backup,attempts,favorites:[]});
+    applyCloudFavorites(favorites,changes);
+    syncNotice = '同步完成。上传 '+uploaded+' 条答题记录，下载 '+(state.attempts.length-before)+' 条。当前收藏 '+favoriteIds().length+' 道。';
   } catch (error) {
     syncNotice = error instanceof SyntaxError || error instanceof TypeError ? '暂时无法同步，请稍后重试。' : error.message;
   } finally {
     syncingStudy = false;
-    if (location.hash==='#stats') render();
+    if (/^#(?:stats|favorites|record)(?:\/|$)/.test(location.hash)) render();
   }
 }
 function priorityReview() {
@@ -775,18 +810,73 @@ function priorityReview() {
     return '<div class="row"><div><h3>'+topic.title+'</h3><p>'+topic.subject.name+' · '+topic.term+'册 · '+summary.pending+' 道错题</p></div>'+startButton('topic-mistakes/'+key,'复练此知识点','secondary')+'</div>';
   }).join('')+'</div></section>';
 }
-function statsPage() {
+const historyPageSize = 20;
+function historyLink(subject, page = 1) {
+  return '#stats'+(subject || page>1 ? '/'+(subject || 'all')+'/'+page : '');
+}
+function historyScope(subject) {
+  return activeSubjectById.has(subject) ? subject : '';
+}
+function historyList(subject, page) {
+  const records = attemptReferences(state.attempts).filter(item=>{
+    const question = questionById.get(item.id);
+    return question && (!subject || question.subject===subject);
+  }).sort((a,b)=>a.date.localeCompare(b.date) || (a.time??0)-(b.time??0)).reverse();
+  const lastPage = Math.max(1,Math.ceil(records.length/historyPageSize));
+  const current = Math.min(lastPage,Math.max(1,Number.isSafeInteger(page) ? page : 1));
+  const tabs = [['','全部'],...activeSubjects.map(item=>[item.id,item.name])].map(([id,label])=>
+    '<a class="btn secondary" '+(id===subject?'aria-current="true" ':'')+'href="'+historyLink(id)+'">'+esc(label)+'</a>'
+  ).join('');
+  const rows = records.slice((current-1)*historyPageSize,current*historyPageSize).map(record=>{
+    const question = questionById.get(record.id);
+    const topic = topicByKey.get(question.topic);
+    const href = '#record/'+encodeURIComponent(record.ref)+'/'+(subject || 'all')+'/'+current;
+    return '<li><a class="row history-row" href="'+esc(href)+'"><div><h3>'+esc(question.prompt)+'</h3>'+
+      '<p>'+esc(record.date)+' · '+esc(topic.subject.name)+' · '+esc(topic.term)+'册</p></div>'+
+      '<span class="result-status '+(record.ok?'is-correct':'is-wrong')+'">'+(record.ok?'答对':'答错')+'</span></a></li>';
+  }).join('');
+  const paging = lastPage>1 ? '<nav class="history-paging" aria-label="答题明细分页">'+
+    (current>1?'<a class="btn secondary" href="'+historyLink(subject,current-1)+'">上一页</a>':'')+
+    '<span>'+current+' / '+lastPage+' 页</span>'+
+    (current<lastPage?'<a class="btn secondary" href="'+historyLink(subject,current+1)+'">下一页</a>':'')+'</nav>' : '';
+  return '<section class="history-list"><div class="section-head"><h2>答题明细</h2><span>'+records.length+' 条</span></div>'+
+    '<nav class="history-filter" aria-label="按学科筛选答题明细">'+tabs+'</nav>'+
+    (rows?'<ul class="topic-list">'+rows+'</ul>'+paging:empty('暂无作答记录','完成一道题后，可以在这里打开题目和解析。','pencil'))+'</section>';
+}
+function recordPage(encodedRef, subject, page) {
+  let ref;
+  try { ref = decodeURIComponent(encodedRef ?? ''); } catch {}
+  const item = attemptReferences(state.attempts).find(record=>record.ref===ref);
+  const question = questionById.get(item?.id);
+  const returnTo = historyLink(historyScope(subject),Number.isSafeInteger(page) && page>0 ? page : 1);
+  const back = '<a class="crumb" href="'+returnTo+'">返回答题明细</a>';
+  if (!question) return back+empty('找不到这条答题记录','如果是在其他设备上作答，请先同步学习记录。','book');
+  const topic = topicByKey.get(question.topic);
+  const options = question.options ? '<ol class="record-options" type="A">'+question.options.map(option=>'<li>'+esc(option)+'</li>').join('')+'</ol>' : '';
+  const actions = isActiveQuestion(question.id) ?
+    favoriteButton(question.id)+startButton('record-one/'+question.id,'再练这题','primary','',returnTo) : '';
+  return '<section class="quiz">'+back+'<article class="question record-question">'+
+    '<p>'+esc(item.date)+' · '+esc(topic.subject.name)+' · '+esc(topic.title)+' <span class="result-status '+(item.ok?'is-correct':'is-wrong')+'">'+
+    (item.ok?'本次答对':'本次答错')+'</span></p><h1>'+esc(question.prompt)+'</h1>'+
+    readingMaterial(question,true)+options+'<div class="feedback"><p><b>正确答案</b>　'+esc(question.correct)+'</p>'+
+    (question.explanation?'<p><b>解析</b>　'+esc(question.explanation)+'</p>':'')+
+    diagramFigure(question.answerDiagram)+workedSolution(question)+'</div>'+
+    '<div class="actions">'+actions+lessonLink(question.topic)+'</div></article></section>';
+}
+
+function statsPage(subject, page) {
   const attempts = state.attempts.filter(item=>isActiveQuestion(item.id));
   const right = attempts.filter(a => a.ok);
   const days = new Set(attempts.map(a => a.date));
-  return pageHead('学习记录','做题后自动更新。记录保存在当前浏览器。',homeLink)+
+  return pageHead('学习记录','点开答题明细可以回看题目、正确答案和解析。',homeLink)+
     '<div class="metrics">'+metric('累计作答',attempts.length+' 题','violet','pencil')+metric('整体正确率',percent(right.length,attempts.length),'green','target')+metric('练习天数',days.size+' 天','orange','chart')+'</div>'+
-    studyBackup()+studySyncPanel()+priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+activeSubjects.map(subject => {
+    studySyncPanel()+historyList(subject,page)+studyBackup()+priorityReview()+'<div class="section-head"><h2>分科进度</h2></div><div class="topic-list">'+activeSubjects.map(subject => {
       const tried = attempts.filter(a=>questionById.get(a.id)?.subject===subject.id);
       const success = tried.filter(a=>a.ok);
       const distinct = new Set(success.map(a=>a.id)).size;
       const total = subject.topics.reduce((n,t)=>n+t.questions.length,0);
-      return '<div class="row"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><div><h3>'+subject.name+'</h3><p>已答对 '+distinct+' / '+total+' 道不同的题</p></div></div><div>'+percent(success.length,tried.length)+'</div></div>';
+      return '<div class="row"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><div><h3>'+subject.name+'</h3><p>已答对 '+distinct+' / '+total+' 道不同的题</p></div></div><div class="saved-actions">'+percent(success.length,tried.length)+
+        (tried.length?'<a class="btn secondary" href="'+historyLink(subject.id)+'">查看记录</a>':'')+'</div></div>';
     }).join('')+'</div>';
 }
 function dailyQuestions() {
@@ -886,6 +976,8 @@ function start(key, backTarget) {
   } else if (kind === 'favorites' || kind === 'favorite-one') {
     ids = kind === 'favorite-one' ? [id] : favoriteIds();
     label = '收藏题复练'; back = '#favorites';
+  } else if (kind === 'record-one') {
+    ids = [id]; label = '答题记录复练'; back = /^#stats(?:\/[a-z]+\/\d+)?$/.test(backTarget) ? backTarget : '#stats';
   } else if (kind === 'topic-mistakes') {
     const topic = topicByKey.get(id);
     if (!activeSubjectById.has(topic?.subject.id)) return;
@@ -911,7 +1003,7 @@ function answer(current,currentQuestion) {
   current.answers[current.index] = {id:q.id,ok,raw,...(fields?{fields}:{})};
   const now = new Date();
   const time = now.getTime();
-  const ref = Array.from(crypto.getRandomValues(new Uint32Array(4)), number=>number.toString(16).padStart(8,'0')).join('');
+  const ref = newStudyRef();
   state.attempts.push({id:q.id,ok,date:dateKey(now),time,ref});
   if (ok) delete state.mistakes[q.id];
   else state.mistakes[q.id] = {count:(state.mistakes[q.id]?.count??0)+1,time};
@@ -1049,7 +1141,7 @@ function quizPage() {
   if (!isActiveSession(s)) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
   const reviewBack = reviewCollections.get(s.back.slice(1).split('/')[0]);
   const backLabel = reviewBack?.returnLabel ?? (s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
-    : s.back.startsWith('#course/') ? '本课练习' : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back] ?? '学科'));
+    : s.back.startsWith('#course/') ? '本课练习' : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back.split('/')[0]] ?? '学科'));
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
@@ -1093,10 +1185,10 @@ function quizPage() {
 }
 function render(moveFocus = false) {
   for (const audio of app.querySelectorAll?.('audio[data-listening-player]') ?? []) saveListeningPosition(audio,true);
-  const [page,subjectId,courseKey] = location.hash.slice(1).split('/');
+  const [page,subjectId,courseKey,recordPageNumber] = location.hash.slice(1).split('/');
   const subject = activeSubjectById.get(subjectId);
-  const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back] ?? 'bank';
-  const view = reviewCollections.has(page) ? 'bank' : {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',course:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',quiz:quizNav}[page] ?? 'home';
+  const quizNav = ({'#home':'home','#mistakes':'mistakes','#stats':'stats','#favorites':'favorites'})[state.session?.back?.split('/')[0]] ?? 'bank';
+  const view = reviewCollections.has(page) ? 'bank' : {bank:'bank',mixed:'bank',difficulty:'bank',advanced:'bank',packs:'bank',subject:'bank',course:'bank',learn:'bank',mistakes:'mistakes',favorites:'favorites',stats:'stats',record:'stats',quiz:quizNav}[page] ?? 'home';
   for (const link of document.querySelectorAll('[data-nav]')) {
     if (link.dataset.nav===view) link.setAttribute('aria-current','page');
     else link.removeAttribute('aria-current');
@@ -1127,7 +1219,8 @@ function render(moveFocus = false) {
   }
   else if (page==='mistakes') app.innerHTML = mistakePage();
   else if (page==='favorites') app.innerHTML = favoritePage();
-  else if (page==='stats') app.innerHTML = statsPage();
+  else if (page==='stats') app.innerHTML = statsPage(historyScope(subjectId),Number(courseKey));
+  else if (page==='record') app.innerHTML = recordPage(subjectId,courseKey,Number(recordPageNumber));
   else if (page==='quiz') app.innerHTML = quizPage();
   else app.innerHTML = home();
   if (storageFailed) app.insertAdjacentHTML('afterbegin','<p class="feedback" role="status">当前浏览器无法保存学习记录。关闭或刷新页面会丢失本次记录。</p>');
@@ -1157,6 +1250,7 @@ app.addEventListener('click',event => {
     const id = button.dataset.favorite;
     const wasSelected = state.favorites.includes(id);
     state.favorites = wasSelected ? state.favorites.filter(key=>key!==id) : [...state.favorites,id];
+    queueFavoriteChange(id,!wasSelected);
     save();
     if (location.hash === '#favorites') {
       render();

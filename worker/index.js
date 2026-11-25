@@ -269,6 +269,7 @@ async function syncResponse(request,env,url) {
   if (request.method==='HEAD') {
     try {
       await studyDb(env).prepare('SELECT homework_reference FROM study_attempts LIMIT 0').all();
+      await studyDb(env).prepare('SELECT question_id FROM study_favorite_events LIMIT 0').all();
       return new Response(null,{status:204,headers:{'Cache-Control':'no-store'}});
     } catch (error) {
       console.error('Study storage readiness: '+error.name+' '+error.message);
@@ -299,6 +300,25 @@ async function syncResponse(request,env,url) {
     return json({error:'暂时无法同步，请稍后再试。'},500);
   }
 }
+async function favoritesSyncResponse(request,env,url) {
+  if (!request.headers.get('oai-authenticated-user-id')) return json({error:'请先登录 ChatGPT 账号。'},401);
+  const owner = requireOwner(request);
+  try {
+    if (request.method==='GET') return json({favorites:await favoriteSnapshot(env,owner)});
+    if (request.method==='POST') {
+      if (request.headers.get('Origin')!==url.origin) return json({error:'请在练习室内同步记录。'},403);
+      await syncFavoriteEvents(env,owner,await boundedJson(request,120000));
+      return json({saved:true});
+    }
+    return new Response(null,{status:405,headers:{Allow:'GET, POST'}});
+  } catch (error) {
+    if (error instanceof StudyError || error instanceof SyntaxError) {
+      return json({error:error instanceof SyntaxError ? '同步数据格式有误。' : error.message},400);
+    }
+    console.error('Favorite sync: '+error.name+' '+error.message);
+    return json({error:'暂时无法同步收藏，请稍后再试。'},500);
+  }
+}
 function staticResponse(request,path) {
   if (!['GET','HEAD'].includes(request.method)) return new Response(null,{status:405,headers:{Allow:'GET, HEAD'}});
   const assetPath = path==='/' ? '/index.html' : path;
@@ -318,6 +338,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname==='/mcp') return mcpResponse(request,env);
     if (url.pathname==='/api/study-sync') return syncResponse(request,env,url);
+    if (url.pathname==='/api/study-favorites') return favoritesSyncResponse(request,env,url);
     return staticResponse(request,url.pathname);
   }
 };

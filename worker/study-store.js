@@ -123,3 +123,33 @@ async function mistakesFor(env,owner,args) {
     .sort((a,b)=>b.date.localeCompare(a.date)||b.time-a.time||b.cursor-a.cursor);
   return {total:open.length,results:open.slice(0,limit).map(mistakeQuestionView)};
 }
+
+async function favoriteSnapshot(env,owner) {
+  const {results} = await studyDb(env).prepare(`SELECT question_id AS id FROM study_favorite_events
+    WHERE owner_id = ? AND selected = 1 AND rowid IN (
+      SELECT MAX(rowid) FROM study_favorite_events WHERE owner_id = ? GROUP BY question_id
+    ) ORDER BY rowid`).bind(owner,owner).all();
+  return results.map(({id})=>id);
+}
+
+async function syncFavoriteEvents(env,owner,data) {
+  const {legacy,changes} = data ?? {};
+  if (!Array.isArray(legacy) || !Array.isArray(changes) || legacy.length+changes.length>200 ||
+      legacy.some(id=>typeof id!=='string') ||
+      changes.some(item=>!item || typeof item.id!=='string' || typeof item.selected!=='boolean' ||
+        typeof item.ref!=='string' || !/^[a-f0-9]{32}$/.test(item.ref))) {
+    throw new StudyError('收藏同步数据有误，每次最多同步 200 条。');
+  }
+  const db = studyDb(env);
+  const seed = `INSERT INTO study_favorite_events (owner_id,event_ref,question_id,selected)
+    SELECT ?,?,?,1 WHERE NOT EXISTS (
+      SELECT 1 FROM study_favorite_events WHERE owner_id = ? AND question_id = ?
+    ) ON CONFLICT(owner_id,event_ref) DO NOTHING`;
+  const update = `INSERT INTO study_favorite_events (owner_id,event_ref,question_id,selected)
+    VALUES (?,?,?,?) ON CONFLICT(owner_id,event_ref) DO NOTHING`;
+  const statements = [
+    ...legacy.filter(id=>questions.has(id)).map(id=>db.prepare(seed).bind(owner,'legacy:'+id,id,owner,id)),
+    ...changes.filter(({id})=>questions.has(id)).map(({id,selected,ref})=>db.prepare(update).bind(owner,ref,id,Number(selected)))
+  ];
+  for (let i=0;i<statements.length;i+=40) await db.batch(statements.slice(i,i+40));
+}

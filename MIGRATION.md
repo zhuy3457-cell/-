@@ -7,7 +7,7 @@
 | 题库、知识点、课内及专项练习 | `dist/*.js`，由 `scripts/build-worker.mjs` 装载 |
 | 网页界面与配图 | `dist/index.html`、`dist/styles.css`、`dist/*.webp` |
 | 聊天助手、答题与同步服务 | `worker/` |
-| D1 结构及变更顺序 | `drizzle/0000_chat_study.sql`、`drizzle/0001_homework_reference.sql` |
+| D1 结构及变更顺序 | `drizzle/0000_chat_study.sql`、`drizzle/0001_homework_reference.sql`、`drizzle/0002_study_favorites.sql` |
 | 现有 Sites 项目标识和绑定声明 | `.openai/hosting.json` |
 | 原始照片、电子原件、课件、听力、归档清单及经授权导出的学习备份 | `zhuy3457-cell/suxue-private-archive` 的 `main`，凭证另行管理 |
 
@@ -49,7 +49,7 @@ tar -C "$build_dir/worker" -czf "$build_dir/suxue-worker.tar.gz" .openai dist dr
 
 **网页与离线。** 在原浏览器进入「学习记录 → 导出备份」。如需将已同步的云端题库作答一并纳入，先登录并完成网页的同步。备份包括现有题库题目的作答结果及收藏，导入时按作答编号合并，错题本根据作答历史重建。重复导入同一备份应新增 0 条。当前方案不记录每道题的完整原始作答文本。当前练习进度和浏览器本地音频播放位置也不在备份内。使用多个浏览器或设备时，各自导出并归档。更换账号前先在原账号和浏览器完成导出。
 
-**聊天与 D1。** 网页同步接口只回传正式题库的作答记录。聊天里录入的外部作业题干、参考答案和解析保存在 D1 的 `study_attempts`，不会进入网页 JSON。跨账号时需要旧、新账号在托管服务使用的内部标识。现有项目读取数据的工具没有整库导出和写入接口。须由有权限的原库管理员通过平台支持的私有导出取得 SQLite 数据，再由目标库管理员在目标环境执行迁入。若只能取得 SQL 备份，可先在隔离环境将其恢复成 SQLite 文件。
+**聊天与 D1。** 网页跨设备同步传输正式题库的作答记录和收藏。收藏变更保存在 D1 的 `study_favorite_events`，包含取消收藏的记录。首次同步可补传浏览器中原有的收藏。聊天里录入的外部作业题干、参考答案和解析保存在 D1 的 `study_attempts`，不会进入网页 JSON。跨账号时需要旧、新账号在托管服务使用的内部标识。现有项目读取数据的工具没有整库导出和写入接口。须由有权限的原库管理员通过平台支持的私有导出取得 SQLite 数据，再由目标库管理员在目标环境执行迁入。若只能取得 SQL 备份，可先在隔离环境将其恢复成 SQLite 文件。
 
 以下脚本操作本地 SQLite 文件。先给空目标库按文件名顺序应用 `drizzle/*.sql`，再执行：
 
@@ -58,7 +58,7 @@ node scripts/migrate-study-data.mjs export /private/old.sqlite "$old_owner_id" /
 node scripts/migrate-study-data.mjs import /private/new.sqlite "$new_owner_id" /private/study-rows.json
 ```
 
-脚本只导出指定账号的行，可映射到目标账号。重复导入跳过等同记录，编号冲突而值不同则整次回滚，不覆盖原有数据。生产库导入应通过平台授予的管理通道完成。完成后校验行数、作答编号、日期、错题统计和聊天作业重练，再在目标网页导入收藏。不要把个人备份、数据库文件、账号标识或凭证提交到公开 GitHub。
+脚本只导出指定账号的行，可映射到目标账号。重复导入跳过等同记录，编号冲突而值不同则整次回滚，不覆盖原有数据。生产库导入应通过平台授予的管理通道完成。完成后校验行数、作答编号、日期、错题统计、聊天作业重练和收藏状态。在原浏览器执行过跨设备同步的收藏可在目标网页同步，也可用浏览器 JSON 恢复。旧版 D1 JSON 仍可导入。不要把个人备份、数据库文件、账号标识或凭证提交到公开 GitHub。
 
 ## 测试与回滚
 

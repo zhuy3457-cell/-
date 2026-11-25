@@ -1046,3 +1046,28 @@ test('biology summary lessons draw and grade pictured and classification items',
     }
   }
 });
+
+test('favorites sync carries legacy saves and removals across devices without replaying old events',async ()=>{
+  const owner = 'tablet-favorites';
+  const endpoint = '/api/study-favorites';
+  const id = 'geo-124-weather-day';
+  const other = 'bio-summary-cell-model';
+  const add = {id,selected:true,ref:'a'.repeat(32)};
+  const remove = {id,selected:false,ref:'b'.repeat(32)};
+  const post = (legacy,changes,from=origin)=>request(endpoint,{owner,method:'POST',
+    headers:{Origin:from,'Content-Type':'application/json'},body:JSON.stringify({legacy,changes})});
+  const read = async account=>(await (await request(endpoint,{owner:account})).json()).favorites;
+  assert.equal((await request(endpoint)).status,401);
+  assert.equal((await post([id],[],'https://example.com')).status,403);
+  assert.equal((await post([], [{...add,selected:1}])).status,400);
+  assert.deepEqual(await read(owner),[]);
+  assert.equal((await post([id,other],[])).status,200);
+  assert.deepEqual(await read(owner),[id,other]);
+  assert.deepEqual(await read('other-favorites'),[]);
+  assert.equal((await post([], [add])).status,200);
+  assert.equal((await post([], [remove])).status,200);
+  assert.equal((await post([id], [add,remove])).status,200);
+  assert.deepEqual(await read(owner),[other]);
+  assert.equal((await post([], [{...add,ref:'c'.repeat(32)}])).status,200);
+  assert.deepEqual(await read(owner),[other,id]);
+});
