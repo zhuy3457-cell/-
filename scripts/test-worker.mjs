@@ -628,8 +628,8 @@ test('Tiangong exam has its own page group and grades all six parts of question 
   const key = 'geo-exam-earth-page-6';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'geography',scope_id});
-  assert.equal(course.question_count,26);
-  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[5,9,6,6]);
+  assert.equal(course.question_count,32);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[6,5,9,6,6]);
   const quiz = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-8',count:6});
   assert.deepEqual(quiz.questions.map(question=>question.question_id).sort(),
     Array.from({length:6},(_,index)=>key+'-39-'+(index+1)));
@@ -649,6 +649,20 @@ test('page 7 grades the FAST contour and Great Wall questions with their diagram
   assert.match(questions.get(key+'-38-4').diagram.url,/geography-exam-fast\.webp$/);
   const answers = [['37-4','B',true],['37-5','C',true],['38-1','D',true],['38-2','B',true],
     ['38-3','A',true],['38-3','B',false],['38-4',['B线','等高线更密'],true]];
+  const graded = await good('grade_homework',{record:false,submissions:answers.map(([id,answer])=>({
+    question_id:key+'-'+id,answer
+  }))});
+  assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
+});
+test('page 4 supplies sea-land charts and latitude diagrams with correct single and double choices',async ()=>{
+  const key = 'geo-exam-earth-page-6';
+  const quiz = await good('draw_questions',{subject:'geography',scope_id:'course:'+key,group_id:key+'-page-4',count:6});
+  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  assert.equal(questions.size,6);
+  assert.match(questions.get(key+'-24').diagram.url,/geography-exam-land-sea\.webp$/);
+  for (const number of [26,27]) assert.match(questions.get(key+'-'+number).diagram.url,/geography-exam-latitudes\.webp$/);
+  const answers = [[22,'B',true],[23,'A',true],[24,'C',true],[25,'D',true],
+    [26,'CA',true],[27,'A、C',true],[27,'BD',false]];
   const graded = await good('grade_homework',{record:false,submissions:answers.map(([id,answer])=>({
     question_id:key+'-'+id,answer
   }))});
