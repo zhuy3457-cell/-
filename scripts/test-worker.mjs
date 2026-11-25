@@ -928,14 +928,17 @@ test('history worksheet supplement keeps lesson groups and grades multi-blank hi
   const key = 'history-upper-cloze-supplement';
   const scope_id = 'course:'+key;
   const lesson = await good('explain_topic',{subject:'history',scope_id});
-  assert.equal(lesson.question_count,36);
-  assert.equal(lesson.practice_groups.length,14);
-  const quiz = await good('draw_questions',{scope_id,group_id:key+'-lesson-14',count:1});
-  const question = quiz.questions[0];
+  assert.equal(lesson.question_count,61);
+  assert.equal(lesson.practice_groups.length,20);
+  const quiz = await good('draw_questions',{scope_id,group_id:key+'-lesson-14',count:5});
+  const question = quiz.questions.find(item=>item.question_id===key+'-36');
   assert.equal(question.fields.length,3);
   const grade = await good('grade_homework',{record:false,submissions:[
     {question_id:question.question_id,answer:['阳关、玉门关','大月氏','１３８']},
-    {question_id:question.question_id,answer:['玉门关和阳关','匈奴','138']}
+    {question_id:question.question_id,answer:['玉门关和阳关','匈奴','138']},
+    {question_id:key+'-source-1',answer:'100万年'},
+    {question_id:key+'-source-3',answer:['私有制','阶级','国家的产生']},
+    {question_id:key+'-59',answer:['云冈','龙门石窟','陶潜']}
   ]});
-  assert.deepEqual(grade.results.map(result=>result.correct),[true,false]);
+  assert.deepEqual(grade.results.map(result=>result.correct),[true,false,true,true,true]);
 });
