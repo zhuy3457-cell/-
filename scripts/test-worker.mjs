@@ -283,7 +283,7 @@ test('new classroom materials stay in their own upper-term courses and grade wor
   for (const [subject,key,count] of [
     ['math','math-equations-brackets-423',23],
     ['math','math-happy-four',29],
-    ['math','math-happy-three',12],
+    ['math','math-happy-three',31],
     ['biology','biology-environment-chapter-two',8],
     ['biology','biology-ecosystem-types-review',7],
     ['history','history-warring-states-lesson-six',7],
@@ -913,4 +913,13 @@ test('retired subjects are unavailable for practice and their old records still 
   assert.deepEqual(await sync.json(),{added:1,ignored:0});
   const backup = await (await request(attemptEndpoint,{owner})).json();
   assert.deepEqual(backup.attempts,[attempt]);
+});
+
+test('restored supplemental questions preserve prior IDs and grade the new folding and motion answers',async ()=>{
+  const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:'math-happy-three-12',answer:['3/2','7/2']},
+    {question_id:'math-happy-three-30',answer:'7/2'},
+    {question_id:'math-happy-three-31',answer:'1、1.5、2.5、3'}
+  ]});
+  assert.equal(graded.correct,3);
 });
