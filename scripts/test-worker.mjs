@@ -1122,3 +1122,22 @@ test('history chronology course grades four units and reserves explanatory timel
     assert.equal(response.headers.get('content-type'),'image/webp');
   }
 });
+
+test('history source-reading draws and grades the new illustrated comparison questions',async ()=>{
+  const scope_id = 'course:history-source-reading';
+  const quiz = await good('draw_questions',{subject:'history',scope_id,count:4});
+  assert.equal(quiz.questions.length,4);
+  assert.doesNotMatch(JSON.stringify(quiz),/answer-history-/);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'history-source-reading-jiahu',answer:'B'},
+    {question_id:'history-source-reading-confucians',answer:'C'},
+    {question_id:'history-source-reading-qin',answer:'D'},
+    {question_id:'history-source-reading-farming',answer:'A'}
+  ]});
+  assert.equal(grade.correct,4);
+  for (const {answer_diagram:{url}} of grade.results) {
+    const response = await request(new URL(url).pathname);
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('content-type'),'image/webp');
+  }
+});

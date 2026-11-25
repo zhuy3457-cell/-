@@ -1104,6 +1104,48 @@ historyMindmapModules.push({
   ]
 });
 
+historyMindmapModules.push({
+  key:'history-source-reading',
+  title:'七上历史 · 史料与制度辨析',
+  range:'史前、百家争鸣、秦汉',
+  description:'用遗物和观点判断结论，比较秦朝制度与汉初政策。',
+  notes:[
+    {label:'遗物能说明什么？',points:['河南贾湖遗址出土的碳化稻谷可用于研究稻作，骨笛可用于研究早期音乐活动。判断史料价值要先看它记录或保存了什么。']},
+    {label:'同一学派的主张也有差异',points:['孟子强调仁政与民贵君轻，荀子重视礼治，也强调法度。辨认学派要联系完整的观点。']},
+    {label:'把政策放回时代背景',points:['商鞅变法以富国强兵为目标；汉初休养生息有利于恢复战后生产。秦统一文字改善交流，郡县制则加强中央对地方的管理。']}
+  ],
+  questions:[
+    {
+      id:'history-source-reading-jiahu',level:'standard',
+      prompt:'一组贾湖展品有碳化稻谷和骨笛。研究者想讨论当地早期稻作，哪项做法更符合史料的用途？',
+      options:['只看骨笛是否能演奏，就能断定当地稻作技术','先用碳化稻谷及其考古背景研究稻作，骨笛用于了解早期音乐','用两件展品推算贾湖所有居民的职业','用骨笛直接判断稻田面积'],
+      correct:'先用碳化稻谷及其考古背景研究稻作，骨笛用于了解早期音乐',
+      explanation:'两件遗物回答的问题不同。遗址中的碳化稻谷是研究稻作的相关实物，是否已经栽培还要结合更多证据；骨笛与早期音乐活动直接相关。'
+    },
+    {
+      id:'history-source-reading-confucians',level:'standard',
+      prompt:'展签甲突出“仁政、民贵君轻”，展签乙突出“提倡礼治，也重视法度”。按七上课本，两张展签分别更适合放在哪两位思想家名下？',
+      options:['韩非、墨子','老子、孔子','孟子、荀子','荀子、孟子'],
+      correct:'孟子、荀子',
+      explanation:'“仁政、民贵君轻”是辨认孟子的线索。荀子重视礼治并讲求法度，两人都属于儒家。'
+    },
+    {
+      id:'history-source-reading-qin',level:'standard',
+      prompt:'两张展签分别写着“以小篆规范各地文书”和“地方长官由中央任免”。这两条线索分别体现秦朝哪项措施？',
+      options:['统一度量衡、实行分封制','统一货币、实行郡县制','统一文字、实行分封制','统一文字、实行郡县制'],
+      correct:'统一文字、实行郡县制',
+      explanation:'小篆是秦朝规范文字的线索，服务于交流。地方长官由中央任免是郡县制的线索，体现中央对地方的直接管理。'
+    },
+    {
+      id:'history-source-reading-farming',level:'challenge',
+      prompt:'比较战国秦国的“奖励耕织”和西汉初年的“轻徭薄赋，鼓励务农”。哪项同时说明了共同点和不同背景？',
+      options:['都重视农业；前者服务于富国强兵，后者有利于恢复战后生产','都为恢复秦末战乱后的生产','前者主要统一文字，后者主要实行郡县制','前者与农业无关，后者只重视商业'],
+      correct:'都重视农业；前者服务于富国强兵，后者有利于恢复战后生产',
+      explanation:'“耕织”“务农”都指向农业生产。商鞅变法发生于战国时期，重在增强秦国实力；西汉初年的轻徭薄赋是休养生息的一部分。'
+    }
+  ]
+});
+
 const historyMindmapByTopic = new Map(historyMindmapModules.map(module=>[module.key,module]));
 for (const module of historyMindmapModules) {
   historySubject.topics.push({

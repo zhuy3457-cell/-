@@ -33,6 +33,18 @@
       {src:'answer-history-north-south-2.webp',alt:'南线420年刘宋建立、南朝开始。北线439年北魏统一北方、494年孝文帝迁都洛阳。',caption:'把北线的494年和南线对照，南方已进入南朝时期。'},
       {src:'answer-history-north-south-3.webp',alt:'北线和南线最后汇到589年隋统一。494年发生在420年南朝开始之后、589年隋统一之前。',caption:'589年隋灭陈；494年落在南朝时期。'}
     ],
+    'history-source-reading-jiahu': [
+      {src:'answer-history-jiahu-evidence.webp',alt:'贾湖碳化稻谷指向稻作研究，贾湖骨笛指向早期音乐活动研究。',caption:'两种遗物支持不同的历史结论。',source:'https://www.chnmus.net/ch/collection/appraise/details.html?id=512152053903974657',credit:'河南博物院 · 贾湖遗物'}
+    ],
+    'history-source-reading-confucians': [
+      {src:'answer-history-confucians.webp',alt:'孟子主张仁政、民贵君轻；荀子提倡礼治，也重视法度。',caption:'先找主张中的关键词，再判断人物。'}
+    ],
+    'history-source-reading-qin': [
+      {src:'answer-history-qin-measures.webp',alt:'秦统一文字便利文书交流；郡县制的地方长官由中央任免，加强地方管理。',caption:'分清文化措施和政治制度。'}
+    ],
+    'history-source-reading-farming': [
+      {src:'answer-history-agriculture-policy.webp',alt:'战国秦国奖励耕织以增强实力，西汉初年轻徭薄赋、鼓励务农以恢复战后生产。',caption:'先找共同点，再比较时代背景与政策目的。'}
+    ],
     'equation-app-parameters-6': [
       {src:'answer-equation-denominator.webp',alt:'左侧把右边的负1漏乘2，得到x等于m，由误算结果得m等于3。右侧正确乘2得到2x减1等于x加m减2，代入m等于3求得x等于2。',caption:'先从错误算式求 m，再回到原方程正确去分母。'}
     ]
