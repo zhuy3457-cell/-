@@ -144,7 +144,7 @@ test('uploaded English worksheets and both book units work through the chat tool
   const courses = [
     ['英语问候与自我介绍学案','course:classroom-u1-intro',30],
     ['英语1.3 Grammar','course:classroom-u1-grammar',43],
-    ['英语Grammar Integration 默写','course:classroom-u2-integration',31],
+    ['英语 Unit 2 Grammar Integration 默写与翻译','course:classroom-u2-integration',31],
     ['英语柳林风声','course:english-wind-willows',8],
     ['英语快乐王子','course:english-happy-prince',8]
   ];
@@ -298,6 +298,37 @@ test('new classroom materials stay in their own upper-term courses and grade wor
   ]});
   assert.equal(graded.correct,4,JSON.stringify(graded.results));
   assert.equal(graded.recorded,false);
+});
+test('Unit 3–5 worksheets and Chinese classroom reviews are available on the upper term',async ()=>{
+  for (const [subject,key,count] of [
+    ['english','classroom-u3-school-writing',6],
+    ['english','classroom-u4-welcome-reading',31],
+    ['english','classroom-u4-grammar-integration',21],
+    ['english','classroom-u5-welcome-reading',36],
+    ['english','classroom-u5-health-morning',27],
+    ['english','classroom-upper-paraphrase',12],
+    ['chinese','chinese-narrative-midterm-review',6],
+    ['chinese','chinese-hollow-sandalwood-review',4],
+    ['chinese','chinese-weekly-one-review',20]
+  ]) {
+    const result = await good('explain_topic',{subject,scope_id:'course:'+key});
+    assert.equal(result.term,'上');
+    assert.equal(result.question_count,count);
+  }
+  const unit4 = await good('explain_topic',{query:'英语第四单元'});
+  const unit5 = await good('explain_topic',{query:'英语第五单元'});
+  assert.ok(unit4.practice_groups.some(group=>group.group_id==='classroom-u4-grammar-integration-grammar'));
+  assert.ok(unit5.practice_groups.some(group=>group.group_id==='classroom-u5-health-morning-words'));
+  const tree = await good('draw_questions',{subject:'chinese',scope_id:'course:chinese-hollow-sandalwood-review',count:4});
+  assert.ok(tree.questions.every(q=>q.material?.includes('设计师') && !q.table));
+  const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:'classroom-u4-welcome-reading-24',answer:'ɑ:'},
+    {question_id:'classroom-u4-grammar-integration-21',answer:['take care of','look after']},
+    {question_id:'classroom-u5-welcome-reading-12',answer:['What else','What other food']},
+    {question_id:'classroom-upper-paraphrase-11',answer:'on weekends'},
+    {question_id:'chinese-weekly-one-review-8',answer:['学而不思则罔','思而不学则殆']}
+  ]});
+  assert.equal(graded.correct,5,JSON.stringify(graded.results));
 });
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});

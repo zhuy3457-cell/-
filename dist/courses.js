@@ -24,7 +24,6 @@ const courseCatalog = (() => {
     ['english-grammar-day10', 'english-grammar-day11'],
     []
   ];
-  const classroomByUnit = [englishClassroomModules.slice(0,2),englishClassroomModules.slice(2,3)];
   const moduleGroups = (module,prefix = '') => module.sections.map((section,index)=>({
     ...sectionGroup(module,index),title:prefix+section.title
   }));
@@ -35,7 +34,7 @@ const courseCatalog = (() => {
     const index = unit.unit - 1;
     const check = englishCourseChecks[index];
     const grammar = grammarByUnit[index];
-    const classroom = classroomByUnit[index] ?? [];
+    const classroom = englishClassroomModules.filter(module=>module.key.startsWith('classroom-u'+unit.unit+'-'));
     const vocab = vocabByUnit[index];
     return makeCourse('unit-' + unit.unit, unit.title, topics.get(check).description,
       [fullGroup(check, '随堂小测'), ...unit.sections.map((section, i) => sectionGroup(unit, i)),

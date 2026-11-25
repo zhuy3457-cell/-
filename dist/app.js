@@ -126,8 +126,8 @@ const reviewCollections = new Map([
   }],
   ['english-classroom', {
     subject:'english', name:'英语', icon:'letters', tone:'blue',
-    title:'Unit 1–2 学案与课外阅读', keywords:'自我介绍 1.3 Grammar Grammar Integration 柳林风声 快乐王子',
-    subtitle:'按题型练 Unit 1 学案、Unit 2 默写与译写，并阅读两篇英文原著的情节简写。',
+    title:'Unit 1–5 学案、默写与课外阅读', keywords:'自我介绍 Grammar Integration Welcome Reading 同义句 早读 新学校 柳林风声 快乐王子',
+    subtitle:'按单元练学案、词句默写、音标、写作与同义转换，也可做英文课外阅读。',
     start:'english-classroom', returnLabel:'英语学案与课外阅读', modules:englishClassroomModules, byTopic:englishClassroomByTopic
   }],
   ['english-vocab-review', {

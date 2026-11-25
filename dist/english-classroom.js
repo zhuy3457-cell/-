@@ -275,7 +275,200 @@ const englishClassroomModules = (() => {
   ],[{title:'Project Gutenberg · The Happy Prince and Other Tales',url:'https://www.gutenberg.org/files/902/902-h/902-h.htm',
     note:'Oscar Wilde 原著合集。阅读材料根据同名故事简写，问题为本练习编写。'}]);
 
-  return [introduction,grammar,integration,willows,prince];
+  function words(entries) {
+    return entries.map(([prompt,forms])=>fill(prompt,forms));
+  }
+  function sounds(entries) {
+    return entries.map(([word,ipa])=>{
+      const asciiLength = ipa.replace('ː',':');
+      return fill('写出 '+word+' 中方括号部分的音标。',[[`/${ipa}/`,ipa,`/${asciiLength}/`,asciiLength]],'可带斜线，也可只写音标。');
+    });
+  }
+
+  const schoolWriting = module('classroom-u3-school-writing','Unit 3 · 我的新学校写作','七上 Unit 3',
+    '根据写作讲义练习介绍学校、说明喜欢某处的原因，并描述师生。',[
+    ['作文的三个问题','What is your new school like? What’s your favourite place at school? What are your teachers and classmates like? 先写学校的总体印象，再写场所、活动和理由，最后写老师与同学。'],
+    ['学校活动','take place 表示活动发生或举行。A lot of interesting events take place in the school hall. 也可以用 a perfect place for me to play football 写清喜欢运动场的原因。'],
+    ['表达与衔接','so big and modern that… 表示“如此……以至于……”。用 What’s more 或 as well 补充信息。spend an hour reading 用动词 -ing，be ready to help 用 to 加动词原形。']
+  ],[
+    ['writing','描述学校 · 写作句型',[
+      fill('我的学校很大也很现代化，所以我非常喜欢它。\nMy school is ____ that I love it very much.','so big and modern','so + 形容词 + that 引出结果。'),
+      fill('很多有趣的活动在学校礼堂举行。\nA lot of interesting events ____ in the school hall.','take place','take place 表示有计划的活动举行。'),
+      fill('运动场很适合我和朋友一起踢足球。\nThe sports field is a perfect place ____ with my friends.','for me to play football','a place for sb. to do sth. 可写出场所的用途。'),
+      fill('有空时，我经常花一小时读各种各样的书。\nWhen I am free, I often ____ different kinds of books.','spend an hour reading','spend + 时间 + doing。'),
+      fill('老师们很关心我们。\nOur teachers ____ us a lot.','care about','care about 表示关心。'),
+      fill('同学乐于帮助别人。\nMy classmates are always ____ others.','ready to help','be ready to do sth. 表示愿意或准备好做某事。')
+    ]]
+  ]);
+
+  const dailyLife = module('classroom-u4-welcome-reading','Unit 4 · Welcome–Reading 默写卷','七上 Unit 4',
+    '按原卷顺序练日常活动、学校生活和 8 个元音音标。',[
+    ['时间和日常活动','on weekdays、in the morning。do morning exercises 中 exercises 用复数，help with housework 中 housework 不可数。'],
+    ['学校生活','learn about 后接学习的对象，leave for 后接目的地。practise doing sth. 中 practise 是英式动词拼写，美式可拼 practice。hear from sb. 表示收到某人的来信或消息。']
+  ],[
+    ['welcome','Welcome',[
+      ...words([
+        ['吃早饭、吃午饭、吃晚饭，按顺序填。',['have breakfast','have lunch','have dinner']],
+        ['做早操','do morning exercises'],['上课','have lessons'],
+        ['做课外活动','do after-school activities'],['帮忙做家务','help with housework'],
+        ['做家庭作业',[['do homework','do one’s homework']]],
+        ['上床睡觉','go to bed'],['一点、少量','a little'],
+        ['玩得痛快，依次填 have fun、have a … time 和 enjoy … 三种表达。',['have fun',['have a good time','have a great time'],'enjoy oneself']]
+      ]),
+      fill('你工作日早上几点起床？\nWhat time do you ____ in the morning ____?',['get up','on weekdays'],'on weekdays 表示在工作日。'),
+      fill('我通常去短途慢跑，而且玩得很开心。\nI ____ go for ____ and enjoy ____.',['usually','a short jog','myself'],'go for a jog 表示出去慢跑。enjoy 的反身代词和主语 I 对应。')
+    ]],
+    ['reading','Reading',[
+      ...words([
+        ['开始（动词）',[['start','begin']]],['令人惊奇的（以 a 开头）','amazing'],
+        ['生物学','biology'],['采、摘','pick'],
+        ['我的第一学期／第一学期',[['my first term','the first term']]],
+        ['练习做某事',[['practise doing sth.','practice doing sth.','practise doing something','practice doing something']]],
+        ['实地考察（单数）','field trip'],['动身去（某地）','leave for'],['一切顺利。','All the best.']
+      ]),
+      fill('我们阅读许多著名作家的作品。\nWe read the ____ of many ____.',['works','famous writers'],'works 指作品。'),
+      fill('我们了解许多生物和自然。\nWe ____ many ____ and ____.',['learn about','living things','nature'],'living things 表示生物。'),
+      fill('希望尽早收到你的来信。\nHope ____ you soon.','to hear from','hope to do sth.，hear from sb.。')
+    ]],
+    ['pronunciation','Pronunciation',sounds([['p[ar]k','ɑː'],['dr[aw]','ɔː'],['s[ee]','iː'],['h[ea]d','e'],['f[oo]d','uː'],['b[oo]k','ʊ'],['b[ir]d','ɜː'],['aft[er]','ə']])]
+  ]);
+
+  const schoolActivities = module('classroom-u4-grammar-integration','Unit 4 · Grammar–Integration 默写卷','七上 Unit 4',
+    '按三个板块练频率副词、时间介词、实地考察和班级值日。',[
+    ['频率与时间','seldom 和 always 通常放在实义动词前。具体某天的上午用 on Tuesday morning，时长可用 for about half an hour。'],
+    ['参观和值日','take a trip to、go on a field trip、share sth. with sb.、try one’s best to do sth.。take care of 相当于 look after。']
+  ],[
+    ['grammar','Grammar',[
+      ...words([['很少（以 s 开头）','seldom'],['当然。','Of course.'],['在运动场上','on the sports field']]),
+      fill('我们将在周二早上去一个农场旅游。\nWe will ____ to a farm ____.',['take a trip','on Tuesday morning'],'星期几的上午前用 on。'),
+      fill('她总是跳大约半个小时的舞。\nShe always ____ for about ____.',['dances','half an hour'],'she 后用 dances，half an hour 表示半小时。'),
+      fill('我没有很多时间去打网球。\nI do not have ____ time to ____.',['much','play tennis'],'time 在这里不可数，球类名称前通常不加冠词。')
+    ]],
+    ['integration-1','Integration 1',[
+      ...words([
+        ['累人的（描述事情）','tiring'],['参观、旅行（名词，以 t 开头）','tour'],['团队合作','teamwork'],
+        ['种苹果、植树，按顺序填。',['grow apples','plant trees']],['在学校网站上','on the school website'],
+        ['观看视频（单复数均可）',[['watch videos','watch a video']]]
+      ]),
+      fill('我们带一些苹果回家并与家人分享。\nWe take some apples home and ____ them ____ our family.',['share','with'],'share sth. with sb.。'),
+      fill('我喜欢实地考察，因为我喜欢待在外面。\nI love ____ because I like ____.',['field trips',['being outside','to be outside']],'field trips 表示不止一次的实地考察。'),
+      fill('每个人都尽力使事情变得更好。\nEverybody ____ to ____.',['tries their best','make things better'],'Everybody 作主语时，谓语用第三人称单数。'),
+      fill('我喜欢周一的班级值日。保持学校区域整洁很棒。\nI like our ____ on Mondays. It is good to ____.',['class duties','keep our school area clean'],'keep + 宾语 + 形容词。')
+    ]],
+    ['integration-2','Integration 2',[
+      ...words([['参加（活动，三词）','take part in'],['小组合作','work in groups'],['轮流做某事',[['take turns to do sth.','take turns doing sth.','take turns to do something']]]]),
+      fill('我擦黑板并清空垃圾桶。\nI clean the blackboard and ____.','empty the bins','empty 在这里作动词。'),
+      fill('我们学习如何照顾那里的植物，先填 take…，再填 look…。\nWe learn how to ____ the plants there.',['take care of','look after'],'两种说法都可表示照顾。')
+    ]]
+  ]);
+
+  const lifestyle = module('classroom-u5-welcome-reading','Unit 5 · Welcome–Reading 默写卷','七上 Unit 5',
+    '按原卷板块默写食物、生活方式、健康句型与 8 个辅音音标。',[
+    ['食物与数量','candies 或 sweets 可数，chocolate、beef、mutton、sugar 一般不可数。many cucumbers、too much mutton、less sugar。'],
+    ['生活习惯','have a sweet tooth 爱吃甜食，stay up 熬夜，without breakfast 没吃早饭。keep fit 和 stay healthy 表示保持健康。'],
+    ['句型','It is + 形容词 + for sb. + to do sth.。What else…? 可改写成 What other food…?。say no to 表示拒绝。']
+  ],[
+    ['welcome','Welcome',[
+      ...words([
+        ['柠檬','lemon'],['西瓜','watermelon'],['牛肉','beef'],['猪肉','pork'],
+        ['有一种健康的生活方式','have a healthy lifestyle'],['许多黄瓜和甜椒','many cucumbers and peppers'],
+        ['一些糖果和巧克力',[['some sweets and chocolate','some candies and chocolate']]],
+        ['对健康有益、对健康有害，按顺序填。',['be good for health','be bad for health']],
+        ['一些美味的点心','some delicious snacks'],['我也是。','Me too.']
+      ]),
+      fill('经常喝牛奶、吃鸡蛋对我们来说是健康的。\n____ us ____ often.',[['It’s healthy for','It is healthy for'],'to have milk and eggs'],'It is healthy for sb. to do sth.。'),
+      fill('你经常吃其他什么？\n____ do you often eat? = ____ do you often eat?',['What else','What other food'],'else 放在疑问词后，other 放名词前。')
+    ]],
+    ['reading','Reading',[
+      ...words([
+        ['喜欢待在家里的人','homebody'],['有点不健康的','a little unhealthy'],
+        ['很少吃蛋糕和糖果','seldom eat cakes or sweets'],['吃更多水果和更少食糖','eat more fruit and less sugar'],
+        ['有一种不健康的饮食','have an unhealthy diet'],['计划去游泳','plan to go swimming'],
+        ['没吃早饭去上学',[['go to school without breakfast','go to school without having breakfast']]],
+        ['午餐吃一个煎饼','have a pancake for lunch'],['太多羊肉','too much mutton'],
+        ['对我们的牙齿有害','be bad for our teeth'],['多锻炼，先填 exercise…，再填 do…。',['exercise more','do more exercise']],
+        ['爱吃甜食（用 tooth）','have a sweet tooth'],['熬夜','stay up'],
+        ['需要得到足够的睡眠并经常锻炼',[['need to get enough sleep and exercise very often','need to get enough sleep and exercise often']]]
+      ]),
+      fill('对我来说拒绝蛋糕很难。\n____ me to ____ cakes.',[['It’s hard for','It is hard for'],'say no to'],'say no to cakes 表示拒绝蛋糕。'),
+      fill('保持健康对他来说很重要。\nIt’s ____ for him ____.',['important',['to keep fit','to stay healthy','to keep healthy']],'It’s important for him to do sth.。')
+    ]],
+    ['pronunciation','Pronunciation',sounds([['o[f]ten','f'],['[v]ery','v'],['bo[th]','θ'],['[th]ere','ð'],['ma[tch]','tʃ'],['[g]ym','dʒ'],['[tr]y','tr'],['[dr]eam','dr']])]
+  ]);
+
+  const breakfast = module('classroom-u5-health-morning','Unit 5 · 健康生活早读与数量提问','七上 Unit 5',
+    '练习早读课件中的饮食、睡眠、数量提问和完整句翻译。',[
+    ['问数量','面向包装数用 How many packets of salt…?，面向盐的总量用 How much salt…?。sweets 可数，问糖果数量用 How many sweets…?。'],
+    ['问时长','How long do you sleep every day? 可答 I sleep for more than eight hours every day.。How long do you spend sleeping…? 用 spend + 时间 + sleeping 回答。'],
+    ['足够与过多','enough 放在名词前、形容词后。too many 后接可数名词复数，too much 后接不可数名词。'],
+    ['maybe 与 may be','Maybe 放在句首表示“也许”。may be 由情态动词 may 和原形 be 组成，可在句中作谓语。']
+  ],[
+    ['words','早读词形与搭配',[
+      fill('写出 health 的形容词及其反义词，按顺序填。',['healthy','unhealthy'],'health 是名词，healthy 与 unhealthy 是形容词。'),
+      fill('写出 tooth、homebody 和 kilo 的复数，按顺序填。',['teeth','homebodies','kilos'],'tooth 的复数不规则，homebody 把 y 变 i 加 es，kilo 加 s。'),
+      fill('写出 little 的比较级、many 的比较级与最高级，按顺序填。',['less','more','most'],'much 的比较级和最高级也分别是 more、most。'),
+      fill('写出 miss 的第三人称单数。','misses','以 ss 结尾的动词在第三人称单数中加 -es。'),
+      fill('学生们的生活方式\nthe ____ lifestyles','students’','students 是复数，所有格在 s 后加撇号。'),
+      fill('太多食糖、太多点心，按顺序填。',['too much sugar','too many snacks'],'sugar 不可数，snacks 是可数名词复数。'),
+      fill('不到八个小时／八个多小时，按顺序填。',[
+        ['less than eight hours','less than 8 hours'],
+        ['more than eight hours','more than 8 hours','over eight hours','over 8 hours']
+      ],'less than 表示少于，more than 与 over 均可表示多于。'),
+      fill('做出一些改变\nmake ____','some changes','change 作可数名词时，some 后用复数。'),
+      fill('它为我们提供整个早上的能量。\nIt gives us ____ for ____.',['energy','the whole morning'],'energy 在这里不可数。'),
+      fill('足够的锻炼／足够健康，按顺序填。',['enough exercise','healthy enough'],'enough 修饰名词放在名词前，修饰形容词放在形容词后。'),
+      fill('你早餐吃什么？／你吃早餐吗？写出两句。',['What do you have for breakfast?','Do you have breakfast?'],'have breakfast 表示吃早餐，have … for breakfast 表示早餐吃……。'),
+      choose('哪一项同时正确使用了 maybe 和 may be？',['May be he is tired. He maybe at home.','Maybe he is tired. He may be at home.','Maybe he tired. He may home.','He may be tired. He maybe be at home.'],1,'句首可用副词 Maybe。主语后可用 may be 作谓语。'),
+      fill('健康的生活方式离不开健康饮食、充足锻炼和休息。\nA healthy lifestyle is all about a healthy diet, ____.','enough exercise and rest','这里 exercise 和 rest 都用作不可数名词。')
+    ]],
+    ['grammar','同义转换与提问',[
+      fill('I go to school and I don’t have breakfast.\nI go to school ____ breakfast.','without having','without 是介词，后接动词的 -ing 形式。'),
+      fill('Tom needs two packets of salt. 对包装的数量提问。\n____ of salt does Tom need?','How many packets','packets 是可数名词复数。'),
+      fill('Tom needs two packets of salt. 对盐的总量提问。\n____ does Tom need?','How much salt','salt 在这里不可数。'),
+      fill('Tom needs two packets of sweets. 问需要多少颗糖果。\n____ does Tom need?','How many sweets','sweets 是可数名词复数。'),
+      fill('How long do you sleep every day?\nI sleep ____ every day.（近八小时）',[['for almost eight hours','for almost 8 hours','almost eight hours','almost 8 hours']],'almost 表示接近，for 后可接一段时间。'),
+      fill('用完整的下半句回答。你每天花多长时间睡觉？\nI spend ____ every day.（八个多小时）',[['more than eight hours sleeping','over eight hours sleeping','more than 8 hours sleeping','over 8 hours sleeping']],'用 spend + 时间 + doing 表示花时间做某事。'),
+      fill('Amy buys six bottles of juice. 对瓶数提问。\n____ of juice does Amy buy?','How many bottles','问瓶子的数量使用 How many bottles。')
+    ]],
+    ['sentences','早读翻译填空',[
+      fill('他不爱吃甜食。\nHe ____.',[["doesn’t have a sweet tooth",'does not have a sweet tooth',"doesn’t like sweets",'does not like sweets']],'have a sweet tooth 表示爱吃甜食。'),
+      fill('他熬夜并且有不健康的饮食。\nHe ____ and ____.',['stays up','has an unhealthy diet'],'两个动词都与主语 he 一致。'),
+      fill('充足的睡眠对我们的健康很重要。\nGetting ____ is important ____.',['enough sleep','for our health'],'Getting enough sleep 作主语。'),
+      fill('太多食糖对牙齿有害。\n____ is ____ our teeth.',['Too much sugar','bad for'],'sugar 不可数，使用 much。'),
+      fill('他需要多锻炼、少吃盐。\nHe needs to ____ and ____.',[['exercise more','do more exercise'],'eat less salt'],'salt 不可数，用 less 修饰。'),
+      fill('我从来不不吃早饭就上学。\nI never go to school ____.',[['without breakfast','without having breakfast']],'never 和 without 分别表示“从不”和“没有”。'),
+      fill('我早餐吃两片面包。\nI have ____ for breakfast.',[['two pieces of bread','two slices of bread','2 pieces of bread','2 slices of bread']],'bread 不可数，借助 pieces 或 slices 计量。')
+    ]]
+  ]);
+
+  const paraphrase = module('classroom-upper-paraphrase','期中同义句转换 · 11 组与任务型问答','七上 · 英语期中复习',
+    '按原卷练同义替换、动词形态和时间表达，再答频率问题。',[
+    ['搭配转换','go by、hear from、take care of、enjoy oneself、as well、spend time doing、be in a team、would like、be good at。改写后检查人称、时态和动词形式。'],
+    ['时间说法','from Monday to Friday 可概括为 on weekdays。on Saturday and Sunday 可写 at the weekend 或 on weekends。How often 用频率或说明固定哪几天来回答。']
+  ],[
+    ['conversion','同义句转换 1–11',[
+      fill('You can call him Daniel.\nHe ____ Daniel.','goes by','he 后用 goes。'),
+      fill('I hope to get a letter from you soon.\nI hope to ____ you soon.','hear from','hear from 表示收到某人的来信。'),
+      fill('Sandy helps her mother look after her brother.\nSandy helps her mother ____ her brother.','take care of','take care of 与 look after 都表示照顾。'),
+      fill('I often have fun playing ping-pong.\nI often ____ playing ping-pong.',[['enjoy myself','have a good time','have a great time']],'主语是 I，反身代词用 myself。'),
+      fill('Johnny is interested in playing volleyball too.\nJohnny is interested in playing volleyball ____.','as well','as well 可置于句末，意为“也”。'),
+      fill('I do sport for half an hour every day.\nI ____ half an hour ____ sport every day.',['spend','doing'],'spend + 时间 + doing。'),
+      fill('We are members of the basketball team.\nWe ____ the basketball team.',[['are in','are on']],'are in / are on the team 可表示是队员。'),
+      fill('Do you want to go to school with me?\n____ you ____ to go to school with me?',['Would','like'],'Would you like to…? 用于邀请。'),
+      fill('Kitty does well in singing and dancing.\nKitty ____ singing and dancing.','is good at','be good at 与 do well in 都表示擅长。'),
+      fill('He takes a bus to school from Monday to Friday.\nHe takes a bus to school ____.','on weekdays','on weekdays 表示工作日。'),
+      fill('He watches football matches on Saturday and Sunday.\nHe watches football matches ____.',[['at the weekend','at weekends','on weekends','on the weekend']],'英式常用 at the weekend，美式常用 on the weekend。')
+    ]],
+    ['frequency','任务型阅读 · 频率',[
+      fill('He watches football matches on Saturday and Sunday.\nHow often does he watch football matches?',[
+        ['At the weekend.','At weekends.','On weekends.','Every weekend.','On Saturday and Sunday.',
+          'He watches football matches at the weekend.','He watches football matches on weekends.','Twice a week.']
+      ],'回答可指出每个周末，也可按题意说明一周两天。')
+    ]]
+  ]);
+  return [
+    introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase
+  ];
 })();
 
 const englishClassroomByTopic = new Map(englishClassroomModules.map(module=>[module.key,module]));
