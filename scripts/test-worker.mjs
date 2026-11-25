@@ -386,16 +386,23 @@ test('Unit 1 and 3 morning review and Unit 3–4 writing are searchable upper-te
 });
 test('Unit 4 handout uses its own numbering and grades the original phrase groups',async ()=>{
   const scope_id = 'course:english-u4-handout-phrases';
-  const lesson = await good('explain_topic',{query:'英语 学案词组 27–60'});
+  const lesson = await good('explain_topic',{query:'英语 学案词组 1–60'});
   assert.equal(lesson.scope_id,scope_id);
   assert.equal(lesson.term,'上');
-  assert.equal(lesson.question_count,34);
-  assert.deepEqual(lesson.practice_groups.map(group=>group.question_count),[10,3,21]);
+  assert.equal(lesson.question_count,60);
+  assert.deepEqual(lesson.practice_groups.map(group=>group.question_count),[14,12,10,3,21]);
   const unit = await good('explain_topic',{query:'英语第四单元'});
   assert.ok(unit.practice_groups.some(group=>group.group_id==='english-u4-handout-phrases-phrases-37'));
   const quiz = await good('draw_questions',{scope_id,group_id:'english-u4-handout-phrases-phrases-37',count:3});
   assert.deepEqual(quiz.questions.map(q=>parseInt(q.prompt,10)).sort((a,b)=>a-b),[37,38,39]);
+  const welcome = await good('draw_questions',{scope_id,group_id:'english-u4-handout-phrases-phrases-1',count:14});
+  assert.deepEqual(welcome.questions.map(q=>parseInt(q.prompt,10)).sort((a,b)=>a-b),
+    Array.from({length:14},(_,index)=>index+1));
   const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:'english-u4-handout-phrases-3',answer:['do morning exercises','do eye exercises']},
+    {question_id:'english-u4-handout-phrases-12',answer:['get up at 6:45 a.m.','go for a short jog']},
+    {question_id:'english-u4-handout-phrases-20',answer:['on','practice']},
+    {question_id:'english-u4-handout-phrases-23',answer:'receive a letter from someone'},
     {question_id:'english-u4-handout-phrases-29',answer:"on Children's Day"},
     {question_id:'english-u4-handout-phrases-30',answer:'at the age of six'},
     {question_id:'english-u4-handout-phrases-40',answer:['in spring','in summer','in fall','in winter']},
@@ -403,7 +410,7 @@ test('Unit 4 handout uses its own numbering and grades the original phrase group
     {question_id:'english-u4-handout-phrases-57',answer:['work in groups','take turns to']},
     {question_id:'english-u4-handout-phrases-60',answer:['take good care of someone','look after someone well']}
   ]});
-  assert.equal(graded.correct,6);
+  assert.equal(graded.correct,10);
 });
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});

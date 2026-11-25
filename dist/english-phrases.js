@@ -549,10 +549,36 @@ const {englishPhraseModules,unitFourPhraseHandout} = (() => {
     unit,key:'english-phrases-unit'+unit,title:'Unit '+unit+' · '+name,range:'原资料 Unit '+unit,description,source
   }));
   const unitFourPhraseHandout = makeModule({
-    unit:4,key:'english-u4-handout-phrases',title:'Unit 4 · 学案词组 27–60',range:'七上 Unit 4 · 学案原编号',
-    description:'按照片原编号练第 27–60 条，含时间与活动、Pronunciation 短语、Integration 与班级家务。',
-    start:27,groups:[[0,10,'时间与活动'],[10,13,'Pronunciation'],[13,34,'Integration']],
+    unit:4,key:'english-u4-handout-phrases',title:'Unit 4 · 学案词组 1–60',range:'七上 Unit 4 · 单元自主学习导航',
+    description:'按学案原编号练第 1–60 条，覆盖 Welcome、Reading、Grammar、Pronunciation 和 Integration。',
+    groups:[[0,14,'Welcome'],[14,26,'Reading'],[26,36,'Grammar · 时间与活动'],[36,39,'Pronunciation'],[39,60,'Integration']],
     source:`
+起床|get up
+依次填吃早餐、吃午餐、吃晚餐|早餐=have breakfast~eat breakfast|午餐=have lunch~eat lunch|晚餐=have dinner~eat dinner
+依次填做早操、做眼保健操|早操=do morning exercises|眼保健操=do eye exercises
+上课|have lessons|have classes
+做课后活动|do after-school activities
+依次填帮忙做家务、在某方面帮助某人|帮忙做家务=help with housework~help with the housework|帮助某人=help sb. with sth.
+做家庭作业|do homework|do one’s homework
+上床睡觉|go to bed
+在早晨|in the morning
+在工作日|on weekdays
+你工作日早晨几点起床？写出整句。|What time do you get up in the morning on weekdays?|What time do you get up on weekdays in the morning?|When do you get up in the morning on weekdays?
+我通常早上 6:45 起床，然后出去慢跑。 I usually ____ and then ____.|起床时间=get up at 6:45 a.m.~get up at 6:45 am~get up at 6:45 in the morning~get up at six forty-five in the morning~get up at a quarter to seven in the morning|去慢跑=go for a short jog~go for a jog
+读一会儿书|read a little|read for a little while
+玩得痛快，依次用 enjoy、fun 和 time 写三个表达|enjoy=enjoy oneself|fun=have fun|time=have a good time~have a great time
+第一学期|the first term|my first term
+在早上 8 点开始|start at 8 in the morning|start at eight in the morning|start at 8:00 in the morning|start at 8 a.m.|start at 8:00 a.m.|start at eight a.m.
+我们阅读许多著名作家的作品。 We read ____.|the works of many famous writers|many famous writers’ works
+我们每周二和周四上生物课。 We ____ on ____.|上生物课=have Biology classes~have Biology lessons~have Biology|每周二和周四=Tuesdays and Thursdays
+我们了解许多生物和自然。 We ____ many ____ and ____.|了解=learn about|生物=living things|自然=nature
+我在学校排球队，我们每周五下午训练。 I am ____ the school volleyball team, and we ____ on Friday afternoons.|在队里=in~on|训练=practise~practice~train
+去某地进行一次实地考察|have a field trip to sp.|take a field trip to sp.|go on a field trip to sp.|have a field trip to some place|take a field trip to some place|go on a field trip to some place|go on a field trip to a place
+明天早上我们将前往一个农场去摘苹果。 Tomorrow morning we will ____ a farm to ____.|动身前往=leave for~set off for~head for|摘苹果=pick apples
+收到某人的来信|hear from sb.|receive a letter from sb.|receive one’s letter|get a letter from sb.
+现在我会讲一点中文了。前文已提到中文，可以用 it。|I can speak it a little now.|I can speak a little Chinese now.|Now I can speak a little Chinese.|Now I can speak it a little.
+迫不及待做某事|can’t wait to do sth.|cannot wait to do sth.
+一切顺利。|All the best.
 到某地旅游|take a trip to sp.|take a trip to some place|take a trip to a place|take a trip to somewhere
 在周二早上|on Tuesday morning
 在儿童节|on Children’s Day
@@ -589,7 +615,11 @@ const {englishPhraseModules,unitFourPhraseHandout} = (() => {
 照顾（好）某人，依次用 take、look 表达|用 take=take care of sb.~take good care of sb.|用 look=look after sb.~look after sb. well
 `
   });
-  unitFourPhraseHandout.notes.unshift({label:'年龄与参加的用法',text:'“在六岁时”可用 at the age of six 或 at six，也可用从句 when I was six years old。具体某天的上午用 on。参加活动用 take part in，加入俱乐部用 join。'});
+  unitFourPhraseHandout.notes.unshift(
+    {label:'Welcome · 作息与反身代词',text:'morning exercises、eye exercises 的 exercises 用复数。和 help sb. with sth. 一样，help with housework 的 with 后接所帮忙的事。have fun 和 have a good time 后可接 doing。enjoy 后按主语选 myself、yourself、himself、herself、itself、ourselves、yourselves 或 themselves。'},
+    {label:'Reading · 训练、出发与来信',text:'living things 中 living 是形容词。practise doing sth. 表示练习做某事。leave A for B 表示离开 A 前往 B。hear from sb. 可以表示收到某人的来信。'},
+    {label:'Grammar · 时间、年龄与参加活动',text:'“在六岁时”可用 at the age of six 或 at six，也可用从句 when I was six years old。具体某天的上午用 on。参加活动用 take part in，加入俱乐部用 join。'}
+  );
   return {englishPhraseModules,unitFourPhraseHandout};
 })();
 
