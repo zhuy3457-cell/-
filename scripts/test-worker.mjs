@@ -1020,3 +1020,29 @@ test('later geography lessons draw, display illustrations and grade through thei
     }
   }
 });
+
+test('biology summary lessons draw and grade pictured and classification items',async ()=>{
+  const groups = [
+    ['bio-review-cells',6,[['cell-model','A',true],['cell-division','B',true],['cell-division-data','D']]],
+    ['bio-review-plant-groups',4,[['plant-storage','C',true]]],
+    ['bio-review-animal-groups',5,[['animal-shapes','C',true],['animal-birds','D']]],
+    ['bio-review-classifying',4,[['class-cells','B'],['class-names','D']]]
+  ];
+  for (const [key,count,samples] of groups) {
+    const quiz = await good('draw_questions',{subject:'biology',scope_id:'course:'+key,count});
+    assert.equal(quiz.questions.length,count,key);
+    for (const [suffix,answer,pictured] of samples) {
+      const question_id = 'bio-summary-'+suffix;
+      const question = quiz.questions.find(item=>item.question_id===question_id);
+      assert.ok(question,question_id);
+      if (pictured) {
+        assert.match(question.diagram.alt,/\S/);
+        const asset = await request(new URL(question.diagram.url).pathname);
+        assert.equal(asset.status,200);
+        assert.equal(asset.headers.get('content-type'),'image/webp');
+      }
+      const grade = await good('grade_homework',{record:false,submissions:[{question_id,answer}]});
+      assert.equal(grade.correct,1,question_id);
+    }
+  }
+});
