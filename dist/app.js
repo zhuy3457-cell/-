@@ -30,6 +30,8 @@ document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = icon(el.da
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#searchDialog');
 const searchInput = document.querySelector('#searchInput');
+const searchSubject = document.querySelector('#searchSubject');
+const searchStatus = document.querySelector('#searchStatus');
 const results = document.querySelector('#searchResults');
 const allTopics = subjects.flatMap(subject => subject.topics.map(topic => ({...topic, subject})));
 const allQuestions = allTopics.flatMap(topic => topic.questions);
@@ -227,6 +229,10 @@ const topicSearchIndex = allTopics.filter(topic=>activeSubjectById.has(topic.sub
     detail:normalizeSearch([topic.description,module?.range,collection?.keywords].filter(Boolean).join(' '))
   };
 });
+const questionSearchIndex = topicSearchIndex.flatMap(({topic,title,scope})=>topic.questions.map(question=>({
+  question, topic, title:normalizeSearch(question.prompt), scope:title+' '+scope, detail:''
+})));
+searchSubject.innerHTML += activeSubjects.map(({id,name})=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
 const courseSearchIndex = [...courseCatalog.values()].flatMap(({lessons})=>lessons.map(({key})=>{
   const course = courseByKey.get(key);
   const {name} = activeSubjectById.get(course.subjectId);
@@ -842,6 +848,14 @@ function start(key, backTarget) {
     label = unit.title+' · 单条默写';
     back = studyHref(unit.key);
     state.term = '上';
+  } else if (kind === 'search-question') {
+    const question = questionById.get(id);
+    if (!isActiveQuestion(id)) return;
+    const topic = topicByKey.get(question.topic);
+    ids = [id];
+    label = topic.title+' · 单题练习';
+    back = studyHref(topic.key) || '#subject/'+topic.subject.id;
+    state.term = topic.term;
   } else if (kind === 'review-section' || kind === 'review-remaining') {
     const route = reviewRouteByTopic.get(id);
     const unit = reviewCollections.get(route)?.byTopic.get(id);
@@ -1308,16 +1322,19 @@ function findPhrases(query) {
 function search() {
   const query = normalizeSearch(searchInput.value);
   const terms = query ? [...new Set(query.split(/\s+/))] : [];
+  const subject = searchSubject.value;
+  const inSubject = id => !subject || id===subject;
   const found = terms.length ? topicSearchIndex
+    .filter(({topic})=>inSubject(topic.subject.id))
     .map(entry=>({topic:entry.topic, score:searchScore(entry,terms)}))
     .filter(result=>result.score>0).sort((a,b)=>b.score-a.score).slice(0,14).map(result=>result.topic) : [];
   const topics = found.map(t=>{
     const hasLesson = !!studyHref(t.key);
-    const result = '<button class="search-result option" type="button" data-key="'+t.key+'" data-search-action="'+(hasLesson?'learn':'practice')+'"><div><strong>'+t.title+'</strong><small>'+t.subject.name+' · '+t.term+'册'+(hasLesson?' · 看讲解':'')+'</small></div></button>';
+    const result = '<button class="search-result option" type="button" data-key="'+t.key+'" data-search-action="'+(hasLesson?'learn':'practice')+'"><div><strong>'+esc(t.title)+'</strong><small>'+esc(t.subject.name)+' · '+t.term+'册'+(hasLesson?' · 看讲解':'')+'</small></div></button>';
     const practice = hasLesson ? '<button class="btn secondary" type="button" data-key="'+t.key+'" data-search-action="practice" aria-label="练习'+esc(t.title)+'">做练习</button>' : '';
     return '<div class="search-entry">'+result+practice+'</div>';
   }).join('');
-  const matches = terms.length ? findPhrases(query) : [];
+  const matches = terms.length && inSubject('english') ? findPhrases(query) : [];
   const phrases = matches.map(({entry:{question,unit}})=>{
     const source = unit===unitFourPhraseHandout ? '学案原编号' : '重点词组表';
     const action = '<button class="search-result option" type="button" data-phrase-id="'+question.id+'"><strong>'+esc(question.prompt)+'</strong>'+
@@ -1325,21 +1342,37 @@ function search() {
     const lesson = '<button class="btn secondary" type="button" data-key="'+unit.key+'" data-search-action="learn" aria-label="查看 '+esc(unit.title)+'">看本单元</button>';
     return '<div class="search-entry">'+action+lesson+'</div>';
   }).join('');
-  const courseMatches = terms.length ? courseSearchIndex.map(entry=>({...entry,score:searchScore(entry,terms)}))
+  const courseMatches = terms.length ? courseSearchIndex.filter(({course})=>inSubject(course.subjectId)).map(entry=>({...entry,score:searchScore(entry,terms)}))
     .filter(entry=>entry.score>=8 && terms.some(term=>entry.title.includes(term)))
     .sort((a,b)=>b.score-a.score).slice(0,5) : [];
   const courses = courseMatches.map(({course,name})=>
     '<div class="search-entry"><button class="search-result option" type="button" data-search-course="'+course.key+'"><strong>'+
     esc(course.title)+'</strong><small>'+name+' · '+course.term+'册 · '+course.ids.length+' 题</small></button></div>').join('');
+  const phraseIds = new Set(matches.map(({entry})=>entry.question.id));
+  const questionMatches = terms.length && query.length>1 ? questionSearchIndex.flatMap(entry=>{
+    if (!inSubject(entry.topic.subject.id) || phraseIds.has(entry.question.id)) return [];
+    if (!terms.some(term=>term.length>1 && entry.title.includes(term))) return [];
+    const score = searchScore(entry,terms);
+    return score ? [{entry,score}] : [];
+  }).sort((a,b)=>b.score-a.score || a.entry.title.length-b.entry.title.length).slice(0,8) : [];
+  const questions = questionMatches.map(({entry:{question,topic}})=>
+    '<div class="search-entry"><button class="search-result option" type="button" data-search-question="'+esc(question.id)+'"><strong>'+
+    esc(question.prompt)+'</strong><small>'+esc(topic.subject.name+' · '+topic.term+'册 · '+topic.title)+' · 练习这题</small></button></div>').join('');
   const courseGroup = courses ? '<h3 class="search-heading">按课练习</h3>'+courses : '';
-  const topicGroup = topics && (phrases || courses) ? '<h3 class="search-heading">知识点</h3>'+topics : topics;
+  const topicGroup = topics ? '<h3 class="search-heading">知识点</h3>'+topics : '';
   const phraseGroup = phrases ? '<h3 class="search-heading">重点词组</h3>'+phrases : '';
-  results.innerHTML = (matches[0]?.score===3 ? phraseGroup+courseGroup+topicGroup : courseGroup+topicGroup+phraseGroup) ||
-    '<p class="scope" role="status">'+(query?'没有找到匹配的知识点或词组。':'试试「英语 Day 11」「保持健康」或「Unit 3 第 44 条」。')+'</p>';
+  const questionGroup = questions ? '<h3 class="search-heading">题目</h3>'+questions : '';
+  results.innerHTML = matches[0]?.score===3 ? phraseGroup+courseGroup+topicGroup+questionGroup :
+    courseGroup+topicGroup+questionGroup+phraseGroup;
+  const shown = found.length+matches.length+courseMatches.length+questionMatches.length;
+  searchStatus.textContent = shown ? '显示 '+shown+' 条匹配结果' : query ? '没有匹配结果，试试较短的关键词。' :
+    '试试「学而不思」「地球自转」或「Unit 3 第 44 条」。';
+  results.scrollTop = 0;
 }
 function openSearch() {
   if (dialog.open) return;
   searchInput.value='';
+  searchSubject.value='';
   search();
   dialog.showModal();
   searchInput.focus();
@@ -1347,10 +1380,15 @@ function openSearch() {
 document.querySelector('#searchButton').addEventListener('click',openSearch);
 document.querySelector('#closeSearch').addEventListener('click',()=>dialog.close());
 searchInput.addEventListener('input',search);
+searchSubject.addEventListener('change',search);
 searchInput.addEventListener('keydown',event=>{
-  if (event.key==='Enter' && !event.isComposing) {
+  if (event.isComposing) return;
+  if (event.key==='Enter') {
     event.preventDefault();
     results.querySelector('.search-result')?.click();
+  } else if (event.key==='ArrowDown') {
+    event.preventDefault();
+    results.querySelector('.search-result')?.focus();
   }
 });
 dialog.addEventListener('click',event=>{
@@ -1358,7 +1396,7 @@ dialog.addEventListener('click',event=>{
     const rect=dialog.getBoundingClientRect();
     if (event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom) dialog.close();
   }
-  const button = event.target.closest('[data-key], [data-phrase-id], [data-search-course]');
+  const button = event.target.closest('[data-key], [data-phrase-id], [data-search-course], [data-search-question]');
   if (!button) return;
   dialog.close();
   if (button.dataset.phraseId) {
@@ -1367,6 +1405,10 @@ dialog.addEventListener('click',event=>{
   }
   if (button.dataset.searchCourse) {
     location.hash = courseByKey.get(button.dataset.searchCourse).href;
+    return;
+  }
+  if (button.dataset.searchQuestion) {
+    start('search-question/'+button.dataset.searchQuestion);
     return;
   }
   const key = button.dataset.key;

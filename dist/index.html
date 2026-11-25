@@ -53,14 +53,18 @@
 <div class="shell">
   <header class="topbar">
     <div class="location"><span data-icon="pin"></span>江苏省<span class="separator"></span><strong>七年级</strong></div>
-    <button class="search" type="button" id="searchButton"><i data-icon="search"></i><span>搜索知识点或词组</span><kbd>Ctrl K</kbd></button>
+    <button class="search" type="button" id="searchButton"><i data-icon="search"></i><span>搜索题库</span><kbd>Ctrl K</kbd></button>
   </header>
   <main id="app" tabindex="-1"></main>
   <footer>苏学练习室 <span>·</span> 江苏七年级知识点练习</footer>
 </div>
 <dialog id="searchDialog" aria-labelledby="searchTitle">
   <div class="dialog-top"><h2 id="searchTitle">搜索题库</h2><button class="icon-button" id="closeSearch" aria-label="关闭搜索"><i data-icon="close"></i></button></div>
-  <label class="search-field"><i data-icon="search"></i><input id="searchInput" placeholder="输入知识点或中英词组" autocomplete="off" aria-label="搜索学科、知识点或词组"></label>
+  <div class="search-controls">
+    <label class="search-field"><i data-icon="search"></i><input id="searchInput" placeholder="输入题干、知识点或词组" autocomplete="off" aria-label="搜索题干、知识点或词组"></label>
+    <label class="search-subject" for="searchSubject">学科 <select id="searchSubject"><option value="">全部</option></select></label>
+  </div>
+  <p id="searchStatus" class="scope search-status" role="status"></p>
   <div id="searchResults"></div>
 </dialog>
 </body>
