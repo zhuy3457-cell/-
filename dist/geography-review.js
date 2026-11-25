@@ -1080,26 +1080,57 @@ geoReviewModules.push((() => {
   const question = (number,prompt,correct,explanation,extra = {})=>({
     id:key+'-'+number,prompt:number.replace(/-(\d)$/, '（$1）')+' '+prompt,correct,explanation,level:'basic',...extra
   });
-  const multi = (number,prompt,options,correct,explanation)=>{
+  const multi = (number,prompt,options,correct,explanation,extra = {})=>{
     const reversed = [...correct].reverse().join('');
     const aliases = [correct,reversed].flatMap(pair=>['',' ',',','、','/'].map(separator=>[...pair].join(separator)));
     const choices = options.map((option,index)=>String.fromCharCode(65+index)+'. '+option).join('　');
     return question(number,prompt+'（多选，填写全部正确选项的字母。）\n'+choices,correct,explanation,{
-      steps:[{label:'正确选项的字母',answer:correct,aliases,text:true}]
+      ...extra,steps:[{label:'正确选项的字母',answer:correct,aliases,text:true}]
     });
   };
   const beidou = {
     material:'北斗卫星导航系统（BDS）是中国自主研制的全球卫星导航系统。根据图 12 的经纬网，判断甲、乙、丙三地的位置。',
     diagram:{src:"geography-exam-beidou.webp",alt:'图 12 经纬网。甲是标为 90°E 的经线与 30°N 纬线的交点。乙是标为 150°E 的经线与同一纬线的交点。丙在标为 120°E 的经线与 0° 纬线的交点。'}
   };
+  const routeMaterial = '小李和家人去观赛，在手机地图中查询从吾悦广场到淮安体育中心的路线。';
+  const routes = {
+    material:routeMaterial+' 以下是图 9 中可辨认的三条驾车方案。',
+    table:{caption:'图 9 · 手机地图驾车路线',headers:['方案','预计用时','路线距离'],
+      rows:[['备选一','11 分钟','5.9 千米'],['备选二','13 分钟','6.4 千米'],['备选三','13 分钟','6 千米']]}
+  };
+  const solarTerms = {
+    material:'根据图 10 的二十四节气顺序示意图作答。图中标出了二分二至和秋分前后的节气。',
+    diagram:{src:"geography-exam-solar-terms.webp",alt:'图 10。公转轨道上的四个位置按春分、夏至、秋分、冬至循环。图下方从左到右依次标有立秋、处暑、白露、秋分、寒露、霜降、立冬。'}
+  };
+  const pageFive = [
+    multi('28','对小李同学这次出行观赛有明显帮助的是',
+      ['中国地形图','世界地形图','淮安奥体中心导览图','淮安交通图'],'CD',
+      '场馆导览图可以帮助找到入口和观赛区域，淮安交通图有助于规划前往场馆的路线。',{material:routeMaterial}),
+    multi('29','测得吾悦广场到体育中心的图上距离约 4 cm，实际距离约 6 km。下列哪两种比例尺表示正确？',
+      ['1∶150 000','1∶1 500','图上 1 厘米代表实地距离 15 千米','长度 1 厘米的比例尺线段，两端标 0 和 1.5 千米'],'AD',
+      '6 km＝600 000 cm。比例尺为 4∶600 000＝1∶150 000，即图上 1 cm 对应实地 1.5 km。',{material:routeMaterial}),
+    question('30','根据图 9 能辨认的路线数据，哪一项可以确定？','备选一方案用时最短',
+      '备选一预计 11 分钟，其余两条预计 13 分钟，所以备选一用时最短。备选二的距离并非最短。这张照片的停车提示辨认不清，无法靠这组数据判断车位。',{
+        ...routes,options:['备选一方案用时最短','他无法查看自己的实时定位','备选二方案距离最近','到达时预计车位紧张']
+      }),
+    multi('31','下列关于地球公转的说法，正确的是',
+      ['方向为自东向西','公转产生了四季现象','公转时，地轴的空间指向基本不变','旋转中心是地轴'],'BC',
+      '地球绕太阳自西向东公转。公转过程中地轴的指向基本不变，地轴倾斜和公转共同造成四季变化。',solarTerms),
+    multi('32','读图 10 判断，距离秋分最近的两个节气分别是',
+      ['立秋','白露','寒露','冬至'],'BC','秋分的前一个节气是白露，下一个节气是寒露。',solarTerms)
+  ];
   return {
-    key,title:'七上地理试卷第 6 页 · 地球运动与经纬网',range:'第 6 页 · 第 33–37 题（可独立作答的小题）',
-    description:'练习二分二至、极昼、地球五带和北斗经纬网读图。多选题用字母填写，顺序不限。',
+    key,title:'七上地理试卷第 5–6 页 · 地图与地球运动',range:'第 5–6 页 · 第 28–37 题（可独立作答的小题）',
+    description:'练习地图选用、比例尺、二十四节气、五带与北斗经纬网。多选题用字母填写，顺序不限。',
+    firstPageIds:pageFive.map(item=>item.id),
+    firstPageNumber:5,firstPageTitle:'第 5 页 · 观赛地图与二十四节气',laterPageTitle:'第 6 页 · 地球运动与经纬网',
     notes:[
+      {label:'图上和实地距离',text:'先统一单位，再用图上距离除以实地距离。查导航时分开比较用时和距离。'},
       {label:'读经纬网',text:'用纬线确定纬度，再沿经线确定经度。赤道是南北半球的分界线。东、西半球的分界线是20°W和160°E。'},
       {label:'比较日出先后',text:'在同一条纬线上，通常越偏东，越先看到日出。经度同为东经时，度数越大，位置越偏东。'}
     ],
     questions:[
+      ...pageFive,
       multi('33','一年中，地球上能拍摄到“日不落”景观的地区是',
         ['北极地区','南极地区','淮安市','热带地区'],'AB','“日不落”指极昼。南北极圈内在各自的夏半年都可能发生极昼。'),
       multi('34','当地球公转到北半球夏至、冬至位置时，太阳直射点分别在哪里？',

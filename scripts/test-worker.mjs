@@ -599,15 +599,21 @@ test('map-reading checklist keeps its two pages separately available and grades 
   }))});
   assert.deepEqual(graded.results.map(result=>result.correct),answers.map(([, ,correct])=>correct));
 });
-test('earth-motion exam grades multi-select letters and carries the Beidou grid',async ()=>{
+test('geography exam keeps pages 5 and 6, grades multi-select letters, and supplies the original figure data',async ()=>{
   const key = 'geo-exam-earth-page-6';
   const scope_id = 'course:'+key;
-  const quiz = await good('draw_questions',{subject:'geography',scope_id,count:8});
+  const pageFive = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-5',count:5});
+  const quiz = await good('draw_questions',{subject:'geography',scope_id,group_id:key,count:8});
+  assert.equal(pageFive.questions.length,5);
   assert.equal(quiz.questions.length,8);
+  const find = id=>pageFive.questions.find(question=>question.question_id===key+'-'+id);
+  assert.equal(find('30').table.rows[0][1],'11 分钟');
+  assert.match(find('32').diagram.url,/geography-exam-solar-terms\.webp$/);
   const reading = quiz.questions.filter(question=>question.question_id.startsWith(key+'-36-'));
   assert.equal(reading.length,3);
   assert.ok(reading.every(question=>question.diagram?.url.endsWith('/geography-exam-beidou.webp')));
   const answers = [
+    ['28','DC',true],['29','A、D',true],['29','BD',false],['30','A',true],['31','BC',true],['32','BC',true],
     ['33','BA',true],['33','A',false],['34','Ｂ，Ｃ',true],['35','D C',true],['35','AB',false],
     ['36-1','B',true],['36-2','C',true],['36-2','A',false],['36-3','乙地',true],
     ['37-1','B',true],['37-3','南纬23.5°',true]
