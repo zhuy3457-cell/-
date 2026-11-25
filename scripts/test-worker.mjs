@@ -330,19 +330,31 @@ test('Unit 3–5 worksheets and Chinese classroom reviews are available on the u
   ]});
   assert.equal(graded.correct,5,JSON.stringify(graded.results));
 });
-test('parents’ meeting cloze and school-day grammar preserve worksheet numbers and accept valid forms',async ()=>{
+test('Unit 4 Integration worksheet includes both pages and preserves the original question numbers',async ()=>{
   const key = 'classroom-u4-parents-mary';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'english',scope_id});
   assert.equal(course.term,'上');
-  assert.equal(course.question_count,16);
-  const cloze = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-cloze',count:6});
-  const grammar = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-grammar',count:10});
-  const questions = new Map([...cloze.questions,...grammar.questions].map(question=>[question.question_id,question]));
-  for (let number=19;number<=34;number++) {
-    assert.ok(questions.get(key+'-'+number)?.material?.includes(number<=24?'parents’ meetings':'Mary gets up at 5:30 a.m.'));
+  assert.equal(course.question_count,34);
+  let number = 1;
+  for (const [group,count] of [['vocabulary',5],['translation',3],['choices',6],['cloze',10],['grammar',10]]) {
+    const quiz = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-'+group,count});
+    const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+    assert.equal(questions.size,count);
+    for (let index=0;index<count;index++,number++) {
+      const question = questions.get(key+'-'+number);
+      assert.ok(question?.prompt.startsWith(number+'. '));
+      if (group==='cloze') {
+        assert.ok(question.material.includes('Chinese schools often have parents’ meetings.'));
+        assert.ok(question.material.includes('[15]') && question.material.includes('[24]'));
+      }
+      if (group==='grammar') assert.ok(question.material.includes('Mary gets up at 5:30 a.m.'));
+    }
   }
   const answers = [
+    [1,'starts',true],[4,'empties',true],[6,['work','in','groups','take','turns'],true],
+    [8,['take','care','of'],true],[10,'to run',false],[10,'B',true],
+    [15,'C',true],[16,'D',true],[17,'A',true],[18,'C',true],
     [19,'with',true],[21,'good',true],[25,'exercises',true],[27,'to be',true],[27,'is',false],
     [29,'dancing',true],[31,'cleaning',true],[33,'playing',true],[33,'to play',false]
   ];

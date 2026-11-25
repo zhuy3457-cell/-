@@ -10,11 +10,11 @@ const englishClassroomModules = (() => {
   function choose(prompt,options,correct,explanation) {
     return {prompt,options,correct:options[correct],explanation,level:'standard'};
   }
-  function module(key,title,range,description,notes,groups,sources = [],startNumber = 1) {
+  function module(key,title,range,description,notes,groups,sources = []) {
     const questions = [];
     const sections = groups.map(([keySuffix,stage,items,material])=>{
       const ids = items.map(item=>{
-        const number = questions.length+startNumber;
+        const number = questions.length+1;
         const id = key+'-'+number;
         questions.push({...item,id,stage,prompt:number+'. '+item.prompt,...(material ? {material} : {})});
         return id;
@@ -659,6 +659,8 @@ const englishClassroomModules = (() => {
     ]]
   ]);
   const parentsMeeting = [
+    'Chinese schools often have parents’ meetings. They help [15] know about their children’s schoolwork.',
+    'In our school, the parents’ meeting is on the first [16] afternoon of a new school year. The next day is the weekend, so teachers and parents have enough [17] to have a good talk. The meeting starts at 6:00 p.m. and most parents can come to school after [18].',
     'At parents’ meetings, teachers talk [19] parents. These meetings are very short, maybe five or ten [20]. These face-to-face talks are very [21] for teachers, parents and students.',
     'In our school, students can listen to the conversation. They can sit near their parents. [22] do you feel when you hear your teachers and parents talk about you? I really feel [23], because I am good at all my [24].',
     'What about parents’ meetings at your school?'
@@ -669,18 +671,43 @@ const englishClassroomModules = (() => {
     'Her classmates often take turns [31] (clean) the classroom. Sometimes, she throws a Frisbee with other classmates. She gets home at 5:30 p.m. Later, her parents come back from work. Mary usually helps [32] (they) with different chores.',
     'In the evening, she does her homework. Sometimes, she watches TV or reads storybooks. She seldom spends time [33] (play) computer games. She goes to bed at ten. Her school life is [34] (interest).'
   ].join('\n\n');
-  const parentsAndSchoolDay = module('classroom-u4-parents-mary','Unit 4 · 家长会完形与校园生活语法','七上 Unit 4',
-    '学案第 19–34 题。阅读家长会和 Mary 的校园生活两段短文，练习上下文判断与常见语法搭配。',[
+  const parentsAndSchoolDay = module('classroom-u4-parents-mary','Unit 4 · 4.5 Integration (2) 学案','七上 Unit 4',
+    '两页学案第 1–34 题，含词汇、翻译、单选、家长会完形与校园生活语法填空。',[
+    ['班级合作与值日','work in groups 小组合作，take turns to do sth. 轮流做某事，sweep the floor 扫地，take care of 照顾。'],
     ['家长会常用搭配','talk with sb. 与某人交谈，talk about sth. 谈论某事。be good for 表示“对……有益”，be good at 表示“擅长……”。'],
     ['动词形式','like doing / like to do 都可用。practise doing 和 spend time doing 后接动名词。take turns to do 和 take turns doing 都可表示轮流做某事。'],
     ['校园生活词组','do morning exercises 做早操，on sunny mornings 在晴朗的早晨，take part in an activity 参加活动，help sb. with sth. 在某方面帮助某人。']
   ],[
-    ['cloze','第 19–24 题 · 家长会完形',[
+    ['vocabulary','第 1–5 题 · 词汇',[
+      fill('Our school day always ____ (开始) at 8:00 a.m. and it finishes at 4:30 p.m.',[['starts','begins']],'主语 our school day 是单数，一般现在时用 starts 或 begins。'),
+      fill('We students often work in ____ (小组) to finish tasks in class.','groups','work in groups 表示“小组合作”，groups 用复数。'),
+      fill('In this video, you can learn how ____ (take) care of dogs.','to take','how to do sth. 表示“如何做某事”。take care of 表示“照顾”。'),
+      fill('He always ____ (empty) the rubbish bin and keeps the classroom clean.','empties','主语 he 是第三人称单数，empty 变 y 为 i 再加 -es，得到 empties。'),
+      fill('There are two ____ (bin) in the classroom, and we put the waste in them.','bins','two 后接可数名词复数，bin 的复数是 bins。')
+    ]],
+    ['translation','第 6–8 题 · 翻译',[
+      fill('在我的班级，我们都小组合作并且轮流做不同的日常事务。\nIn my class, we all ____ ____ ____ and ____ ____ to do different chores.',['work','in','groups','take','turns'],'we 后用动词原形 work 和 take。work in groups 和 take turns to do sth. 中的 groups 和 turns 都用复数。'),
+      fill('在他的空闲时间里，丹尼尔喜欢扫地。\nIn his free time, Daniel likes to ____ ____ ____.',['sweep','the','floor'],'sweep the floor 表示“扫地”。'),
+      fill('我们在学校学习如何照顾植物。\nWe learn how to ____ ____ ____ plants at school.',['take','care','of'],'按三个空填 take care of。look after 也表示“照顾”，可以用于两个空的改写。')
+    ]],
+    ['choices','第 9–14 题 · 单选',[
+      choose('Mike has to ____ his little sister when their parents are working.',['take part in','take place','take apart','take care of'],3,'take care of 表示“照顾”。take part in 表示“参加”，take place 表示“发生”，take apart 表示“拆开”。'),
+      choose('Many students practise ____ in the morning because of the PE exam.',['to run','running','run','runs'],1,'practise 后接动名词。run 双写 n 再加 -ing，得到 running。'),
+      choose('The teacher asked the students to sit in ____ to talk about what they learn.',['groups','turns','duties','trips'],0,'sit in groups 表示“分组坐”。in turns 表示“轮流”，题中学生分组讨论。'),
+      choose('The World Cup is usually ____ summer. It lasts about a month.',['from','for','in','on'],2,'季节前通常用介词 in，如 in summer。'),
+      choose('Peter doesn’t like football. He ____ plays it.',['sometimes','often','usually','seldom'],3,'seldom 表示“很少”，符合 Peter 不喜欢足球的语境。'),
+      choose('—How do you practise your English?\n—I practise it by ____ English news every day.',['read','to read','reading','reads'],2,'by doing sth. 表示“通过做某事”。by 是介词，后接动名词 reading。')
+    ]],
+    ['cloze','第 15–24 题 · 家长会完形',[
+      choose('They help ____ know about their children’s schoolwork.',['students','teachers','parents','friends'],2,'their children’s schoolwork 指“自己孩子的学业情况”，因此选 parents。'),
+      choose('The parents’ meeting is on the first ____ afternoon of a new school year.',['Monday','Tuesday','Thursday','Friday'],3,'下文说第二天是周末，因此家长会在周五举行。'),
+      choose('Teachers and parents have enough ____ to have a good talk.',['time','money','space','area'],0,'have enough time to do sth. 表示“有足够的时间做某事”。'),
+      choose('The meeting starts at 6:00 p.m. and most parents can come to school after ____.',['breakfast','sleep','work','trip'],2,'家长会在傍晚六点开始，多数家长可以下班后到学校。after work 表示“下班后”。'),
       choose('Teachers talk ____ parents.',['with','about','for','like'],0,'talk with sb. 表示“与某人交谈”。下文的 face-to-face talks 说明老师和家长面对面交谈。'),
       choose('These meetings are very short, maybe five or ten ____.',['hours','minutes','days','seconds'],1,'根据 very short 和交谈的语境，选 minutes，表示五到十分钟。'),
       choose('These face-to-face talks are very ____ for teachers, parents and students.',['sorry','polite','good','bright'],2,'be good for 表示“对……有益”，符合家长会的语境。'),
       choose('____ do you feel when you hear your teachers and parents talk about you?',['Where','Which','Who','How'],3,'How do you feel? 用 how 询问感受。'),
-      choose('I really feel ____ . 请根据短文选出符合上下文的词。',['happy','worried','lazy','ready'],0,'后半句说自己各门课都学得好，因此这里选 happy。'),
+      choose('I really feel ____. 请根据短文选出符合上下文的词。',['happy','worried','lazy','ready'],0,'后半句说自己各门课都学得好，因此这里选 happy。'),
       choose('I am good at all my ____.',['sports','lessons','stories','dreams'],1,'家长会的语境涉及在校学习，all my lessons 指“我的所有课程”。')
     ],parentsMeeting],
     ['grammar','第 25–34 题 · 校园生活语法',[
@@ -695,7 +722,7 @@ const englishClassroomModules = (() => {
       fill('She seldom spends time ____ (play) computer games.','playing','spend time doing sth. 表示“花时间做某事”。'),
       fill('Her school life is ____ (interest).','interesting','用 interesting 描述学校生活有趣。interested 常用于描述人的感受。')
     ],marySchoolDay]
-  ],[],19);
+  ]);
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
     unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay
