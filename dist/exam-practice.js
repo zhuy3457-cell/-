@@ -144,6 +144,7 @@ for (const question of examQuestions) {
 
 const practicePacks = new Map(Object.entries({
   "math": {
+    "term": "下",
     "title": "数学 · 应用与综合",
     "icon": "math",
     "tone": "violet",
@@ -172,6 +173,7 @@ const practicePacks = new Map(Object.entries({
     ]
   },
   "chinese": {
+    "term": "下",
     "title": "语文 · 阅读与表达",
     "icon": "book",
     "tone": "pink",
@@ -193,6 +195,7 @@ const practicePacks = new Map(Object.entries({
     ]
   },
   "english": {
+    "term": "下",
     "title": "英语 · 语篇理解",
     "icon": "letters",
     "tone": "blue",
@@ -214,6 +217,7 @@ const practicePacks = new Map(Object.entries({
     ]
   },
   "materials": {
+    "term": "下",
     "title": "综合 · 材料信息推断",
     "icon": "layers",
     "tone": "teal",

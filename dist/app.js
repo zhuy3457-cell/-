@@ -499,15 +499,20 @@ function advancedPage(selected) {
 }
 function packPage(selectedId) {
   const selected = practicePacks.get(selectedId);
-  const entries = selected ? [[selectedId,selected]] : [...practicePacks].reverse();
+  if (selected && selected.term!==state.term) {
+    state.term = selected.term;
+    save();
+  }
+  const entries = selected ? [[selectedId,selected]] : [...practicePacks].reverse().filter(([,pack])=>pack.term===state.term);
   const cards = entries.map(([id,pack])=>{
     const refs = referenceItems(pack.sources);
     const stages = pack.stages ? '<ul class="pack-stages">'+pack.stages.map(stage=>'<li class="chip">'+esc(stage)+'</li>').join('')+'</ul>' : '';
-    return '<article class="pack-card"><div class="subject-head"><span class="subject-icon '+pack.tone+'">'+icon(pack.icon)+'</span><div><h2>'+esc(pack.title)+'</h2><p>七年级'+(pack.term ?? '下')+'册 · '+pack.ids.length+' 题</p></div></div>'+
+    return '<article class="pack-card"><div class="subject-head"><span class="subject-icon '+pack.tone+'">'+icon(pack.icon)+'</span><div><h2>'+esc(pack.title)+'</h2><p>七年级'+pack.term+'册 · '+pack.ids.length+' 题</p></div></div>'+
       '<p>'+esc(pack.description)+'</p>'+stages+(refs?'<details><summary>查看参考卷面</summary><ul class="reference-list">'+refs+'</ul></details>':'')+
       '<div class="actions">'+startButton('pack/'+id,'开始这组')+'</div></article>';
   }).join('');
-  return pageHead(selected?'课堂同难度练习':'江苏专项题组','做完后可以逐题核对答案和思路。',selected?'<a class="crumb" href="#packs">全部专项题组</a>':bankLink)+
+  const tabs = selected ? '' : '<div class="section-head"><h2 class="group-title">选择册次</h2>'+termTabs()+'</div>';
+  return pageHead(selected?.stages?'课堂同难度练习':'江苏专项题组','做完后可以逐题核对答案和思路。',selected?'<a class="crumb" href="#packs">返回专项题组</a>':bankLink)+tabs+
     '<div class="pack-grid'+(selected?' pack-grid-single':'')+'">'+cards+'</div>';
 }
 function lessonPage(topic) {
@@ -729,6 +734,7 @@ function start(key, backTarget) {
   } else if (kind === 'pack') {
     const pack = practicePacks.get(id);
     if (!pack) return;
+    state.term = pack.term;
     ids = pack.ids; label = pack.title; back = pack.stages ? '#packs/'+id : '#packs';
   } else if (kind === 'advanced') {
     const set = advancedSets.get(id+'/'+term);

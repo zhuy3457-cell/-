@@ -269,6 +269,17 @@ test('new absolute-value and segment exercises grade every root, endpoint and co
   assert.deepEqual(graded.results.at(-1).fields.map(field=>field.correct),[true,true,false]);
   assert.match(JSON.stringify(graded.results[9].solution),/28−22=6/);
 });
+test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
+  const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
+  const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});
+  assert.equal(upper.term,'上');
+  assert.equal(lower.term,'下');
+  const fromPack = await good('draw_questions',{subject:'english',scope_id:'pack:english',count:6});
+  assert.equal(fromPack.term,'下');
+  assert.ok(fromPack.questions.every(question=>question.term==='下'));
+  const filtered = await good('query_courses',{subject:'english',term:'上',query:'语篇理解'});
+  assert.ok(filtered.results.every(scope=>scope.scope_id!=='pack:english'));
+});
 test('grades objective work and isolates personal mistakes and progress',async ()=>{
   const questionId = 'web-math-calculation-5';
   const owner = 'student-a';

@@ -34,13 +34,18 @@ const studyJson = vm.runInContext(`JSON.stringify({
   })),
   questions:allQuestions,
   courses:[...courseByKey.values()],
-  packs:[...practicePacks].map(([key,data])=>({key,title:data.title,description:data.description,ids:data.ids,href:'#packs/'+key}))
+  packs:[...practicePacks].map(([key,data])=>({key,title:data.title,term:data.term,description:data.description,ids:data.ids,href:'#packs/'+key}))
 })`,context);
 const study = JSON.parse(studyJson);
 const questions = new Set(study.questions.map(q=>q.id));
 assert.equal(questions.size,study.questions.length);
 for (const scope of [...study.topics,...study.courses,...study.packs]) {
   assert.ok(scope.ids.every(id=>questions.has(id)),scope.key);
+}
+const topicTerms = new Map(study.topics.map(topic=>[topic.key,topic.term]));
+const questionTerms = new Map(study.questions.map(question=>[question.id,topicTerms.get(question.topic)]));
+for (const pack of study.packs) {
+  assert.ok(['上','下'].includes(pack.term) && pack.ids.length>0 && pack.ids.every(id=>questionTerms.get(id)===pack.term),pack.key);
 }
 const kinds = {
   '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
