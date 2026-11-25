@@ -19,6 +19,20 @@
     'bio-summary-plant-storage': [
       {src:'answer-seed-storage.webp',alt:'左侧菜豆种子的两片子叶储存主要营养，右侧玉米籽粒中的胚乳储存主要营养。',caption:'① 指向菜豆子叶，② 指向玉米胚乳。'}
     ],
+    'history-chronology-evidence': [
+      {src:'answer-history-early.webp',alt:'从早到晚是约170万年前元谋人、约70万至20万年前北京人、约7000年前河姆渡、约6000年前半坡。',caption:'先判“距今”单位，再用流域和代表性作物核对展签。'}
+    ],
+    'history-chronology-zhou': [
+      {src:'answer-history-zhou.webp',alt:'公元前770年周平王东迁，前356年商鞅变法，约前256年修建都江堰，前221年秦统一六国。',caption:'按公元前纪年从大到小排，再分别判断制度改革和水利工程。'}
+    ],
+    'history-chronology-regions': [
+      {src:'answer-history-western-regions.webp',alt:'公元前221年秦统一，前202年西汉建立，前138年张骞首次出使，前60年设置西域都护。',caption:'先有张骞出使交流，后设西域都护加强管理。'}
+    ],
+    'history-chronology-parallel': [
+      {src:'answer-history-north-south-1.webp',alt:'南线317年东晋建立，先定位南方的起点。',caption:'先看南线，317年东晋建立。'},
+      {src:'answer-history-north-south-2.webp',alt:'南线420年刘宋建立、南朝开始。北线439年北魏统一北方、494年孝文帝迁都洛阳。',caption:'把北线的494年和南线对照，南方已进入南朝时期。'},
+      {src:'answer-history-north-south-3.webp',alt:'北线和南线最后汇到589年隋统一。494年发生在420年南朝开始之后、589年隋统一之前。',caption:'589年隋灭陈；494年落在南朝时期。'}
+    ],
     'equation-app-parameters-6': [
       {src:'answer-equation-denominator.webp',alt:'左侧把右边的负1漏乘2，得到x等于m，由误算结果得m等于3。右侧正确乘2得到2x减1等于x加m减2，代入m等于3求得x等于2。',caption:'先从错误算式求 m，再回到原方程正确去分母。'}
     ]

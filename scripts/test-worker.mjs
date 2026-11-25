@@ -1102,3 +1102,23 @@ test('visual explanations are available only in feedback and ship their images',
     assert.equal(response.headers.get('content-type'),'image/webp');
   }
 });
+
+test('history chronology course grades four units and reserves explanatory timelines for feedback',async ()=>{
+  const scope_id = 'course:history-chronology';
+  const quiz = await good('draw_questions',{subject:'history',scope_id,count:4});
+  assert.equal(quiz.questions.length,4);
+  assert.doesNotMatch(JSON.stringify(quiz),/answer-history-/);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'history-chronology-evidence',answer:'A'},
+    {question_id:'history-chronology-zhou',answer:'B'},
+    {question_id:'history-chronology-regions',answer:'C'},
+    {question_id:'history-chronology-parallel',answer:'D'}
+  ]});
+  assert.equal(grade.correct,4);
+  assert.match(grade.results[3].answer_diagram.alt,/420年.*589年/);
+  for (const {answer_diagram:{url}} of grade.results) {
+    const response = await request(new URL(url).pathname);
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('content-type'),'image/webp');
+  }
+});
