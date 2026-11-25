@@ -139,7 +139,15 @@ const courseCatalog = (() => {
     english: {上: [...english,...englishWorksheets]},
     civics: {上: civicsReviewModules.map(module => topicCourse(module.key))},
     history: {上: history},
-    geography: {上: geoReviewModules.map(module => topicCourse(module.key))},
+    geography: {上: geoReviewModules.map(module => {
+      if (!module.firstPageIds) return topicCourse(module.key);
+      const laterPage = fullGroup(module.key,'第 6 页 · 二分二至与地球五带');
+      laterPage.ids = laterPage.ids.filter(id=>!module.firstPageIds.includes(id));
+      return makeCourse(module.key,module.title,module.description,[
+        {key:module.key+'-page-5',title:'第 5 页 · 自转、公转与四季',ids:module.firstPageIds},
+        laterPage
+      ],[module.key]);
+    })},
     biology: {上: biologyReviewModules.map(module => topicCourse(module.key))}
   };
   const groupedTopicKeys = new Set(['dictation-upper', 'dictation-lower', 'rational', 'algebra', 'geometry']);

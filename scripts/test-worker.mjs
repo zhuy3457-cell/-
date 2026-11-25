@@ -482,13 +482,19 @@ test('division-power worksheet keeps its definition and grades exponent notation
   ]});
   assert.deepEqual(grades.results.map(result=>result.correct),[true,true,false,true,true,true,true,false,false]);
 });
-test('geography checklist carries the four seasonal table columns and both worksheet diagrams',async ()=>{
+test('geography checklist preserves both pages and grades rotation, revolution and seasons',async ()=>{
   const key = 'geo-checklist-3-page-6';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'geography',scope_id});
-  assert.equal(course.question_count,9);
-  const quiz = await good('draw_questions',{subject:'geography',scope_id,count:9});
-  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  assert.equal(course.question_count,16);
+  const pageFive = await good('draw_questions',{subject:'geography',scope_id,group_id:key+'-page-5',count:7});
+  const pageSix = await good('draw_questions',{subject:'geography',scope_id,group_id:key,count:9});
+  assert.equal(pageFive.questions.length,7);
+  assert.equal(pageSix.questions.length,9);
+  const questions = new Map([...pageFive.questions,...pageSix.questions].map(question=>[question.question_id,question]));
+  assert.match(questions.get(key+'-1a').diagram.url,/geography-checklist-rotation\.webp$/);
+  assert.match(questions.get(key+'-1b').diagram.url,/geography-checklist-revolution\.webp$/);
+  assert.equal(questions.get(key+'-6').table.rows.length,4);
   for (const [id,season] of [['7a','春分'],['7b','夏至'],['7c','秋分'],['7d','冬至']]) {
     const question = questions.get(key+'-'+id);
     assert.deepEqual(question.table.headers,['项目',season]);
@@ -497,6 +503,11 @@ test('geography checklist carries the four seasonal table columns and both works
   assert.match(questions.get(key+'-8').diagram.url,/geography-checklist-solar\.webp$/);
   assert.match(questions.get(key+'-10c').diagram.url,/geography-checklist-zones\.webp$/);
   const answers = [
+    ['1a',['地轴','自西向东','逆时针','顺时针','一日','昼夜交替','太阳东升西落','地方时差']],
+    ['1b',['太阳','自西向东','一年','四季更替','昼夜长短的变化','五带的形成']],
+    ['2',['经度','更早看到日出']],
+    ['3',['倾斜方向和角度','春季','夏季','秋季','冬季','相反']],
+    ['5','春季'],['6',['3-5月','6、7、8月','9—11月','12月至次年2月','相反']],
     ['7b',['6月22日','北回归线','昼最长夜最短','极昼']],
     ['8',['3月21日','9月23日']],
     ['9',['北回归线','南回归线','北极圈','南极圈']],
