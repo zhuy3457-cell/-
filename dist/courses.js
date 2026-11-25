@@ -36,14 +36,16 @@ const courseCatalog = (() => {
     const grammar = grammarByUnit[index];
     const classroom = classroomModulesForUnit(unit.unit);
     const vocab = vocabByUnit[index];
+    const supplement = unit.unit===4 ? [unitFourPhraseHandout] : [];
     return makeCourse('unit-' + unit.unit, unit.title, topics.get(check).description,
       [fullGroup(check, '随堂小测'), ...unit.sections.map((section, i) => sectionGroup(unit, i)),
         ...grammar.map(key => fullGroup(key)),
         ...classroom.flatMap(module=>moduleGroups(module,module.title.split(' · ')[1]+' · ')),
+        ...supplement.flatMap(module=>moduleGroups(module,'学案 · ')),
         ...(vocab ? [...moduleGroups(vocab),...sentenceGroups[index]] : [])],
-      [unit.key, ...grammar, ...classroom.map(module=>module.key),...(vocab ? [vocab.key,sentenceSheet.key] : [])]);
+      [unit.key, ...grammar, ...[...classroom,...supplement].map(module=>module.key),...(vocab ? [vocab.key,sentenceSheet.key] : [])]);
   });
-  const englishWorksheets = [...englishClassroomModules,...englishVocabModules].map(module=>
+  const englishWorksheets = [...englishClassroomModules,...englishVocabModules,unitFourPhraseHandout].map(module=>
     makeCourse(module.key,module.title,module.description,moduleGroups(module),[module.key],module.sources));
 
   const [classics, scenery] = publicStudyCollections.chinese;

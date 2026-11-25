@@ -112,10 +112,10 @@ const reviewCollections = new Map([
     start:'equation-application', returnLabel:'一元一次方程应用', modules:equationApplicationModules, byTopic:equationApplicationByTopic
   }],
   ['english-phrases', {
-    subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'个单元',
+    subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'组资料',
     title:'Unit 1–8 重点词组', keywords:'英语重点词组 短语默写 中译英 中英对照',
     subtitle:'可查看中英对照，按单元或编号范围默写。顶部搜索支持按中文、英文或原编号查找单条词组。',
-    start:'english-phrases', returnLabel:'英语重点词组', modules:englishPhraseModules, byTopic:englishPhraseByTopic
+    start:'english-phrases', returnLabel:'英语重点词组', modules:englishPhraseCollections, byTopic:englishPhraseByTopic
   }],
   ['english-grammar-daily', {
     subject:'english', name:'英语', icon:'letters', tone:'blue', unitLabel:'天',
@@ -236,11 +236,11 @@ const courseSearchIndex = [...courseCatalog.values()].flatMap(({lessons})=>lesso
 }));
 const phraseSearchKey = text => normalizeSearch(text).replace(/[’‘ʼ]/g,"'")
   .replace(/[^\p{L}\p{N}']+/gu,' ').trim();
-const phraseSearchIndex = englishPhraseModules.flatMap(unit=>unit.questions.map((question,index)=>{
+const phraseSearchIndex = englishPhraseCollections.flatMap(unit=>unit.questions.map(question=>{
   const chinese = question.prompt.replace(/^\d+\.\s*/,'');
   const forms = question.steps.flatMap(step=>[step.answer,...step.aliases]);
   return {
-    unit, question, number:index+1,
+    unit, question, number:parseInt(question.prompt,10),
     values:[...new Set([chinese,...forms].map(phraseSearchKey))]
   };
 }));
@@ -486,8 +486,9 @@ function englishClassroomPage(key, done, current) {
   const back = base+(filter?'/'+filter:'');
   return heading+sections.map(([id,label])=>{
     const unit = Number(id.slice(5));
-    const modules = id==='extra' ? extra : filter ? classroomModulesForUnit(unit) :
+    const selected = id==='extra' ? extra : filter ? classroomModulesForUnit(unit) :
       englishClassroomModules.filter(module=>classroomUnitOf(module)===unit);
+    const modules = unit===4 ? [...selected,unitFourPhraseHandout] : selected;
     const cards = modules.map(module=>{
       const correct = module.questions.filter(question=>done.has(question.id)).length;
       const title = module.title.replace(/^Unit \d+ · /,'');
@@ -496,7 +497,7 @@ function englishClassroomPage(key, done, current) {
         : startButton('topic/'+module.key,'直接练习','secondary','',back);
       return '<article class="pack-card classroom-card"><h3>'+esc(title)+'</h3>'+
         '<p>'+esc(module.description)+'</p><p>已答对 '+correct+' / '+module.questions.length+' 题</p>'+
-        '<div class="actions"><a class="btn secondary" href="'+base+'/'+module.key+'">看要点与题组</a>'+practice+'</div></article>';
+        '<div class="actions"><a class="btn secondary" href="'+studyHref(module.key)+'">看要点与题组</a>'+practice+'</div></article>';
     }).join('');
     return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
   }).join('');
@@ -1277,7 +1278,8 @@ function searchScore(entry, terms) {
 }
 const phraseScopeWords = new Set(['英语','七上','七上英语','英语上册','重点词组','英语重点词组','词组','短语','短语默写','词组默写']);
 function findPhrases(query) {
-  const words = query.replace(/第\s*(\d+)\s*单元/g,'unit$1').split(/\s+/);
+  const handoutOnly = query.includes('学案');
+  const words = query.replace(/学案(?:词组)?/g,' ').replace(/第\s*(\d+)\s*单元/g,'unit$1').trim().split(/\s+/);
   const unitToken = words.find(word=>/^unit\d+$/.test(word));
   const unitNumber = unitToken ? Number(unitToken.slice(4)) : null;
   const body = words.filter(word=>word!==unitToken && !phraseScopeWords.has(word)).join(' ');
@@ -1287,6 +1289,7 @@ function findPhrases(query) {
   const terms = needle.split(' ');
   const contains = (value,term) => /\p{Script=Han}/u.test(term) ? value.includes(term) : (' '+value+' ').includes(' '+term+' ');
   return phraseSearchIndex.flatMap(entry=>{
+    if (handoutOnly && entry.unit!==unitFourPhraseHandout) return [];
     if (unitNumber!==null && entry.unit.unit!==unitNumber) return [];
     if (itemNumber) return entry.number===Number(itemNumber[1]) ? [{entry,score:3}] : [];
     if (entry.values.includes(needle)) return [{entry,score:3}];
@@ -1309,8 +1312,9 @@ function search() {
   }).join('');
   const matches = terms.length ? findPhrases(query) : [];
   const phrases = matches.map(({entry:{question,unit}})=>{
+    const source = unit===unitFourPhraseHandout ? '学案原编号' : '重点词组表';
     const action = '<button class="search-result option" type="button" data-phrase-id="'+question.id+'"><strong>'+esc(question.prompt)+'</strong>'+
-      '<small>'+esc(question.correct)+'</small><small>Unit '+unit.unit+' · 默写这条</small></button>';
+      '<small>'+esc(question.correct)+'</small><small>Unit '+unit.unit+' · '+source+' · 默写这条</small></button>';
     const lesson = '<button class="btn secondary" type="button" data-key="'+unit.key+'" data-search-action="learn" aria-label="查看 '+esc(unit.title)+'">看本单元</button>';
     return '<div class="search-entry">'+action+lesson+'</div>';
   }).join('');

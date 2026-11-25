@@ -1,4 +1,4 @@
-const englishPhraseModules = (() => {
+const {englishPhraseModules,unitFourPhraseHandout} = (() => {
   const units = [
     [1,'自我介绍与交友', '练习打招呼、自我介绍、人物外貌与性格，以及班级和朋友相关表达。',`
 这是我！|This is me!
@@ -505,9 +505,9 @@ const englishPhraseModules = (() => {
     return {label,answer,aliases:acceptedSpellings(answer,alternatives),text:'english'};
   }
 
-  function makeEntry(unit, line, index) {
+  function makeEntry(unit, key, line, number) {
     const [chinese,...fields] = line.split('|');
-    const number = index+1;
+
     const parts = fields[0].includes('=') ? fields.map(field=>{
       const [label,spellings] = field.split('=');
       return [label,spellings.split('~')];
@@ -517,7 +517,7 @@ const englishPhraseModules = (() => {
     const explanation = parts.length===1 && fields.length>1 ? '也可写作 '+fields.slice(1).join(' / ') : '';
     return {
       question:{
-        id:'english-phrases-unit'+unit+'-'+number,
+        id:key+'-'+number,
         level:'basic',
         prompt:String(number).padStart(2,'0')+'. '+chinese,
         steps,
@@ -529,32 +529,74 @@ const englishPhraseModules = (() => {
     };
   }
 
-  return units.map(([unit,name,description,source])=>{
-    const key = 'english-phrases-unit'+unit;
-    const entries = source.trim().split('\n').map((line,index)=>makeEntry(unit,line,index));
+  function makeModule({unit,key,title,range,description,source,start = 1,groups}) {
+    const entries = source.trim().split('\n').map((line,index)=>makeEntry(unit,key,line,start+index));
     const sections = [];
     const notes = [];
-    for (let index=0; index<entries.length; index+=20) {
-      const group = entries.slice(index,index+20);
-      const title = '第 '+(index+1)+'–'+(index+group.length)+' 条';
-      sections.push({
-        key:'phrases-'+(index+1),
-        title,
-        ids:group.map(entry=>entry.question.id)
-      });
-      notes.push({label:title+' · 中英对照',points:group.map(entry=>entry.review)});
+    const chunks = groups ?? Array.from({length:Math.ceil(entries.length/20)},(_,index)=>[
+      20*index,Math.min(20*(index+1),entries.length),''
+    ]);
+    for (const [low,high,label] of chunks) {
+      const group = entries.slice(low,high);
+      const name = '第 '+(low+start)+'–'+(high+start-1)+' 条'+(label ? ' · '+label : '');
+      sections.push({key:'phrases-'+(low+start),title:name,ids:group.map(entry=>entry.question.id)});
+      notes.push({label:name+' · 中英对照',points:group.map(entry=>entry.review)});
     }
-    return {
-      key,unit,title:'Unit '+unit+' · '+name,range:'原资料 Unit '+unit,
-      description,notes,sections,
-      questions:entries.map(entry=>entry.question)
-    };
+    return {key,unit,title,range,description,notes,sections,questions:entries.map(entry=>entry.question)};
+  }
+
+  const englishPhraseModules = units.map(([unit,name,description,source])=>makeModule({
+    unit,key:'english-phrases-unit'+unit,title:'Unit '+unit+' · '+name,range:'原资料 Unit '+unit,description,source
+  }));
+  const unitFourPhraseHandout = makeModule({
+    unit:4,key:'english-u4-handout-phrases',title:'Unit 4 · 学案词组 27–60',range:'七上 Unit 4 · 学案原编号',
+    description:'按照片原编号练第 27–60 条，含时间与活动、Pronunciation 短语、Integration 与班级家务。',
+    start:27,groups:[[0,10,'时间与活动'],[10,13,'Pronunciation'],[13,34,'Integration']],
+    source:`
+到某地旅游|take a trip to sp.|take a trip to some place|take a trip to a place|take a trip to somewhere
+在周二早上|on Tuesday morning
+在儿童节|on Children’s Day
+在六岁时（写一种以 at 开头的表达）|at the age of 6|at the age of six|at 6|at six|at 6 years old|at six years old
+做运动|play sport|play sports|do sport|do sports|do exercise|exercise
+当然。|Of course.
+打网球|play tennis
+在运动场上|on the sports field
+跳舞半小时|dance for half an hour
+去滑旱冰|go roller skating|go roller-skating
+一个穿短裙的女孩|a girl in a skirt
+一个正在工作的护士|a nurse at work|a nurse who is working
+绕着墙走|walk around the wall|walk round the wall
+依次填在春季、夏季、秋季、冬季|春季=in spring|夏季=in summer|秋季=in autumn~in fall|冬季=in winter
+参观一个苹果农场|visit an apple farm
+参观田野|have a tour of the fields|take a tour of the fields|go on a tour of the fields
+在学校网站上查询更多信息|find more on the school website|find out more on the school website|find more information on the school website|find out more information on the school website
+返回（用 get）|get back
+观看视频|watch a video|watch videos
+依次填学习如何种苹果、学习如何植树|种苹果=learn how to grow apples|植树=learn how to plant trees
+在农场上|on the farm
+与某人分享某物|share sth. with sb.
+依次填待在外面、待在里面|外面=be outside~stay outside|里面=be inside~stay inside
+亲近大自然|get close to nature
+尽某人最大努力做某事|try one’s best to do sth.|do one’s best to do sth.
+使事情变得更好|make things better
+班级职责、班级任务|class duties
+保持我们学校区域干净|keep our school area clean
+依次填参加活动、加入俱乐部|参加活动=take part in an activity~take part in activities~join in an activity~join in activities|加入俱乐部=join a club~join the club
+通过做日常杂事或家务来学习（写出短语）|learning by doing chores|learn by doing chores
+在我的班级，我们都分组合作，并轮流做不同的日常事务。 In my class, we all ____ and ____ do different chores.|分组合作=work in groups|轮流做=take turns to
+扫地|sweep the floor
+清空垃圾箱|empty the bins|empty the rubbish bins|empty the trash cans
+照顾（好）某人，依次用 take、look 表达|用 take=take care of sb.~take good care of sb.|用 look=look after sb.~look after sb. well
+`
   });
+  unitFourPhraseHandout.notes.unshift({label:'年龄与参加的用法',text:'“在六岁时”可用 at the age of six 或 at six，也可用从句 when I was six years old。具体某天的上午用 on。参加活动用 take part in，加入俱乐部用 join。'});
+  return {englishPhraseModules,unitFourPhraseHandout};
 })();
 
-const englishPhraseByTopic = new Map(englishPhraseModules.map(module=>[module.key,module]));
+const englishPhraseCollections = [...englishPhraseModules,unitFourPhraseHandout];
+const englishPhraseByTopic = new Map(englishPhraseCollections.map(module=>[module.key,module]));
 const englishPhraseSubject = subjects.find(subject=>subject.id==='english');
-for (const module of englishPhraseModules) {
+for (const module of englishPhraseCollections) {
   englishPhraseSubject.topics.push({
     key:module.key,title:module.title,term:'上',description:module.description,
     questions:module.questions.map(question=>({...question,subject:englishPhraseSubject.id,topic:module.key}))
