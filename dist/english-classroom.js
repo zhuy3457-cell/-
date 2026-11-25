@@ -831,9 +831,46 @@ const englishClassroomModules = (() => {
       choose('哪句话最适合第 52 空？',greenSchoolOptions,3,'前句的 not only a colour 和下句 It is also about life 相呼应，最后一句号召大家践行绿色生活。')
     ],greenSchool,48]
   ]);
+  const unitFourReview = module('classroom-u4-midterm-review-paper','Unit 4 · 期中复习练习卷','七上 Unit 4',
+    '第 1 页，共 22 题。练习词形填空、同义句转换、完成句子和单项选择。',[
+    ['词形','for the first time 表示“第一次”。a writer 用名词，make things better 用比较级，living things 表示“生物”。'],
+    ['时间与频率','in the morning 表示“在早晨”，具体某一天的早晨用 on。How often 用于问频率。'],
+    ['句型转换','take care of 和 look after 表示“照顾”。hear from sb. 表示收到某人的来信或消息。be in / on the team 表示是队员。']
+  ],[
+    ['word-forms','第 1–10 题 · 词形填空',[
+      fill('The boy visits Beijing for the ____ (one) time. He’s very excited.','first','for the first time 表示“第一次”。one 的序数词是 first。'),
+      fill('She likes reading books. So she wants to be a ____ (write).','writer','a 后填表示职业的单数名词 writer。'),
+      fill('I really enjoy ____ (I) chatting with my friends.','myself','enjoy oneself 表示“玩得开心”。主语 I 对应反身代词 myself。'),
+      fill('If you work in groups, you can make things ____ (good).','better','good 的比较级是 better。make things better 表示“使事情变得更好”。'),
+      fill('All ____ (live) things need water to live.','living','living 是形容词，living things 指生物。'),
+      fill('Our school has different kinds of after-school ____ (activity).','activities','different kinds of 后在这里接复数名词。activity 的复数是 activities。'),
+      fill('Doing morning ____ (exercise) helps us keep fit.','exercises','do morning exercises 表示“做早操”，exercises 用复数。'),
+      fill('Too much housework is ____ (tire). I need to have a rest.','tiring','tiring 表示“令人疲倦的”，用来描述家务。描述人的感受可用 tired。'),
+      fill('We can learn a lot about ____ (大自然) in Biology lessons.','nature','nature 表示“大自然”，learn about 表示“了解”。'),
+      fill('The new ____ (学期) starts in September.','term','根据 starts 可确定主语是单数，用 term。')
+    ]],
+    ['conversion','第 11–13 题 · 同义句转换',[
+      fill('Sandy helps her mother look after her brother.\nSandy helps her mother ____ her brother.','take care of','take care of 和 look after 都表示“照顾”。'),
+      fill('We are members of the basketball team.\nWe ____ the basketball team.',[['are in','are on']],'主语是 we，be 用 are。are in the team 和 are on the team 都可表示“是队员”。'),
+      fill('I hope to get a letter from you soon.\nI hope to ____ you soon.','hear from','hear from sb. 表示收到某人的来信或消息。hope to 后用动词原形。')
+    ]],
+    ['completion','第 14–16 题 · 完成句子',[
+      fill('你每天几点起床？——在 6:30。\n—When do you ____ every day? —At 6:30.','get up','get up 表示“起床”。do 后用动词原形。'),
+      fill('Sandy 明天将动身前往一个农场去摘水果。\nSandy will ____ a farm tomorrow to pick fruit.','leave for','leave for 后接目的地。will 后用动词原形。'),
+      fill('Tom 喜欢睡觉前阅读一点书。\nTom likes reading ____ before going to bed.','a little','read a little 表示“读一点书”。')
+    ]],
+    ['choice','第 17–22 题 · 单项选择',[
+      choose('In which word are the letters in brackets pronounced /uː/?',['w[ou]ld','f[oo]t','c[oo]k','gr[ou]p'],3,'group 的 ou 发 /uː/，would、foot 和 cook 方括号中的字母发 /ʊ/。'),
+      choose('After school, I often play ____ tennis with my friends.',['a','/','an','the'],1,'play tennis 表示“打网球”。球类运动名称前通常不用冠词。选项 / 表示不填。'),
+      choose('—Do you go to the library to read books?\n—No. I ____ go there. I don’t have free time on weekends.',['always','often','seldom','sometimes'],2,'seldom 表示“很少”。根据回答 No 和周末没空的解释，应选 seldom。'),
+      choose('Daniel would like to ____ the field trip to a park this weekend.',['take turns','take part in','take apart','take care of'],1,'take part in 表示“参加某项活动”。此处指参加实地考察。'),
+      choose('—____ do you go swimming?\n—Never. I don’t like swimming.',['How old','How long','How often','How far'],2,'Never 表示频率。How often 用来问“多久一次”。'),
+      choose('We read English ____ the morning every day.',['on','in','at','of'],1,'泛指早晨用 in the morning，点明某天的早晨可用 on，如 on Monday morning。')
+    ]]
+  ]);
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
-    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview
   ];
 })();
 

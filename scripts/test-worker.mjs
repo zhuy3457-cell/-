@@ -396,6 +396,27 @@ test('school worksheet grades questions 21–52 and pairs the green-school passa
     assert.deepEqual(graded.results.map(result=>result.correct),batch.map(([, ,correct])=>correct));
   }
 });
+test('Unit 4 review paper preserves all 22 original question numbers and grades the corrected forms',async ()=>{
+  const key = 'classroom-u4-midterm-review-paper';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'english',scope_id});
+  assert.equal(course.question_count,22);
+  let next = 1;
+  for (const [group,count] of [['word-forms',10],['conversion',3],['completion',3],['choice',6]]) {
+    const quiz = await good('draw_questions',{scope_id,group_id:key+'-'+group,count});
+    const numbers = quiz.questions.map(question=>Number(question.question_id.split('-').at(-1))).sort((a,b)=>a-b);
+    assert.deepEqual(numbers,Array.from({length:count},(_,index)=>next+index));
+    next += count;
+  }
+  const grades = [
+    [1,'first',true],[1,'once',false],[10,'term',true],[12,'are in',true],[12,'are on',true],[12,'have a',false],
+    [13,'hear from',true],[17,'D',true],[18,'B',true],[19,'C',true],[20,'B',true],[21,'C',true],[22,'B',true]
+  ];
+  const graded = await good('grade_homework',{record:false,submissions:grades.map(([number,answer])=>({
+    question_id:key+'-'+number,answer
+  }))});
+  assert.deepEqual(graded.results.map(result=>result.correct),grades.map(([, ,correct])=>correct));
+});
 test('midterm and weekend materials expose the new upper-term courses and targeted marking',async ()=>{
   for (const [subject,key,count] of [
     ['english','classroom-u4-midterm-dictation',48],
