@@ -997,3 +997,26 @@ test('geography review reuses existing pictured questions and grades the new app
     }
   }
 });
+
+test('later geography lessons draw, display illustrations and grade through their course scopes',async ()=>{
+  const sets = [
+    ['geo-review-religions',2,[['geo-124-religion-origin','C']]],
+    ['geo-review-settlements',4,[['geo-124-settlement-pattern','D',true],['geo-124-settlement-houses','A',true]]],
+    ['geo-review-development',3,[['geo-124-development-dialogue','B'],['geo-124-development-value','D']]]
+  ];
+  for (const [scope,count,samples] of sets) {
+    const quiz = await good('draw_questions',{subject:'geography',scope_id:'course:'+scope,count});
+    assert.equal(quiz.questions.length,count,scope);
+    for (const [question_id,answer,pictured] of samples) {
+      const question = quiz.questions.find(item=>item.question_id===question_id);
+      assert.ok(question,question_id);
+      if (pictured) {
+        const asset = await request(new URL(question.diagram.url).pathname);
+        assert.equal(asset.status,200);
+        assert.equal(asset.headers.get('content-type'),'image/webp');
+      }
+      const grade = await good('grade_homework',{record:false,submissions:[{question_id,answer}]});
+      assert.equal(grade.correct,1,question_id);
+    }
+  }
+});
