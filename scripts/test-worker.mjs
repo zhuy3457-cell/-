@@ -482,6 +482,31 @@ test('division-power worksheet keeps its definition and grades exponent notation
   ]});
   assert.deepEqual(grades.results.map(result=>result.correct),[true,true,false,true,true,true,true,false,false]);
 });
+test('geography checklist carries the four seasonal table columns and both worksheet diagrams',async ()=>{
+  const key = 'geo-checklist-3-page-6';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'geography',scope_id});
+  assert.equal(course.question_count,9);
+  const quiz = await good('draw_questions',{subject:'geography',scope_id,count:9});
+  const questions = new Map(quiz.questions.map(question=>[question.question_id,question]));
+  for (const [id,season] of [['7a','春分'],['7b','夏至'],['7c','秋分'],['7d','冬至']]) {
+    const question = questions.get(key+'-'+id);
+    assert.deepEqual(question.table.headers,['项目',season]);
+    assert.equal(question.fields.length,4);
+  }
+  assert.match(questions.get(key+'-8').diagram.url,/geography-checklist-solar\.webp$/);
+  assert.match(questions.get(key+'-10c').diagram.url,/geography-checklist-zones\.webp$/);
+  const answers = [
+    ['7b',['6月22日','北回归线','昼最长夜最短','极昼']],
+    ['8',['3月21日','9月23日']],
+    ['9',['北回归线','南回归线','北极圈','南极圈']],
+    ['10b',['北温带','北温带','南温带','北寒带','南寒带','热带']]
+  ];
+  const graded = await good('grade_homework',{record:false,submissions:answers.map(([id,answer])=>({
+    question_id:key+'-'+id,answer
+  }))});
+  assert.equal(graded.correct,answers.length);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});
