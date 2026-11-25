@@ -973,3 +973,27 @@ test('teaching images reach question cards and keep the history timeline in feed
     assert.equal(response.headers.get('content-type'),'image/webp');
   }
 });
+
+test('geography review reuses existing pictured questions and grades the new applications',async ()=>{
+  const sets = [
+    ['geo-review-weather',5,{'geo-124-weather-day':'C','geo-124-weather-isotherms':'A'}],
+    ['geo-review-climate',4,{'geo-month1-climate-wet-wind':'C','geo-124-climate-monsoon-woods':'D'}],
+    ['geo-review-plates',3,{'geo-month1-plates-types':'A'}]
+  ];
+  for (const [scope,count,answers] of sets) {
+    const quiz = await good('draw_questions',{subject:'geography',scope_id:'course:'+scope,count});
+    assert.equal(quiz.questions.length,count);
+    for (const [id,answer] of Object.entries(answers)) {
+      const question = quiz.questions.find(item=>item.question_id===id);
+      assert.ok(question,id);
+      if (id!=='geo-124-climate-monsoon-woods') {
+        assert.match(question.diagram.alt,/\S/);
+        const asset = await request(new URL(question.diagram.url).pathname);
+        assert.equal(asset.status,200);
+        assert.equal(asset.headers.get('content-type'),'image/webp');
+      }
+      const grade = await good('grade_homework',{record:false,submissions:[{question_id:id,answer}]});
+      assert.equal(grade.correct,1,id);
+    }
+  }
+});
