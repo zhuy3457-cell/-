@@ -933,9 +933,53 @@ const englishClassroomModules = (() => {
       choose('What is Rat like according to the passage?',['Rat is smart and funny.','Rat is brave but not helpful.','Rat is brave, smart and caring.','Rat is afraid and shy.'],2,'Rat 根据外套不见了判断 Mole 的去向，勇敢进树林找他，找到后安慰并等他休息，体现机智、勇敢和关心朋友。')
     ],wildWood]
   ]);
+  const millieSchoolDay = [
+    'Hi, I’m Millie. I am a Grade 7 student at Sunshine Middle School. I love my new school life very much.',
+    'On [23] (weekday), I go to school at 7:30. [24] (usual), I spend about 15 minutes walking to school. School [25] (start) at 8:00 a.m. Sometimes my group members and I have our [26] (duty). We need to clean some parts of our school area [27] Monday morning. Our form teacher always teaches us how [28] (do) cleaning well patiently. We have four lessons in the morning. My favourite subject is English. I think it is interesting and useful. I also like Chinese because I can read many [29] (amaze) works.',
+    'In the afternoon, we have two or three lessons. After school, I go to the volleyball club. We practise [30] (play) volleyball every Friday afternoon. Next year, I want to join more clubs [31] I think club activities are a good way for me to have fun and make friends. At night, I have some [32] (homework) to do. After finishing it, I can go to bed.'
+  ].join('\n\n');
+  const gardeningPassage = [
+    'For most students, they learn many subjects like English and maths in the classroom. Now, there is a new outdoor (户外的) subject in Sunshine Middle School. That is school gardening.',
+    'In the gardening class, teachers teach students how to plant vegetables. Then students work together. They really love this subject. “We can have great fun in this class. We can get out and do things with our hands,” says Anna, one of the students.',
+    'It’s also fun to get something to eat in class. Some students like to plant tomatoes and carrots. “The tomato is my favorite vegetable. It’s always fun to get a tomato, clean it and eat it right in the garden,” says Anna.',
+    'Students can also learn something from the class. Keeping a school garden is not easy and all the students need to come and help. It teaches students to work together. Also, some vegetables are easy to grow but others need a long time. This teaches students that they need to wait before they get the things they want.',
+    'Students really love having outdoor classes like this. And they want to have more in the future.'
+  ].join('\n\n');
+  const schoolGardening = module('classroom-u4-school-gardening','Unit 4 · 校园生活与园艺课学案','七上 Unit 4',
+    '原卷第 22–37 题。第 37 题为开放问答，可先作答再对照例句。',[
+    ['时间与搭配','on weekdays，on Monday morning。how to do，practise doing。homework 不可数。'],
+    ['阅读简答','每题答案不超过 8 个词。问看法时回答看法，问原因时写清楚 because 后的理由。']
+  ],[
+    ['choice','第 22 题 · 情景单选',[
+      choose('—Can you help me empty the bins, Jim?\n—____. I will do it soon.',['Of course','Enjoy yourself','All the best','Good luck'],0,'Of course 表示“当然可以”，用于回应请求。')
+    ],undefined,22],
+    ['grammar','第 23–32 题 · 短文语法填空',[
+      fill('On ____ (weekday), I go to school at 7:30.','weekdays','on weekdays 表示“在工作日”。'),
+      fill('____ (usual), I spend about 15 minutes walking to school.','Usually','副词 usually 表示“通常”，用在句首时首字母大写。'),
+      fill('School ____ (start) at 8:00 a.m.','starts','School 作主语，动词用第三人称单数 starts。'),
+      fill('Sometimes my group members and I have our ____ (duty).','duties','duty 的复数是 duties。'),
+      fill('We need to clean some parts of our school area ____ Monday morning.','on','特定一天的早晨用 on，如 on Monday morning。'),
+      fill('Our form teacher always teaches us how ____ (do) cleaning well.','to do','how to do sth. 表示“如何做某事”。'),
+      fill('I also like Chinese because I can read many ____ (amaze) works.','amazing','amazing 是“令人惊奇的”，用来形容作品。'),
+      fill('We practise ____ (play) volleyball every Friday afternoon.','playing','practise 后接动名词 playing。'),
+      fill('I want to join more clubs ____ I think club activities are a good way to have fun and make friends.','because','后半句是想加入更多社团的原因，用 because。'),
+      fill('At night, I have some ____ (homework) to do.','homework','homework 是不可数名词，some homework 表示“一些作业”。')
+    ],millieSchoolDay,23],
+    ['reading','第 33–36 题 · 园艺课阅读简答（每题不超过 8 词）',[
+      fill('What is the outdoor subject?',[['School gardening','It is school gardening','It’s school gardening','That is school gardening','That’s school gardening']],'第一段直接给出户外科目是 school gardening。'),
+      fill('What do teachers teach students in the gardening class?',[['How to plant vegetables','They teach students how to plant vegetables','They teach them how to plant vegetables','To plant vegetables']],'第二段说老师教学生如何种植蔬菜。'),
+      fill('What does the writer think of keeping a school garden?',[['Not easy','It is not easy','It isn’t easy','It is difficult','Difficult','Keeping a school garden is not easy','It’s not easy']],'第四段直接评价 Keeping a school garden is not easy。'),
+      fill('Are all vegetables easy to grow?',[['No','No, they aren’t','No, they are not','No, not all of them are','No, some need a long time']],'第四段说有些蔬菜容易种，有些需要很长时间，因此作否定回答。')
+    ],gardeningPassage,33]
+  ]);
+  schoolGardening.shortAnswers = [{
+    title:'第 37 题 · 开放问答',material:gardeningPassage,
+    prompt:'Do you want to have the gardening class? Why?（不超过 8 个词。）',
+    points:['示例：Yes, because I can have fun.','答 Yes 或 No 均可，写出与园艺课有关的理由，并控制在 8 个词以内。']
+  }];
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
-    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview,unitOneReview
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview,unitOneReview,schoolGardening
   ];
 })();
 

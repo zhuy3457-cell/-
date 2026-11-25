@@ -148,6 +148,7 @@ function explainTopic(args) {
   const teaching = candidates.map(lessonNotes).filter(Boolean).slice(0,4);
   return {...scopeSummary(scope,subject,term),teaching,
     practice_groups:scope.groups?.map(group=>({group_id:group.key,title:group.title,question_count:group.ids.length})),
+    ...(scope.shortAnswers?.length ? {short_answer_tasks:scope.shortAnswers} : {}),
     sources:scope.sources ?? [],
     ...(teaching.length ? {} : {guidance:'该范围提供练习。可先随机抽取一道，作答后通过批改工具查看例题解析。'})};
 }

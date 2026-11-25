@@ -732,6 +732,33 @@ test('the named geography midterm includes page 1 and grades the five astronomy 
   }))});
   assert.equal(graded.correct,5);
 });
+test('new English, Analects and civics worksheets expose objective questions and original short-answer tasks',async ()=>{
+  const worksheets = [
+    ['english','classroom-u4-school-gardening',15,1],
+    ['chinese','chinese-analects-worksheet-10',36,8],
+    ['civics','civics-midterm-growth-text',1,5]
+  ];
+  for (const [subject,key,questions,tasks] of worksheets) {
+    const scope = await good('explain_topic',{subject,scope_id:'course:'+key});
+    assert.equal(scope.question_count,questions);
+    assert.equal(scope.short_answer_tasks.length,tasks);
+    assert.ok(scope.short_answer_tasks.every(task=>task.prompt && task.points.length));
+    if (subject==='civics') assert.equal(scope.short_answer_tasks.find(task=>task.table).table.rows.length,3);
+  }
+  const reading = await good('draw_questions',{scope_id:'course:classroom-u4-school-gardening',
+    group_id:'classroom-u4-school-gardening-reading',count:4});
+  assert.ok(reading.questions.every(question=>question.material.includes('Keeping a school garden is not easy')));
+  const graded = await good('grade_homework',{record:false,submissions:[
+    {question_id:'classroom-u4-school-gardening-27',answer:'on'},
+    {question_id:'classroom-u4-school-gardening-31',answer:'because'},
+    {question_id:'classroom-u4-school-gardening-35',answer:'It is not easy.'},
+    {question_id:'chinese-analects-worksheet-10-3',answer:['知道','生气']},
+    {question_id:'chinese-analects-worksheet-10-30',answer:'又'},
+    {question_id:'chinese-analects-worksheet-10-38-4',answer:['饭疏食','饮水','曲肱而枕之']},
+    {question_id:'civics-midterm-growth-text-31',answer:[4,1,3,2]}
+  ]});
+  assert.equal(graded.correct,7);
+});
 test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
   const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});

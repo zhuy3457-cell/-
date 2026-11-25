@@ -418,6 +418,7 @@ function courseDetail(course,subject) {
     '<p class="course-description">'+esc(course.description)+'</p><div class="actions course-actions">'+actions+'</div>'+
     '<section class="course-list"><h2 class="group-title">选择题组</h2><div class="topic-list">'+groups+'</div></section>'+
     (links ? '<section class="course-list"><h2 class="group-title">复习资料</h2><div class="actions course-actions">'+links+'</div></section>' : '')+
+    shortAnswerSection(course.shortAnswers)+
     (refs ? '<details class="course-list"><summary>参考来源</summary><ul class="reference-list">'+refs+'</ul></details>' : '');
 }
 function difficultyPage() {
@@ -502,6 +503,14 @@ function englishClassroomPage(key, done, current) {
     return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
   }).join('');
 }
+function shortAnswerSection(tasks) {
+  if (!tasks?.length) return '';
+  const entries = tasks.map(task=>'<article class="geo-note"><h3>'+esc(task.title ?? '读材料作答')+'</h3>'+
+    (task.material?'<p class="example-prompt">'+esc(task.material)+'</p>':'')+(task.table?materialTable(task.table):'')+
+    '<p class="example-prompt">'+esc(task.prompt)+'</p><details><summary>核对参考答案</summary><ol>'+
+    task.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ol></details></article>').join('');
+  return '<section class="short-answer"><h2 class="group-title">简答与自查</h2>'+entries+'</section>';
+}
 function reviewPage(route,key) {
   const collection = reviewCollections.get(route);
   const base = '#'+route;
@@ -532,9 +541,7 @@ function reviewPage(route,key) {
     (note.points ? '<ul>'+note.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ul>' : '<p>'+esc(note.text)+'</p>')+'</details>').join('');
   const refs = referenceItems(unit.sources);
   const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
-  const task = unit.shortAnswer;
-  const shortAnswer = task ? '<section class="short-answer"><h2 class="group-title">材料简答</h2><p>'+esc(task.material)+'</p><p>'+esc(task.prompt)+'</p>'+
-    '<details class="geo-note"><summary>核对作答要点</summary><ol>'+task.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ol></details></section>' : '';
+  const shortAnswer = shortAnswerSection(unit.shortAnswers ?? (unit.shortAnswer ? [unit.shortAnswer] : []));
   const practice = current?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
