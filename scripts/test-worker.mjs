@@ -341,10 +341,11 @@ test('history final review covers twenty lessons and shares question IDs with in
   const key = 'history-final-questions';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'history',scope_id});
-  assert.equal(course.question_count,44);
+  const expanded = new Map([[2,4],[3,4],[4,3],[5,3],[11,3],[18,3],[20,4]]);
+  assert.equal(course.question_count,50);
   const ids = new Set();
   for (let lesson=1;lesson<=20;lesson++) {
-    const count = lesson===20 ? 4 : lesson===11 || lesson===18 ? 3 : 2;
+    const count = expanded.get(lesson) ?? 2;
     const group_id = key+'-lesson-'+lesson;
     const args = {subject:'history',group_id,count};
     const review = await good('draw_questions',{...args,scope_id});
@@ -355,17 +356,33 @@ test('history final review covers twenty lessons and shares question IDs with in
     assert.deepEqual(group.toSorted(),lessonQuestions.questions.map(question=>question.question_id).toSorted());
     for (const id of group) ids.add(id);
   }
-  assert.equal(ids.size,44);
+  assert.equal(ids.size,50);
   const grade = await good('grade_homework',{record:false,submissions:[
     {question_id:key+'-5',answer:['太平道','东汉']},
     {question_id:key+'-13',answer:['蜀','魏','吴']},
     {question_id:key+'-22',answer:['锺繇','胡昭']},
     {question_id:key+'-lesson-8-1',answer:['何尊','利簋']},
     {question_id:key+'-lesson-10-1',answer:['秦朝暴政','大雨误期']},
-    {question_id:key+'-lesson-11-time',answer:[206,202]}
+    {question_id:key+'-lesson-11-time',answer:[206,202]},
+    {question_id:key+'-lesson-2-4',answer:'B'}
   ]});
-  assert.equal(grade.correct,6,JSON.stringify(grade.results));
+  assert.equal(grade.correct,7,JSON.stringify(grade.results));
   assert.match(grade.results[0].explanation,/220/);
+  assert.equal(grade.recorded,false);
+});
+
+test('civics growth guide offers six graded questions and four optional self-check tasks',async ()=>{
+  const scope_id = 'course:civics-growth-answer-guide';
+  const course = await good('explain_topic',{subject:'civics',scope_id});
+  assert.equal(course.question_count,6);
+  assert.equal(course.short_answer_tasks.length,4);
+  const quiz = await good('draw_questions',{subject:'civics',scope_id,count:6});
+  assert.equal(quiz.questions.length,6);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'civics-growth-guide-plan',answer:'B'},
+    {question_id:'civics-growth-guide-self',answer:'C'}
+  ]});
+  assert.equal(grade.correct,2,JSON.stringify(grade.results));
   assert.equal(grade.recorded,false);
 });
 
