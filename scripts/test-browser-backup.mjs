@@ -148,3 +148,21 @@ assert.match(repair.run("readingMaterial(questionById.get('math-midterm-4-6'),tr
 assert.match(repair.run("readingMaterial(questionById.get('hard-bio-seed-rate-controls'),true)"),/<table><caption>萝卜种子的四组观察记录/);
 if (process.argv[2]) assert.match(repair.run('quizPage()'),/src="data:image\/webp;base64,/);
 console.log('校园地图在作答前和旧记录中均展开，结构化数轴和观察表正常。');
+
+const worksheet = browser();
+assert.match(worksheet.run("englishClassroomPage('unit-5',new Set(),null)"),
+  /Grammar · 7 题.*Integration 1 · 12 题.*Integration 2 · 5 题.*练整卷/s);
+worksheet.run("start('topic/classroom-u5-grammar-integration')");
+assert.equal(worksheet.run('state.session.ids.length'),24);
+assert.match(worksheet.run('quizPage()'),/Grammar 第 1 题.*<h1>一块奶酪<\/h1>/s);
+assert.match(worksheet.run("englishClassroomPage('unit-5',new Set(),questionById.get(state.session.ids[0]))"),
+  /Grammar–Integration 默写卷.*继续练习/s);
+worksheet.run("state.session.index=6; location.hash='#home'");
+assert.match(worksheet.run('quizPage()'),/① we should get ② our class party/);
+worksheet.run("start('review-section/classroom-u5-grammar-integration/integration-2')");
+assert.equal(worksheet.run('state.session.ids.length'),5);
+assert.match(worksheet.run('quizPage()'),/Integration 2 第 1 题.*<h1>馅饼（名词）<\/h1>/s);
+worksheet.run("start('search-question/geo-daily-grid-increasing-degrees')");
+assert.match(worksheet.run('quizPage()'),/<img [^>]+alt="北向箭头朝上.*查看图中数据.*40°、30°、20°/s);
+assert.doesNotMatch(worksheet.run('quizPage()'),/解题思路/);
+console.log('Unit 5 原卷分组、题号与填空顺序，以及经纬网图的文字读图数据已验证。');

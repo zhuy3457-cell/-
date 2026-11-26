@@ -520,12 +520,18 @@ function englishClassroomPage(key, done, current) {
       const ids = reviewIds(module);
       const correct = ids.filter(id=>done.has(id)).length;
       const title = module.title.replace(/^Unit \d+ · /,'');
-      const practice = current?.topic===module.key
+      const inProgress = module.practiceIds
+        ? current && worksheetModule(state.session)?.key===module.key
+        : current?.topic===module.key;
+      const practice = inProgress
         ? '<a class="btn primary" href="#quiz">继续练习</a>'
-        : startButton('topic/'+module.key,'直接练习','secondary','',back);
+        : startButton('topic/'+module.key,module.practiceIds?'练整卷':'直接练习','secondary','',back);
+      const parts = module.practiceIds ? '<div class="actions worksheet-parts">'+module.sections.map(section=>
+        startButton('review-section/'+module.key+'/'+section.key,section.title.split(' · ')[0]+' · '+section.ids.length+' 题','secondary')
+      ).join('')+'</div>' : '';
       return '<article class="pack-card classroom-card"><h3>'+esc(title)+'</h3>'+
         '<p>'+esc(module.description)+'</p><p>已答对 '+correct+' / '+ids.length+' 题</p>'+
-        '<div class="actions"><a class="btn secondary" href="'+studyHref(module.key)+'">看要点与题组</a>'+practice+'</div></article>';
+        parts+'<div class="actions"><a class="btn secondary" href="'+studyHref(module.key)+'">看要点与题组</a>'+practice+'</div></article>';
     }).join('');
     return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
   }).join('');
@@ -570,11 +576,14 @@ function reviewPage(route,key) {
   const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
   const shortAnswer = shortAnswerSection(unit.shortAnswers ?? (unit.shortAnswer ? [unit.shortAnswer] : []));
   const size = reviewIds(unit).length;
-  const practice = current?.topic===unit.key
+  const inProgress = unit.practiceIds
+    ? current && worksheetModule(state.session)?.key===unit.key
+    : current?.topic===unit.key;
+  const practice = inProgress
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
     : startButton('topic/'+unit.key,'做本主题 '+size+' 题','primary','pencil',base+'/'+unit.key);
   const remaining = remainingReviewIds(unit,done).length;
-  const targetedPractice = current?.topic!==unit.key && remaining>0 && remaining<size
+  const targetedPractice = !inProgress && remaining>0 && remaining<size
     ? startButton('review-remaining/'+unit.key,'只练未答对的 '+remaining+' 题','secondary')
     : '';
   const sections = unit.sections ? '<div class="actions review-sections">'+unit.sections.map(section=>{
@@ -891,7 +900,7 @@ function dailyQuestions() {
   });
 }
 function start(key, backTarget) {
-  let ids, label, back;
+  let ids, label, back, worksheet;
   const [kind, id, term, count, difficulty] = key.split('/');
   if (state.session?.key===key && isActiveSession(state.session) && !endOfSession(state.session)) {
     location.hash = 'quiz';
@@ -968,6 +977,7 @@ function start(key, backTarget) {
     ids = missedSessionIds(session);
     label = session.key===key ? session.label : session.label+' · 本组错题';
     back = session.back;
+    worksheet = worksheetModule(session)?.key;
   } else if (kind === 'daily') {
     ids = dailyQuestions(); label = '每日练习'; back = '#home';
   } else if (kind === 'topic') {
@@ -992,7 +1002,7 @@ function start(key, backTarget) {
     label = '错题复练'; back = '#mistakes';
   }
   if (!ids.length || !ids.every(isActiveQuestion)) return;
-  state.session = {key, ids, label, back, index:0, answers:[], selected:''};
+  state.session = {key, ids, label, back, index:0, answers:[], selected:'', ...(worksheet ? {worksheet} : {})};
   save();
   if (location.hash === '#quiz') render(true);
   else location.hash = 'quiz';
@@ -1056,7 +1066,8 @@ function diagramFigure(diagram) {
   if (!diagram) return '';
   const source = diagram.source ? ' <a class="crumb" href="'+esc(diagram.source)+'" target="_blank" rel="noopener">'+esc(diagram.credit ?? '图片来源')+'</a>' : '';
   const caption = diagram.caption || source ? '<figcaption>'+esc(diagram.caption ?? '')+source+'</figcaption>' : '';
-  return '<figure class="question-figure"><img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'">'+caption+'</figure>';
+  const text = diagram.readable ? '<details class="diagram-text"><summary>查看图中数据</summary><p>'+esc(diagram.alt)+'</p></details>' : '';
+  return '<figure class="question-figure"><img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'">'+caption+'</figure>'+text;
 }
 const hasQuestionVisual = question => !!(question.diagram || question.numberLine || question.table);
 function readingMaterial(question, expanded = false, block = null) {
@@ -1201,6 +1212,23 @@ function answerExplanation(question) {
     (summary?'<p class="solution-overview">'+esc(summary)+'</p>':'')+
     parts+(question.answerFrames ? answerAnimation(question) : diagramFigure(question.answerDiagram))+'</section>';
 }
+function worksheetModule(session) {
+  const [kind, key, group] = (session?.key ?? '').split('/');
+  const module = englishClassroomByTopic.get(session?.worksheet ?? key) ?? (kind==='course' && group
+    ? englishClassroomModules.find(item=>item.practiceIds && group.startsWith(item.key+'-')) : null);
+  return module?.practiceIds ? module : null;
+}
+function worksheetItems(session) {
+  const module = worksheetModule(session);
+  return new Map(module ? module.sections.flatMap(section=>section.ids.map((id,index)=>
+    [id,section.title.split(' · ')[0]+' 第 '+(index+1)+' 题']
+  )) : []);
+}
+function worksheetPrompt(question) {
+  const stem = question.prompt.replace(/^\d+\.\s*/,'');
+  let blank = 0;
+  return question.steps?.length>1 ? stem.replace(/_{3,}/g,()=>['①','②'][blank++] ?? '____') : stem;
+}
 function quizPage() {
   const s = state.session;
   if (!isActiveSession(s)) return empty('选择一组练习','可以按学科与知识点开始练习。','pencil');
@@ -1208,6 +1236,7 @@ function quizPage() {
   const backLabel = reviewBack?.returnLabel ?? (s.back.startsWith('#mixed') ? '组卷设置' : s.back.startsWith('#learn/') ? '讲解'
     : s.back.startsWith('#course/') ? '本课练习' : s.back.startsWith('#advanced') ? '综合提升' : s.back.startsWith('#packs') ? '专项题组' : ({'#mistakes':'错题本','#home':'首页','#stats':'学习记录','#favorites':'题目收藏'}[s.back.split('/')[0]] ?? '学科'));
   const back = '<a class="crumb" href="'+s.back+'">返回'+backLabel+'</a>';
+  const paper = worksheetItems(s);
   if (endOfSession(s)) {
     const right = s.answers.filter(a=>a.ok).length;
     const wrong = missedSessionIds(s).length;
@@ -1224,12 +1253,17 @@ function quizPage() {
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
-      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question,hasQuestionVisual(question))+comparison+answerExplanation(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      const item = paper.get(question.id);
+      const title = item ? item+' · '+worksheetPrompt(question) : '第 '+(index+1)+' 题 · '+question.prompt;
+      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>'+esc(title)+'</summary>'+readingMaterial(question,hasQuestionVisual(question))+comparison+answerExplanation(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div>'+
       '<section class="result-review" id="answerReview" data-result-view="'+view+'"><div class="section-head result-review-head"><h2 class="group-title">本组答题回顾</h2>'+filter+'</div><ul id="answerReviewList">'+overview+'</ul></section></section>';
   }
   const q = questionById.get(s.ids[s.index]);
+  const item = paper.get(q.id);
+  const stage = item ?? q.stage;
+  const prompt = item ? worksheetPrompt(q) : q.prompt;
   const topic = topicByKey.get(q.topic);
   const level = questionLevel(q);
   const submitted = s.answers[s.index];
@@ -1244,7 +1278,7 @@ function quizPage() {
     : '<input class="answer-input" id="answerInput" aria-label="填写答案" placeholder="整数、小数或分数（如 1/2）" autocomplete="off" maxlength="32" value="'+esc(value)+'" '+(submitted?'disabled':'')+'>';
   const comparison = submitted && q.steps ? stepReview(q,submitted) : submitted && q.blanks ? dictationReview(q,submitted) : '<p><b>正确答案</b>　'+esc(q.correct)+'</p>';
   const feedback = submitted ? '<div class="feedback '+(submitted.ok?'good':'bad')+'" id="feedback" tabindex="-1"><strong>'+(submitted.ok?'答对了！':'答错了，已加入错题本')+'</strong>'+comparison+answerExplanation(q)+lessonLink(q.topic,'crumb feedback-lesson')+'</div>' : '';
-  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(q.stage?'<span class="chip">'+esc(q.stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(q.prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
+  return '<section class="quiz">'+back+'<div class="quiz-meta"><span>'+esc(s.label)+'</span><span>第 '+(s.index+1)+' / '+s.ids.length+' 题</span></div><div class="track" role="progressbar" aria-label="练习进度" aria-valuenow="'+(s.index+(submitted?1:0))+'" aria-valuemax="'+s.ids.length+'"><div style="width:'+100*(s.index+(submitted?1:0))/s.ids.length+'%"></div></div><form class="question" id="questionForm"><div class="quiz-chips"><span class="chip">'+topic.subject.name+' · '+topic.term+'册 · '+(q.steps?'分步填空':q.blanks?'默写填空':q.options?'单选题':'填空题')+'</span><span class="chip level-'+level+'">'+difficultyName(level)+'</span>'+(stage?'<span class="chip">'+esc(stage)+'</span>':'')+'</div>'+readingMaterial(q,expanded,block)+'<h1>'+esc(prompt)+'</h1>'+options+feedback+'<div class="actions quiz-actions">'+favoriteButton(q.id)+(submitted?'<button type="button" class="btn primary" id="nextQuestion">'+(s.index+1===s.ids.length?'查看结果':'下一题')+'</button>':'<button type="submit" class="btn primary" id="submitAnswer" '+(q.steps || q.blanks || value?'':'disabled')+'>提交答案</button>')+'</div></form></section>';
 }
 function render(moveFocus = false) {
   for (const audio of app.querySelectorAll?.('audio[data-listening-player]') ?? []) saveListeningPosition(audio,true);

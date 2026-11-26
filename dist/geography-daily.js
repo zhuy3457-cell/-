@@ -112,6 +112,7 @@ const geoDailyModules = [
         "explanation": "先确定图面上为北、右为东。纬线的度数向下（南）增大，P 的纬度是 20°S。经线的度数向左（西）增大，P 的经度是 30°W。按题目要求先写纬度，再写经度。",
         "diagram": {
           "src": "geography-degree-grid.webp",
+          "readable": true,
           "alt": "北向箭头朝上。三条竖线从左到右标 40°、30°、20°，三条横线从上到下标 10°、20°、30°。P 在中间的竖线和横线交点上。"
         }
       },

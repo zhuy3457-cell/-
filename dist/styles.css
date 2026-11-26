@@ -227,6 +227,10 @@ dialog::backdrop{background:#23193968}
 .question-figure{margin:0}
 .question-figure figcaption{margin-top:6px;color:var(--muted);font-size:.875rem;line-height:1.55;overflow-wrap:anywhere}
 .question-figure figcaption a{text-decoration:underline;text-underline-offset:3px}
+.diagram-text{margin-top:9px}
+.diagram-text>summary{min-height:34px;padding-block:6px}
+.diagram-text>p{margin:4px 0 0;line-height:1.6;overflow-wrap:anywhere}
+@media(max-width:570px){.reading-material:has(> .question-figure){padding-inline:7px}.step-fields .answer-input{font-size:1rem}}
 .number-line{box-sizing:border-box;max-width:520px;margin:9px 0 0;padding:30px 12px;height:76px;color:#283343}
 .number-line-axis{position:relative;display:block;border-top:2px solid currentColor}
 .number-line-axis::after{content:"";position:absolute;right:0;top:-5px;width:8px;height:8px;border-top:2px solid;border-right:2px solid;transform:rotate(45deg)}
@@ -275,6 +279,7 @@ dialog::backdrop{background:#23193968}
 .classroom-section h2{margin-bottom:9px}
 .classroom-card{display:flex;flex-direction:column;gap:7px}
 .classroom-card .actions{margin-top:auto;padding-top:5px}
+.classroom-card .worksheet-parts{margin-top:3px}
 .classroom-listening-help{color:var(--muted);margin-bottom:12px}
 .listening-player h2{font-size:1rem;color:#214d48}
 .listening-player input,.listening-player audio{display:block;max-width:100%;margin-top:8px}
