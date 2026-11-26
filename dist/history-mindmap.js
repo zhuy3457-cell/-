@@ -1146,6 +1146,43 @@ historyMindmapModules.push({
   ]
 });
 
+historyMindmapModules.find(module=>module.key==='history-source-reading').questions.push(
+  {
+    id:'history-source-reading-hezun',level:'standard',
+    prompt:'博物馆把何尊铭文中的“宅兹中国”标作一条史料。哪一项说明更符合这件史料能够证明的范围？',
+    material:'何尊是西周早期青铜器，其内底的铭文记录了“宅兹中国”，还涉及营建成周等史事。',
+    options:['西周已经形成与今天完全相同的国界','这是秦统一后刻在铜权上的文字','这是早期“中国”一词的实物记录，应按西周语境理解','铭文证明何尊属于商代占卜用具'],
+    correct:'这是早期“中国”一词的实物记录，应按西周语境理解',
+    explanation:'先确认史料年代与载体。何尊属于西周早期，其金文是研究周初史事的实物证据。“中国”在铭文里与成周等历史地理语境有关，不能据此推断现代国界。'
+  },
+  {
+    id:'history-source-reading-waterworks',level:'standard',
+    prompt:'根据表中的材料，哪项最能同时解释都江堰的防洪和灌溉功能？',
+    table:{caption:'都江堰的部分工程作用',headers:['观察内容','工程作用'],
+      rows:[['岷江来水在渠首分流','分别引入内江和外江'],['内江有渠道连接农田','向灌区供水'],['水量过大时有溢流通道','使多余水流排向外江']]},
+    options:['依靠统一文字直接防止洪水','只把水拦住，完全切断下游水流','工程仅供舟船通行','合理分流，把部分水引入灌区，并让多余水流排向外江'],
+    correct:'合理分流，把部分水引入灌区，并让多余水流排向外江',
+    explanation:'引入灌区的水用于农业生产，多余水流及时排走有助于减轻洪水压力。同一工程通过分流与调节兼顾不同需求。'
+  },
+  {
+    id:'history-source-reading-qin-officers',level:'standard',
+    prompt:'根据图中的分工，秦朝中央机构示意图上的甲、乙、丙依次应填什么？',
+    diagram:{src:'question-history-qin-officers.webp',alt:'皇帝下方是三个同级职位：甲分管行政，乙分管军事，丙分管监察。',caption:'按三个中央职位的分工填写。'},
+    options:['丞相、太尉、御史大夫','太尉、御史大夫、丞相','御史大夫、丞相、太尉','郡守、县令、太尉'],
+    correct:'丞相、太尉、御史大夫',
+    explanation:'抓住行政、军事、监察三个线索，分别对应丞相、太尉、御史大夫。郡守和县令属于地方官职。'
+  },
+  {
+    id:'history-source-reading-han-rent',level:'challenge',
+    prompt:'根据表中的田租比例，若收成相同，从汉高祖时期到文景时期，示例农户缴纳的田租如何变化？这体现了怎样的政策延续？',
+    table:{caption:'用于比较田租负担的假设数据',headers:['时期','田租比例','假设粮食收成'],
+      rows:[['汉高祖时期','十五税一','300 斛'],['文景时期','三十税一','300 斛']]},
+    options:['由 10 斛增至 20 斛；赋税加重','由 20 斛降至 10 斛；继续休养生息，减轻农户负担','两期都是 15 斛；田租比例未变','由 30 斛降至 15 斛；主要依靠扩大疆域'],
+    correct:'由 20 斛降至 10 斛；继续休养生息，减轻农户负担',
+    explanation:'十五税一对应 300÷15＝20 斛，三十税一对应 300÷30＝10 斛。这是同等收成下的示例，说明田租比例降低可减轻农户负担。'
+  }
+);
+
 const historyMindmapByTopic = new Map(historyMindmapModules.map(module=>[module.key,module]));
 for (const module of historyMindmapModules) {
   historySubject.topics.push({

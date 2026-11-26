@@ -1159,3 +1159,24 @@ test('referenced figures must be present before answers and packed as valid imag
   const grade = await good('grade_homework',{record:false,submissions:[{question_id:map.question_id,answer:'B'}]});
   assert.equal(grade.correct,1);
 });
+
+test('history follow-up questions ship their source materials before grading',async ()=>{
+  const quiz = await good('draw_questions',{subject:'history',scope_id:'course:history-source-reading',count:8});
+  assert.equal(quiz.questions.length,8);
+  const get = suffix=>quiz.questions.find(q=>q.question_id==='history-source-reading-'+suffix);
+  assert.match(get('hezun').material,/宅兹中国/);
+  assert.equal(get('waterworks').table.rows.length,3);
+  assert.match(get('han-rent').table.rows[0][2],/300/);
+  const diagram = get('qin-officers').diagram;
+  assert.match(diagram.url,/question-history-qin-officers\.webp$/);
+  assert.doesNotMatch(JSON.stringify(quiz),/answer-history-/);
+  const before = await request(new URL(diagram.url).pathname);
+  assert.equal(before.headers.get('content-type'),'image/webp');
+  assert.equal(before.status,200);
+  const grade = await good('grade_homework',{record:false,submissions:
+    ['hezun','waterworks','qin-officers','han-rent'].map((name,i)=>({question_id:get(name).question_id,answer:'CDAB'[i]}))
+  });
+  assert.equal(grade.correct,4);
+  assert.match(grade.results[2].answer_diagram.url,/answer-history-qin-officers\.webp$/);
+  assert.match(grade.results[3].answer_diagram.url,/answer-history-han-rent\.webp$/);
+});

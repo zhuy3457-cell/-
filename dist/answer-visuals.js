@@ -45,6 +45,12 @@
     'history-source-reading-farming': [
       {src:'answer-history-agriculture-policy.webp',alt:'战国秦国奖励耕织以增强实力，西汉初年轻徭薄赋、鼓励务农以恢复战后生产。',caption:'先找共同点，再比较时代背景与政策目的。'}
     ],
+    'history-source-reading-qin-officers': [
+      {src:'answer-history-qin-officers.webp',alt:'秦朝：皇帝下设丞相分管行政、太尉分管军事、御史大夫分管监察。',caption:'用职责判断官名，分清中央分工与地方行政。'}
+    ],
+    'history-source-reading-han-rent': [
+      {src:'answer-history-han-rent.webp',alt:'收成同为300斛，汉高祖时期按十五税一缴20斛，文景时期按三十税一缴10斛。',caption:'示例收成相同，继续轻徭薄赋降低了田租负担。'}
+    ],
     'equation-app-parameters-6': [
       {src:'answer-equation-denominator.webp',alt:'左侧把右边的负1漏乘2，得到x等于m，由误算结果得m等于3。右侧正确乘2得到2x减1等于x加m减2，代入m等于3求得x等于2。',caption:'先从错误算式求 m，再回到原方程正确去分母。'}
     ]
