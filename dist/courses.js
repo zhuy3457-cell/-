@@ -148,7 +148,12 @@ const courseCatalog = (() => {
     chinese: {上: [...chinese, ...poemCourses('上')], 下: poemCourses('下')},
     math: {上: math},
     english: {上: [...english,...englishWorksheets]},
-    civics: {上: civicsReviewModules.map(module=>({...topicCourse(module.key),shortAnswers:module.shortAnswers}))},
+    civics: {上: civicsReviewModules.map(module=>({
+      ...(module.sections
+        ? makeCourse(module.key,module.title,module.description,moduleGroups(module),[module.key])
+        : topicCourse(module.key)),
+      shortAnswers:module.shortAnswers
+    }))},
     history: {上: history},
     geography: {上: geoReviewModules.map(module => {
       if (!module.firstPageIds) return topicCourse(module.key);

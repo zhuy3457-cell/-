@@ -371,18 +371,25 @@ test('history final review covers twenty lessons and shares question IDs with in
   assert.equal(grade.recorded,false);
 });
 
-test('civics growth guide offers six graded questions and four optional self-check tasks',async ()=>{
+test('civics growth guide includes five practice groups and retains the original question IDs',async ()=>{
   const scope_id = 'course:civics-growth-answer-guide';
   const course = await good('explain_topic',{subject:'civics',scope_id});
-  assert.equal(course.question_count,6);
-  assert.equal(course.short_answer_tasks.length,4);
-  const quiz = await good('draw_questions',{subject:'civics',scope_id,count:6});
-  assert.equal(quiz.questions.length,6);
+  assert.equal(course.question_count,14);
+  assert.equal(course.short_answer_tasks.length,8);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[6,2,2,2,2]);
+  const growth = await good('draw_questions',{subject:'civics',scope_id,group_id:'civics-growth-answer-guide-growth',count:6});
+  assert.ok(growth.questions.some(question=>question.question_id==='civics-growth-guide-plan'));
+  const friends = await good('draw_questions',{subject:'civics',scope_id,group_id:'civics-growth-answer-guide-friends',count:2});
+  assert.deepEqual(friends.questions.map(question=>question.question_id).toSorted(),[
+    'civics-growth-guide-friends-boundaries','civics-growth-guide-friends-mutual'
+  ]);
   const grade = await good('grade_homework',{record:false,submissions:[
     {question_id:'civics-growth-guide-plan',answer:'B'},
-    {question_id:'civics-growth-guide-self',answer:'C'}
+    {question_id:'civics-growth-guide-self',answer:'C'},
+    {question_id:'civics-growth-guide-friends-boundaries',answer:'D'},
+    {question_id:'civics-growth-guide-learning-practice',answer:'D'}
   ]});
-  assert.equal(grade.correct,2,JSON.stringify(grade.results));
+  assert.equal(grade.correct,4,JSON.stringify(grade.results));
   assert.equal(grade.recorded,false);
 });
 
