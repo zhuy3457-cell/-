@@ -393,6 +393,25 @@ test('civics growth guide includes five practice groups and retains the original
   assert.equal(grade.recorded,false);
 });
 
+test('civics midterm recitation covers four themes and distinguishes linking from applying knowledge',async ()=>{
+  const scope_id = 'course:civics-midterm-recitation';
+  const course = await good('explain_topic',{subject:'civics',scope_id});
+  assert.equal(course.question_count,6);
+  assert.equal(course.short_answer_tasks.length,4);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[2,1,2,1]);
+  const quiz = await good('draw_questions',{subject:'civics',scope_id,group_id:'civics-midterm-recitation-learning',count:2});
+  assert.deepEqual(quiz.questions.map(question=>question.question_id).toSorted(),[
+    'civics-midterm-recitation-application','civics-midterm-recitation-link'
+  ]);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:'civics-midterm-recitation-link',answer:'C'},
+    {question_id:'civics-midterm-recitation-application',answer:'D'},
+    {question_id:'civics-midterm-recitation-family-formation',answer:'A'}
+  ]});
+  assert.equal(grade.correct,3,JSON.stringify(grade.results));
+  assert.equal(grade.recorded,false);
+});
+
 test('Unit 5 Grammar–Integration reuses bank IDs and grades contextual answers',async ()=>{
   const key = 'classroom-u5-grammar-integration';
   const scope_id = 'course:'+key;
