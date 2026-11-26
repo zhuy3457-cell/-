@@ -337,6 +337,44 @@ test('Unit 3–5 worksheets and Chinese classroom reviews are available on the u
   ]});
   assert.equal(graded.correct,5,JSON.stringify(graded.results));
 });
+test('Unit 5 Grammar–Integration reuses bank IDs and grades contextual answers',async ()=>{
+  const key = 'classroom-u5-grammar-integration';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'english',scope_id});
+  assert.equal(course.question_count,24);
+  const ids = new Set();
+  for (const [group,count] of [['grammar',7],['integration-1',12],['integration-2',5]]) {
+    const quiz = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-'+group,count});
+    assert.equal(quiz.questions.length,count);
+    for (const question of quiz.questions) ids.add(question.question_id);
+  }
+  assert.equal(ids.size,24);
+  assert.ok(ids.has('english-phrases-unit5-30'));
+  assert.ok(ids.has('english-phrases-unit5-52'));
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:key+'-grammar-7',answer:['Maybe','some more cakes for']},
+    {question_id:key+'-integration-1-4',answer:['miss','misses']},
+    {question_id:key+'-integration-1-12',answer:['an important meal','gives us energy for the whole morning']},
+    {question_id:'english-phrases-unit5-54',answer:'eat yoghurt between meals'}
+  ]});
+  assert.equal(grade.correct,4,JSON.stringify(grade.results));
+  assert.equal(grade.recorded,false);
+});
+
+test('coordinate grid is available before answering and explains the two directions afterward',async ()=>{
+  const id = 'geo-daily-grid-increasing-degrees';
+  const quiz = await good('draw_questions',{subject:'geography',scope_id:'topic:geo-daily-1',count:10});
+  const question = quiz.questions.find(item=>item.question_id===id);
+  assert.match(question.diagram.alt,/40°、30°、20°/);
+  assert.equal(question.explanation,undefined);
+  const response = await request(new URL(question.diagram.url).pathname);
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('content-type'),'image/webp');
+  const grade = await good('grade_homework',{record:false,submissions:[{question_id:id,answer:'D'}]});
+  assert.equal(grade.correct,1);
+  assert.match(grade.results[0].explanation,/向下（南）.*向左（西）/);
+});
+
 test('Unit 4 Integration worksheet includes both pages and preserves the original question numbers',async ()=>{
   const key = 'classroom-u4-parents-mary';
   const scope_id = 'course:'+key;

@@ -12,10 +12,11 @@ const englishClassroomModules = (() => {
   }
   function module(key,title,range,description,notes,groups,sources = []) {
     const questions = [];
-    const sections = groups.map(([keySuffix,stage,items,material,startNumber])=>{
+    const sections = groups.map(([keySuffix,stage,items,material,startNumber,idPrefix])=>{
       const ids = items.map((item,index)=>{
+        if (typeof item==='string') return item;
         const number = startNumber===undefined ? questions.length+1 : startNumber+index;
-        const id = key+'-'+number;
+        const id = key+'-'+(idPrefix ? idPrefix+'-' : '')+number;
         questions.push({...item,id,stage,prompt:number+'. '+item.prompt,...(material ? {material} : {})});
         return id;
       });
@@ -977,9 +978,47 @@ const englishClassroomModules = (() => {
     prompt:'Do you want to have the gardening class? Why?（不超过 8 个词。）',
     points:['示例：Yes, because I can have fun.','答 Yes 或 No 均可，写出与园艺课有关的理由，并控制在 8 个词以内。']
   }];
+  const grammarIntegration = module('classroom-u5-grammar-integration','Unit 5 · Grammar–Integration 默写卷','七上 Unit 5',
+    '按原卷三部分练 24 题，涵盖数量短语、单词词形、常用搭配和句子填空。',[
+    ['数量短语','用 数词 + 容器或计量单位 + of + 名词 表示数量。数量大于一时，计量单位通常用复数，如 kilos、bottles。'],
+    ['词形与句子','miss 的第三人称单数是 misses，have 变 has，give 变 gives。句首 Maybe 表示“也许”，because 引出原因。']
+  ],[
+    ['grammar','Grammar · 数量短语与句子（第 1–7 题）',[
+      'english-phrases-unit5-30',
+      'english-phrases-unit5-31',
+      'english-phrases-unit5-32',
+      'english-phrases-unit5-34',
+      'english-phrases-unit5-36',
+      fill('对于爱吃甜食的人，我们可以买些糖果。\nFor people ____, we can get some sweets.','with a sweet tooth','先找被修饰的 people。用 with a sweet tooth 修饰它，表示“爱吃甜食的”。'),
+      fill('也许我们应该为我们的班级聚会买更多的蛋糕。\n____ we should get ____ our class party.',['Maybe',['more cakes for','some more cakes for']],'“也许”作句首副词用 Maybe。“更多的蛋糕”用 more cakes，“为聚会”用 for our class party。')
+    ],undefined,1,'grammar'],
+    ['integration-1','Integration 1 · 词汇和早餐（第 1–12 题）',[
+      fill('分数，成绩；比分（名词）','score','score 表示比赛的比分，也可表示测试的成绩。'),
+      fill('得分；要点（名词）','point','point 可以表示单个得分，也可以表示一个要点，如 the main point。'),
+      fill('粥（名词）','porridge','porridge 通常用作不可数名词。一碗粥可以说 a bowl of porridge。'),
+      fill('错过（动词）。依次写原形和第三人称单数。',['miss','misses'],'“错过”用 miss。以 -ss 结尾，第三人称单数加 -es。'),
+      fill('炸薯条（名词）',[['chips','fries','French fries']],'英式英语常说 chips，美式英语常说 fries 或 French fries。'),
+      fill('花时间在智能手机上',[['spend time on the smartphone','spend time on a smartphone','spend time on smartphones','spend time on your smartphone','spend time on your phone']],'spend time on + 名词 表示花时间在某事物上。'),
+      'english-phrases-unit5-39',
+      fill('依次写出“多于”和“少于”。',[['more than','over'],'less than'],'more than 表示超过，less than 表示少于。over 也可表示超过某个数量。'),
+      fill('做出一些改变','make some changes','make 表示做出，some 后的可数名词 change 用复数 changes。'),
+      fill('以一个健康的方式','in a healthy way','用 in a … way 表示“以……的方式”，healthy 修饰 way。'),
+      fill('他早餐大吃一顿。\nHe ____ for breakfast.',[['has a big meal','eats a big meal','has a large meal','eats a large meal']],'用 have a big meal 表示“大吃一顿”。主语是 He，have 改成 has。'),
+      fill('早餐是重要的一餐，因为它给我们一上午的能量。\nBreakfast is ____ because it ____.',['an important meal',['gives us energy for the whole morning','gives us energy for the entire morning','gives us energy for the morning']],'important 以元音音素开头，前面用 an。because 引出原因，it 后用 gives。')
+    ],undefined,1,'integration-1'],
+    ['integration-2','Integration 2 · 词汇与健康生活（第 1–5 题）',[
+      fill('馅饼（名词）','pie','pie 作可数名词。一个馅饼可以说 a pie。'),
+      fill('以不同的方式','in different ways','in … ways 表示“以……的方式”，不同的方式用复数 ways。'),
+      'english-phrases-unit5-54',
+      fill('大多数晚上','most evenings','most 直接修饰复数 evenings，表示通常一周或一段时间里的大多数晚上。'),
+      'english-phrases-unit5-52'
+    ],undefined,1,'integration-2']
+  ]);
+  grammarIntegration.practiceIds = grammarIntegration.sections.flatMap(section=>section.ids);
   return [
     introduction,grammar,integration,willows,prince,schoolWriting,dailyLife,schoolActivities,lifestyle,breakfast,paraphrase,unitFourMidterm,
-    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview,unitOneReview,schoolGardening
+    unitOneMorning,unitThreeWelcome,unitThreeMidterm,schoolLife,parentsAndSchoolDay,schoolAndDreams,unitFourReview,unitOneReview,schoolGardening,
+    grammarIntegration
   ];
 })();
 

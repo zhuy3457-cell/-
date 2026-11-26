@@ -95,7 +95,8 @@ const correctQuestionIds = () => {
   for (const attempt of state.attempts) latest.set(attempt.id,attempt.ok);
   return new Set([...latest].filter(([,ok])=>ok).map(([id])=>id));
 };
-const remainingReviewIds = (unit, correctIds) => unit.questions.map(question=>question.id).filter(id=>!correctIds.has(id));
+const reviewIds = unit => unit.practiceIds ?? unit.questions.map(question=>question.id);
+const remainingReviewIds = (unit, correctIds) => reviewIds(unit).filter(id=>!correctIds.has(id));
 const missedSessionIds = session => [...new Set(session.answers.filter(answer=>!answer.ok && questionById.has(answer.id)).map(answer=>answer.id))];
 const endOfSession = s => s.index >= s.ids.length;
 const isActiveSession = s => !!s && s.ids.length>0 && s.ids.every(isActiveQuestion);
@@ -516,13 +517,14 @@ function englishClassroomPage(key, done, current) {
       englishClassroomModules.filter(module=>classroomUnitOf(module)===unit);
     const modules = unit===4 ? [...selected,unitFourPhraseHandout] : selected;
     const cards = modules.map(module=>{
-      const correct = module.questions.filter(question=>done.has(question.id)).length;
+      const ids = reviewIds(module);
+      const correct = ids.filter(id=>done.has(id)).length;
       const title = module.title.replace(/^Unit \d+ · /,'');
       const practice = current?.topic===module.key
         ? '<a class="btn primary" href="#quiz">继续练习</a>'
         : startButton('topic/'+module.key,'直接练习','secondary','',back);
       return '<article class="pack-card classroom-card"><h3>'+esc(title)+'</h3>'+
-        '<p>'+esc(module.description)+'</p><p>已答对 '+correct+' / '+module.questions.length+' 题</p>'+
+        '<p>'+esc(module.description)+'</p><p>已答对 '+correct+' / '+ids.length+' 题</p>'+
         '<div class="actions"><a class="btn secondary" href="'+studyHref(module.key)+'">看要点与题组</a>'+practice+'</div></article>';
     }).join('');
     return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
@@ -567,11 +569,12 @@ function reviewPage(route,key) {
   const refs = referenceItems(unit.sources);
   const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
   const shortAnswer = shortAnswerSection(unit.shortAnswers ?? (unit.shortAnswer ? [unit.shortAnswer] : []));
+  const size = reviewIds(unit).length;
   const practice = current?.topic===unit.key
     ? '<a class="btn primary" href="#quiz">继续当前练习</a>'
-    : startButton('topic/'+unit.key,'做本主题 '+unit.questions.length+' 题','primary','pencil',base+'/'+unit.key);
+    : startButton('topic/'+unit.key,'做本主题 '+size+' 题','primary','pencil',base+'/'+unit.key);
   const remaining = remainingReviewIds(unit,done).length;
-  const targetedPractice = current?.topic!==unit.key && remaining>0 && remaining<unit.questions.length
+  const targetedPractice = current?.topic!==unit.key && remaining>0 && remaining<size
     ? startButton('review-remaining/'+unit.key,'只练未答对的 '+remaining+' 题','secondary')
     : '';
   const sections = unit.sections ? '<div class="actions review-sections">'+unit.sections.map(section=>{
@@ -971,7 +974,9 @@ function start(key, backTarget) {
     const topic = topicByKey.get(id);
     if (!activeSubjectById.has(topic?.subject.id)) return;
     const level = cleanLevel(term);
-    ids = questionsAt(topic,level).map(q=>q.id); label = topic.subject.name+' · '+topic.title+(level==='all'?'':' · '+difficultyName(level)); back = backTarget || '#subject/'+topic.subject.id;
+    const unit = reviewCollections.get(reviewRouteByTopic.get(id))?.byTopic.get(id);
+    ids = level==='all' && unit?.practiceIds ? unit.practiceIds : questionsAt(topic,level).map(q=>q.id);
+    label = topic.subject.name+' · '+topic.title+(level==='all'?'':' · '+difficultyName(level)); back = backTarget || '#subject/'+topic.subject.id;
   } else if (kind === 'favorites' || kind === 'favorite-one') {
     ids = kind === 'favorite-one' ? [id] : favoriteIds();
     label = '收藏题复练'; back = '#favorites';

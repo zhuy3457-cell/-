@@ -296,7 +296,7 @@ const {englishPhraseModules,unitFourPhraseHandout} = (() => {
 给我们一上午的能量|give us energy for the whole morning|give us energy for the entire morning
 对我来说，健康的生活方式都关乎健康的饮食、足够的运动和休息。|For me, a healthy lifestyle is all about a healthy diet, enough exercise and rest.
 早餐吃一个馅饼、一个鸡蛋和一些草莓|have a pie, an egg and some strawberries for breakfast
-两餐之间吃酸奶|have a yogurt between meals
+两餐之间吃酸奶|have a yogurt between meals|have yogurt between meals|have yoghurt between meals|have a yoghurt between meals|eat yogurt between meals|eat yoghurt between meals
 用不同的方式煮面|cook noodles in different ways
 晚上的好睡眠让我第二天精力充沛。|A good night’s sleep gives me lots of energy for the next day.|A good night’s sleep gives me a lot of energy for the next day.
 `],
