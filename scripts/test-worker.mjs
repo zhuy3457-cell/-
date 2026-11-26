@@ -337,31 +337,34 @@ test('Unit 3–5 worksheets and Chinese classroom reviews are available on the u
   ]});
   assert.equal(graded.correct,5,JSON.stringify(graded.results));
 });
-test('history final review has ten lesson groups and shares its questions with individual lessons',async ()=>{
+test('history final review covers twenty lessons and shares question IDs with individual lessons',async ()=>{
   const key = 'history-final-questions';
   const scope_id = 'course:'+key;
   const course = await good('explain_topic',{subject:'history',scope_id});
-  assert.equal(course.question_count,23);
+  assert.equal(course.question_count,44);
   const ids = new Set();
-  for (let lesson=11;lesson<=20;lesson++) {
-    const count = lesson===20 ? 4 : lesson===18 ? 3 : 2;
+  for (let lesson=1;lesson<=20;lesson++) {
+    const count = lesson===20 ? 4 : lesson===11 || lesson===18 ? 3 : 2;
     const group_id = key+'-lesson-'+lesson;
     const args = {subject:'history',group_id,count};
     const review = await good('draw_questions',{...args,scope_id});
-    const lessonKey = lesson===15 || lesson===16 ? 'history-map-' : 'history-course-';
+    const lessonKey = lesson<=8 || lesson===15 || lesson===16 ? 'history-map-' : 'history-course-';
     const lessonQuestions = await good('draw_questions',{...args,scope_id:'course:'+lessonKey+lesson});
     const group = review.questions.map(question=>question.question_id);
     assert.equal(group.length,count);
     assert.deepEqual(group.toSorted(),lessonQuestions.questions.map(question=>question.question_id).toSorted());
     for (const id of group) ids.add(id);
   }
-  assert.equal(ids.size,23);
+  assert.equal(ids.size,44);
   const grade = await good('grade_homework',{record:false,submissions:[
     {question_id:key+'-5',answer:['太平道','东汉']},
     {question_id:key+'-13',answer:['蜀','魏','吴']},
-    {question_id:key+'-22',answer:['锺繇','胡昭']}
+    {question_id:key+'-22',answer:['锺繇','胡昭']},
+    {question_id:key+'-lesson-8-1',answer:['何尊','利簋']},
+    {question_id:key+'-lesson-10-1',answer:['秦朝暴政','大雨误期']},
+    {question_id:key+'-lesson-11-time',answer:[206,202]}
   ]});
-  assert.equal(grade.correct,3,JSON.stringify(grade.results));
+  assert.equal(grade.correct,6,JSON.stringify(grade.results));
   assert.match(grade.results[0].explanation,/220/);
   assert.equal(grade.recorded,false);
 });
