@@ -132,11 +132,17 @@ const courseCatalog = (() => {
     url: 'https://www.pep.com.cn/bks/zxxjcjx/jcb/202504/t20250417_1999630.shtml',
     note: '参考修订教材的单元主题和活动安排。'
   }];
+  const historyFinal = sevenUpperReview.find(module=>module.key==='history-final-questions');
   const history = [...historyMindmapModules.map(module => module.key), ...historyCourseChecks]
     .sort((a, b) => Number(a.split('-').at(-1)) - Number(b.split('-').at(-1)))
     .map(key => {
+      const lesson = Number(key.split('-').at(-1));
+      const extra = historyFinal.sections.find(section=>section.key==='lesson-'+lesson);
       const course = topicCourse(key);
-      return {...course, sources: historySources};
+      if (!extra) return {...course, sources: historySources};
+      return makeCourse(key,course.title,course.description,
+        [...course.groups,{key:historyFinal.key+'-'+extra.key,title:'期末问答补练',ids:extra.ids}],
+        course.studyKeys,historySources);
     });
   const namedCourses = {
     chinese: {上: [...chinese, ...poemCourses('上')], 下: poemCourses('下')},
