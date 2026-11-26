@@ -1053,6 +1053,7 @@ function diagramFigure(diagram) {
   const caption = diagram.caption || source ? '<figcaption>'+esc(diagram.caption ?? '')+source+'</figcaption>' : '';
   return '<figure class="question-figure"><img class="material-diagram" src="'+esc(diagram.src)+'" alt="'+esc(diagram.alt)+'">'+caption+'</figure>';
 }
+const hasQuestionVisual = question => !!(question.diagram || question.numberLine || question.table);
 function readingMaterial(question, expanded = false, block = null) {
   const diagram = question.diagram;
   const line = question.numberLine;
@@ -1218,7 +1219,7 @@ function quizPage() {
     const overview = s.answers.map((answer, index)=>{
       const question = questionById.get(answer.id);
       const comparison = question.steps ? stepReview(question,answer) : question.blanks ? dictationReview(question,answer) : '<p>你的答案：'+esc(answer.raw)+'</p><p>正确答案：'+esc(question.correct)+'</p>';
-      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question)+comparison+answerExplanation(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
+      return '<li data-correct="'+answer.ok+'"><details '+(answer.ok?'':'open')+'><summary><span class="result-status '+(answer.ok?'is-correct':'is-wrong')+'">'+(answer.ok?'答对':'答错')+'</span>第 '+(index+1)+' 题 · '+esc(question.prompt)+'</summary>'+readingMaterial(question,hasQuestionVisual(question))+comparison+answerExplanation(question)+'<div class="result-actions">'+favoriteButton(question.id)+lessonLink(question.topic)+'</div></details></li>';
     }).join('');
     return '<section class="quiz">'+pageHead('练习完成',esc(s.label),back)+'<div class="metrics">'+metric('已作答',s.ids.length+' 题','violet','pencil')+metric('答对',right+' 题','green','check')+metric('正确率',percent(right,s.ids.length),'orange','target')+'</div><div class="actions">'+retry+nextAction+'</div>'+
       '<section class="result-review" id="answerReview" data-result-view="'+view+'"><div class="section-head result-review-head"><h2 class="group-title">本组答题回顾</h2>'+filter+'</div><ul id="answerReviewList">'+overview+'</ul></section></section>';
@@ -1228,7 +1229,7 @@ function quizPage() {
   const level = questionLevel(q);
   const submitted = s.answers[s.index];
   const block = readingBlock(s,q);
-  const expanded = block ? s.readingView?.key!==block.key || s.readingView.open : !submitted || !!q.diagram?.caption;
+  const expanded = block ? s.readingView?.key!==block.key || s.readingView.open : !submitted || hasQuestionVisual(q);
   const value = submitted?.raw ?? s.selected;
   const options = q.steps ? stepInputs(q,s.selected,submitted) : q.blanks ? dictationInputs(q,s.selected,submitted) : q.options
     ? '<div class="options">'+q.options.map((option,i)=>{

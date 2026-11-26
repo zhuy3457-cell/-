@@ -136,3 +136,15 @@ if (process.argv[2]) {
   for (const frame of animated.answerFrames) assert.match(frame.src,/^data:image\/webp;base64,/);
 }
 console.log('答后图片和三步动画已验证。');
+
+const repair = browser();
+repair.run("const targetMap=questionById.get('geo-daily-arrow-orientation');"+
+  "state.attempts=[{id:targetMap.id,ref:'saved-map-attempt',ok:false,date:'2026-11-25',time:1}];"+
+  "state.session={key:'test',ids:[targetMap.id],label:'测试',back:'#home',index:0,answers:[],selected:''};");
+const renderedMap = /<details class="reading-material" open[^>]*>.*<img [^>]*alt="指北箭头朝图面右方/s;
+assert.match(repair.run('quizPage()'),renderedMap);
+assert.match(repair.run('recordPage("saved-map-attempt","all",1)'),renderedMap);
+assert.match(repair.run("readingMaterial(questionById.get('math-midterm-4-6'),true)"),/role="img".*数轴|<figure class="number-line"/);
+assert.match(repair.run("readingMaterial(questionById.get('hard-bio-seed-rate-controls'),true)"),/<table><caption>萝卜种子的四组观察记录/);
+if (process.argv[2]) assert.match(repair.run('quizPage()'),/src="data:image\/webp;base64,/);
+console.log('校园地图在作答前和旧记录中均展开，结构化数轴和观察表正常。');

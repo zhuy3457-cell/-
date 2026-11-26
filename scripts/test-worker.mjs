@@ -5,6 +5,7 @@ import {join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {after,test} from 'node:test';
+import {checkVisualMaterials} from './check-visual-materials.mjs';
 
 const root = fileURLToPath(new URL('..',import.meta.url));
 const output = process.env.SUXUE_BUILD_DIR;
@@ -1140,4 +1141,21 @@ test('history source-reading draws and grades the new illustrated comparison que
     assert.equal(response.status,200);
     assert.equal(response.headers.get('content-type'),'image/webp');
   }
+});
+
+test('referenced figures must be present before answers and packed as valid images',async ()=>{
+  assert.throws(()=>checkVisualMaterials([{id:'missing-map',prompt:'请看下图，哪条路向北？',
+    answerDiagram:{src:'solution.webp',alt:'解答图'}}],{}),/missing-map 引用图，但题面没有图片/);
+  assert.throws(()=>checkVisualMaterials([{id:'bad-map',prompt:'看图中方向',
+    diagram:{src:'bad.webp',alt:'指北箭头'}}],{'/bad.webp':{type:'image/webp',body:'AAAA'}}),/bad-map 题面图片文件不存在、未打包或不是完整 WebP/);
+  assert.throws(()=>checkVisualMaterials([{id:'missing-table',prompt:'根据下表，求两地的温差'}],{}),/missing-table 引用表格/);
+  const quiz = await good('draw_questions',{subject:'geography',scope_id:'topic:geo-daily-1',count:15});
+  const map = quiz.questions.find(q=>q.question_id==='geo-daily-arrow-orientation');
+  assert.match(map.diagram.alt,/指北箭头朝图面右方.*右上方/);
+  assert.match(map.diagram.url,/question-campus-observation\.webp$/);
+  const photo = await request(new URL(map.diagram.url).pathname);
+  assert.equal(photo.status,200);
+  assert.equal(photo.headers.get('content-type'),'image/webp');
+  const grade = await good('grade_homework',{record:false,submissions:[{question_id:map.question_id,answer:'B'}]});
+  assert.equal(grade.correct,1);
 });

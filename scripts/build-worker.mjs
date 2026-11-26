@@ -4,6 +4,7 @@ import {mkdir, readdir, readFile, writeFile, copyFile} from 'node:fs/promises';
 import {basename, extname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
+import {checkVisualMaterials} from './check-visual-materials.mjs';
 
 const siteRoot = fileURLToPath(new URL('..', import.meta.url));
 const output = process.argv[2] && resolve(process.argv[2]);
@@ -59,6 +60,7 @@ for (const file of (await readdir(webRoot,{withFileTypes:true})).filter(entry=>e
   assets['/'+file.name] = {type,body:bytes.toString('base64'),
     etag:'"'+createHash('sha256').update(bytes).digest('hex')+'"'};
 }
+checkVisualMaterials(study.questions,assets);
 const workerParts = await Promise.all([
   readFile(join(webRoot,'answer-rules.js'),'utf8'),
   ...['catalog.js','study-store.js','index.js'].map(file=>readFile(join(siteRoot,'worker',file),'utf8'))
