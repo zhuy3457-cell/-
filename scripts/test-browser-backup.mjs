@@ -185,3 +185,16 @@ recitation.handlers.get('input')({target:draftField});
 assert.equal(recitation.saved.has(draftKey),false);
 assert.doesNotMatch(renderDrafts(),/先完成报告/);
 console.log('道法简答案例可独立保存、重读和清空草稿，参考要点和学习备份正常。');
+
+const morning = browser();
+const morningKey = 'classroom-u5-health-morning';
+assert.match(morning.run("englishClassroomPage('unit-5',new Set(),null)"),/明早默写 · 8 题/);
+morning.run("start('course/"+morningKey+"/"+morningKey+"-morning-dictation')");
+assert.equal(morning.run('state.session.ids.length'),8);
+assert.match(morning.run('quizPage()'),/明早默写 第 1 题.*<h1>他不爱吃甜食/s);
+morning.run('state.session.index=7');
+assert.match(morning.run('quizPage()'),/明早默写 第 8 题.*\[six\]/s);
+assert.doesNotMatch(morning.run('quizPage()'),/完整参考句/);
+morning.run("state.session.answers[7]={ok:true,fields:['How many bottles'],raw:'How many bottles'}");
+assert.match(morning.run('quizPage()'),/完整参考句.*How many bottles of juice does Amy buy\?/s);
+console.log('Unit 5 明早默写按原题顺序呈现，完整参考句在答后显示。');

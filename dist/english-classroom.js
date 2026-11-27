@@ -454,7 +454,7 @@ const englishClassroomModules = (() => {
       fill('Tom needs two packets of sweets. 问需要多少颗糖果。\n____ does Tom need?','How many sweets','sweets 是可数名词复数。'),
       fill('How long do you sleep every day?\nI sleep ____ every day.（近八小时）',[['for almost eight hours','for almost 8 hours','almost eight hours','almost 8 hours']],'almost 表示接近，for 后可接一段时间。'),
       fill('用完整的下半句回答。你每天花多长时间睡觉？\nI spend ____ every day.（八个多小时）',[['more than eight hours sleeping','over eight hours sleeping','more than 8 hours sleeping','over 8 hours sleeping']],'用 spend + 时间 + doing 表示花时间做某事。'),
-      fill('Amy buys six bottles of juice. 对瓶数提问。\n____ of juice does Amy buy?','How many bottles','问瓶子的数量使用 How many bottles。')
+      fill('Amy buys [six] bottles of juice. 只对方括号中的 six 提问。\n____ of juice does Amy buy?','How many bottles','six 修饰复数 bottles。问瓶数用 How many bottles，助动词用 does，buys 还原为 buy。')
     ]],
     ['sentences','早读翻译填空',[
       fill('他不爱吃甜食。\nHe ____.',[["doesn’t have a sweet tooth",'does not have a sweet tooth',"doesn’t like sweets",'does not like sweets']],'have a sweet tooth 表示爱吃甜食。'),
@@ -462,10 +462,29 @@ const englishClassroomModules = (() => {
       fill('充足的睡眠对我们的健康很重要。\nGetting ____ is important ____.',['enough sleep','for our health'],'Getting enough sleep 作主语。'),
       fill('太多食糖对牙齿有害。\n____ is ____ our teeth.',['Too much sugar','bad for'],'sugar 不可数，使用 much。'),
       fill('他需要多锻炼、少吃盐。\nHe needs to ____ and ____.',[['exercise more','do more exercise'],'eat less salt'],'salt 不可数，用 less 修饰。'),
-      fill('我从来不不吃早饭就上学。\nI never go to school ____.',[['without breakfast','without having breakfast']],'never 和 without 分别表示“从不”和“没有”。'),
+      fill('我从来不会不吃早饭就上学。\nI never go to school ____.',[['without breakfast','without having breakfast']],'never 表示“从不”，without 表示“没有”，合起来说明上学前总会吃早饭。'),
       fill('我早餐吃两片面包。\nI have ____ for breakfast.',[['two pieces of bread','two slices of bread','2 pieces of bread','2 slices of bread']],'bread 不可数，借助 pieces 或 slices 计量。')
     ]]
   ]);
+
+  const morningDictation = [
+    [21,'He doesn’t have a sweet tooth.'],
+    [22,'He stays up and has an unhealthy diet.'],
+    [23,'Getting enough sleep is important for our health.'],
+    [24,'Too much sugar is bad for our teeth.'],
+    [25,'He needs to do more exercise and eat less salt.'],
+    [26,'I never go to school without breakfast.'],
+    [27,'I have two slices of bread for breakfast.'],
+    [20,'How many bottles of juice does Amy buy?']
+  ];
+  breakfast.sections.push({
+    key:'morning-dictation',title:'明早默写 · 第 1–8 题',numbered:true,
+    ids:morningDictation.map(([number,sentence])=>{
+      const question = breakfast.questions[number-1];
+      question.solution = [{title:'完整参考句',lines:[sentence]}];
+      return question.id;
+    })
+  });
 
   const paraphrase = module('classroom-upper-paraphrase','期中同义句转换 · 11 组与任务型问答','七上 · 英语期中复习',
     '按原卷练同义替换、动词形态和时间表达，再答频率问题。',[

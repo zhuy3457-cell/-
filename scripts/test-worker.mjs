@@ -436,6 +436,26 @@ test('civics midterm recitation covers four themes and distinguishes linking fro
   assert.equal(grade.recorded,false);
 });
 
+test('Unit 5 morning dictation links all eight original questions and shows a full sentence after grading',async ()=>{
+  const key = 'classroom-u5-health-morning';
+  const scope_id = 'course:'+key;
+  const guide = await good('explain_topic',{subject:'english',scope_id});
+  assert.equal(guide.question_count,27);
+  const quiz = await good('draw_questions',{subject:'english',scope_id,group_id:key+'-morning-dictation',count:8});
+  assert.deepEqual(quiz.questions.map(question=>question.question_id).toSorted(),
+    Array.from({length:8},(_,index)=>key+'-'+(20+index)));
+  const quantity = quiz.questions.find(question=>question.question_id===key+'-20');
+  assert.match(quantity.prompt,/buys \[six\] bottles/);
+  assert.equal(quantity.solution,undefined);
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:key+'-20',answer:'How many bottles'},
+    {question_id:key+'-26',answer:'without having breakfast'},
+    {question_id:key+'-27',answer:'two slices of bread'}
+  ]});
+  assert.equal(grade.correct,3);
+  assert.deepEqual(grade.results[0].solution[0].lines,['How many bottles of juice does Amy buy?']);
+});
+
 test('Unit 5 Grammar–Integration reuses bank IDs and grades contextual answers',async ()=>{
   const key = 'classroom-u5-grammar-integration';
   const scope_id = 'course:'+key;

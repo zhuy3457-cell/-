@@ -527,7 +527,8 @@ function englishClassroomPage(key, done, current) {
       const practice = inProgress
         ? '<a class="btn primary" href="#quiz">继续练习</a>'
         : startButton('topic/'+module.key,module.practiceIds?'练整卷':'直接练习','secondary','',back);
-      const parts = module.practiceIds ? '<div class="actions worksheet-parts">'+module.sections.map(section=>
+      const quickSections = module.sections.filter(section=>module.practiceIds || section.numbered);
+      const parts = quickSections.length ? '<div class="actions worksheet-parts">'+quickSections.map(section=>
         startButton('review-section/'+module.key+'/'+section.key,section.title.split(' · ')[0]+' · '+section.ids.length+' 题','secondary')
       ).join('')+'</div>' : '';
       return '<article class="pack-card classroom-card"><h3>'+esc(title)+'</h3>'+
@@ -1241,15 +1242,18 @@ function answerExplanation(question) {
 }
 function worksheetModule(session) {
   const [kind, key, group] = (session?.key ?? '').split('/');
+  const numberedSection = item => item.sections.some(section=>section.numbered &&
+    (session?.worksheet===item.key || group===section.key || group===item.key+'-'+section.key));
   const module = englishClassroomByTopic.get(session?.worksheet ?? key) ?? (kind==='course' && group
-    ? englishClassroomModules.find(item=>item.practiceIds && group.startsWith(item.key+'-')) : null);
-  return module?.practiceIds ? module : null;
+    ? englishClassroomModules.find(item=>group.startsWith(item.key+'-') && (item.practiceIds || numberedSection(item))) : null);
+  return module && (module.practiceIds || numberedSection(module)) ? module : null;
 }
 function worksheetItems(session) {
   const module = worksheetModule(session);
-  return new Map(module ? module.sections.flatMap(section=>section.ids.map((id,index)=>
+  const sections = module?.sections.filter(section=>module.practiceIds || section.numbered) ?? [];
+  return new Map(sections.flatMap(section=>section.ids.map((id,index)=>
     [id,section.title.split(' · ')[0]+' 第 '+(index+1)+' 题']
-  )) : []);
+  )));
 }
 function worksheetPrompt(question) {
   const stem = question.prompt.replace(/^\d+\.\s*/,'');
