@@ -15,15 +15,17 @@ if (process.argv[2]) assert.doesNotMatch(html,/<script\s[^>]*src=|<link rel="sty
 
 function browser(fetch) {
   const saved = new Map();
+  const handlers = new Map();
   const node = {innerHTML:'',addEventListener(){}};
+  const app = {innerHTML:'',addEventListener:(type,handler)=>handlers.set(type,handler)};
   const context = vm.createContext({
-    document:{querySelectorAll:()=>[],querySelector:()=>node},
+    document:{querySelectorAll:()=>[],querySelector:selector=>selector==='#app'?app:node,getElementById:()=>null},
     window:{addEventListener(){}},location:{hash:'#home',protocol:fetch?'https:':'file:'},
     crypto:webcrypto,fetch,
-    localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)}
+    localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value),removeItem:key=>saved.delete(key)}
   });
   for (const source of sources) vm.runInContext(source,context);
-  return {context, run:code=>vm.runInContext(code,context), saved};
+  return {context, run:code=>vm.runInContext(code,context), saved, handlers};
 }
 
 const source = browser();
@@ -166,3 +168,20 @@ worksheet.run("start('search-question/geo-daily-grid-increasing-degrees')");
 assert.match(worksheet.run('quizPage()'),/<img [^>]+alt="北向箭头朝上.*查看图中数据.*40°、30°、20°/s);
 assert.doesNotMatch(worksheet.run('quizPage()'),/解题思路/);
 console.log('Unit 5 原卷分组、题号与填空顺序，以及经纬网图的文字读图数据已验证。');
+
+const recitation = browser();
+const courseKey = 'civics-midterm-recitation';
+const draftKey = 'suxue-short-answer-'+courseKey+'-priorities';
+const renderDrafts = () => recitation.run("shortAnswerSection(courseByKey.get('"+courseKey+"').shortAnswers,'"+courseKey+"')");
+assert.equal([...renderDrafts().matchAll(/data-short-answer-draft=/g)].length,4);
+assert.match(recitation.run("courseDetail(courseByKey.get('"+courseKey+"'),activeSubjectById.get('civics'))"),/data-short-answer-jump/);
+const draftField = {id:draftKey,dataset:{shortAnswerDraft:draftKey},value:'先完成报告\n</textarea>再练演讲'};
+recitation.handlers.get('input')({target:draftField});
+assert.equal(recitation.saved.get(draftKey),draftField.value);
+assert.match(renderDrafts(),/先完成报告\n&lt;\/textarea&gt;再练演讲/);
+assert.doesNotMatch(recitation.run('JSON.stringify(backupPayload())'),/先完成报告/);
+draftField.value = '';
+recitation.handlers.get('input')({target:draftField});
+assert.equal(recitation.saved.has(draftKey),false);
+assert.doesNotMatch(renderDrafts(),/先完成报告/);
+console.log('道法简答案例可独立保存、重读和清空草稿，参考要点和学习备份正常。');

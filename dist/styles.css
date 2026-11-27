@@ -311,6 +311,11 @@ dialog::backdrop{background:#23193968}
 .short-answer details{margin-top:12px}
 .short-answer ol{margin:10px 0 0;padding-left:1.4em;line-height:1.65}
 .short-answer li+li{margin-top:6px}
+.short-answer-draft{display:grid;gap:6px;margin-top:12px}
+.short-answer-draft label{font-weight:700}
+.short-answer-draft textarea{font:inherit;font-size:1rem;line-height:1.55;min-height:6rem;resize:vertical}
+.short-answer-draft textarea:focus-visible{outline:3px solid #977dff;outline-offset:2px}
+.short-answer-draft small{color:var(--muted)}
 .material-table-scroll{overflow-x:auto}
 .material-table-scroll table{width:100%;min-width:17rem;max-width:580px;border-collapse:collapse;background:#fff;white-space:normal}
 .material-table-scroll caption{text-align:left;padding:0 0 5px;font-size:.86rem;color:var(--muted)}

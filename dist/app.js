@@ -439,12 +439,13 @@ function courseDetail(course,subject) {
   const back = '<a class="crumb" href="#course/'+subject.id+'">返回'+subject.name+'课程目录</a>';
   const actions = (canResume ? '<a class="btn primary" href="#quiz">继续'+(unit?'本单元':'本课')+'练习</a>' :
     startButton('course/'+course.key+'/'+nextGroup.key,'开始练习','primary','pencil'))+
-    (course.groups.length>1 && pending ? startButton('course/'+course.key+'/remaining','未答对的题 · '+pending+' 题','secondary') : '');
+    (course.groups.length>1 && pending ? startButton('course/'+course.key+'/remaining','未答对的题 · '+pending+' 题','secondary') : '')+
+    (course.shortAnswers?.some(task=>task.draftKey) ? '<button type="button" class="btn secondary" data-short-answer-jump>写材料简答</button>' : '');
   return pageHead(esc(course.title),subject.name+' · 七年级'+course.term+'册 · '+courseProgress(course.ids,done),back)+
     '<p class="course-description">'+esc(course.description)+'</p><div class="actions course-actions">'+actions+'</div>'+
     '<section class="course-list"><h2 class="group-title">选择题组</h2><div class="topic-list">'+groups+'</div></section>'+
     (links ? '<section class="course-list"><h2 class="group-title">复习资料</h2><div class="actions course-actions">'+links+'</div></section>' : '')+
-    shortAnswerSection(course.shortAnswers)+
+    shortAnswerSection(course.shortAnswers,course.key)+
     (refs ? '<details class="course-list"><summary>参考来源</summary><ul class="reference-list">'+refs+'</ul></details>' : '');
 }
 function difficultyPage() {
@@ -536,13 +537,39 @@ function englishClassroomPage(key, done, current) {
     return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
   }).join('');
 }
-function shortAnswerSection(tasks) {
+function readShortAnswerDraft(key) {
+  try { return localStorage.getItem(key) ?? ''; }
+  catch { return ''; }
+}
+function saveShortAnswerDraft(field) {
+  let status = '已保存在此浏览器';
+  try {
+    if (field.value) localStorage.setItem(field.dataset.shortAnswerDraft,field.value);
+    else {
+      localStorage.removeItem(field.dataset.shortAnswerDraft);
+      status = '已清空草稿';
+    }
+  } catch {
+    status = '草稿保存失败';
+  }
+  const message = document.getElementById(field.id+'-status');
+  if (message && message.textContent!==status) message.textContent = status;
+}
+function shortAnswerSection(tasks,scope) {
   if (!tasks?.length) return '';
-  const entries = tasks.map(task=>'<article class="geo-note"><h3>'+esc(task.title ?? '读材料作答')+'</h3>'+
-    (task.material?'<p class="example-prompt">'+esc(task.material)+'</p>':'')+(task.table?materialTable(task.table):'')+
-    '<p class="example-prompt">'+esc(task.prompt)+'</p><details><summary>核对参考答案</summary><ol>'+
-    task.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ol></details></article>').join('');
-  return '<section class="short-answer"><h2 class="group-title">简答与自查</h2>'+entries+'</section>';
+  const entries = tasks.map(task=>{
+    const title = esc(task.title ?? '读材料作答');
+    const key = scope && task.draftKey ? 'suxue-short-answer-'+scope+'-'+task.draftKey : '';
+    const draft = key ? readShortAnswerDraft(key) : '';
+    const input = key ? '<div class="short-answer-draft"><label for="'+esc(key)+'">我的作答</label>'+
+      '<textarea rows="4" maxlength="4000" class="answer-input" id="'+esc(key)+'" data-short-answer-draft="'+esc(key)+'" aria-label="我的作答 · '+title+'" aria-describedby="'+esc(key)+'-status">\n'+esc(draft)+'</textarea>'+
+      '<small id="'+esc(key)+'-status" role="status">'+(draft?'已保存在此浏览器':'草稿保存在此浏览器')+'</small></div>' : '';
+    return '<article class="geo-note"><h3>'+title+'</h3>'+
+      (task.material?'<p class="example-prompt">'+esc(task.material)+'</p>':'')+(task.table?materialTable(task.table):'')+
+      '<p class="example-prompt">'+esc(task.prompt)+'</p>'+input+'<details><summary>核对参考答案</summary><ol>'+
+      task.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ol></details></article>';
+  }).join('');
+  return '<section class="short-answer"><h2 class="group-title" id="shortAnswerHeading" tabindex="-1">简答与自查</h2>'+entries+'</section>';
 }
 function reviewPage(route,key) {
   const collection = reviewCollections.get(route);
@@ -574,7 +601,7 @@ function reviewPage(route,key) {
     (note.points ? '<ul>'+note.points.map(point=>'<li>'+esc(point)+'</li>').join('')+'</ul>' : '<p>'+esc(note.text)+'</p>')+'</details>').join('');
   const refs = referenceItems(unit.sources);
   const timeline = unit.timeline ? '<section class="history-timeline"><h2>时间轴</h2><ol>'+unit.timeline.map(([date,event])=>'<li><span>'+esc(date)+'</span><strong>'+esc(event)+'</strong></li>').join('')+'</ol></section>' : '';
-  const shortAnswer = shortAnswerSection(unit.shortAnswers ?? (unit.shortAnswer ? [unit.shortAnswer] : []));
+  const shortAnswer = shortAnswerSection(unit.shortAnswers ?? (unit.shortAnswer ? [unit.shortAnswer] : []),unit.key);
   const size = reviewIds(unit).length;
   const inProgress = unit.practiceIds
     ? current && worksheetModule(state.session)?.key===unit.key
@@ -1335,6 +1362,8 @@ app.addEventListener('click',event => {
     state.term = button.dataset.term;
     save(); render();
     app.querySelector('[data-term="'+state.term+'"]')?.focus({preventScroll:true});
+  } else if (button.dataset.shortAnswerJump !== undefined) {
+    document.querySelector('#shortAnswerHeading')?.focus();
   } else if (button.dataset.start) {
     start(button.dataset.start,button.dataset.back);
   } else if (button.dataset.resultFilter) {
@@ -1407,6 +1436,10 @@ app.addEventListener('error',event=>{
   if (status) status.textContent = '音频无法播放，请选择可播放的 MP3 或 M4A 文件。';
 },true);
 app.addEventListener('input',event=>{
+  if (event.target.dataset.shortAnswerDraft) {
+    saveShortAnswerDraft(event.target);
+    return;
+  }
   const index = event.target.dataset.answerField;
   if (index !== undefined) {
     const current = state.session;
