@@ -2278,6 +2278,79 @@ const equationApplicationModules = [
   }
 ];
 
+const mathHandout49a = (() => {
+  const key = 'equation-app-handout-49a';
+  const factory = '某车间有 44 名工人，其中女工人数比男工人数的 2 倍少 10 人。每名工人平均每天可生产螺丝 50 个或螺母 120 个。';
+  const nutrition = {
+    caption:'学案参考数据',
+    headers:['食品','每 100 克食品所含蛋白质（克）'],
+    rows:[['谷物','10'],['牛奶','3'],['牛肉','20'],['鸡蛋','15']]
+  };
+  const fields = (unit,answers) => answers.map(([label,answer])=>({label,answer:String(answer),unit}));
+  const questions = [
+    {
+      id:key+'-1-1',level:'basic',stage:'第 1 题 · 人数与配套',
+      prompt:'第 1（1）题。车间男工、女工各有多少人？',
+      material:factory,
+      steps:fields('人',[['男工人数',18],['女工人数',26]]),correct:'18，26',
+      explanation:'设男工人数为 x，则女工人数为 2x−10。把两组人数相加等于 44。',
+      solution:[
+        {title:'设未知数并列方程',lines:['设男工 x 人，则女工有 (2x−10) 人。','x+(2x−10)=44，即 3x=54。']},
+        {title:'解答并检验',lines:['x=18，女工有 2×18−10=26 人。','18+26=44，26 比 18 的 2 倍少 10，符合题意。']}
+      ]
+    },
+    {
+      id:key+'-1-2',level:'standard',stage:'第 1 题 · 人数与配套',
+      prompt:'第 1（2）题。一个螺丝与两个螺母组成一套。怎样分配这 44 名工人，能让每天生产的两种零件正好全部配套？',
+      material:factory,
+      steps:fields('人',[['生产螺丝的人数',24],['生产螺母的人数',20]]),correct:'24，20',
+      explanation:'一个螺丝配两个螺母，因此每天的螺母产量应是螺丝产量的 2 倍。这里分的是生产岗位。',
+      solution:[
+        {title:'写出两种零件的日产量',lines:['设 x 人生产螺丝，则 (44−x) 人生产螺母。','螺丝日产量为 50x 个，螺母日产量为 120(44−x) 个。']},
+        {title:'按配套关系列方程',lines:['120(44−x)=2×50x，即 5280=220x，所以 x=24。','生产螺母的有 44−24=20 人。']},
+        {title:'检验配套',lines:['24 人生产 1200 个螺丝，20 人生产 2400 个螺母，正好配成 1200 套。']}
+      ]
+    },
+    {
+      id:key+'-2-1',level:'basic',stage:'第 2 题 · 食品数据',
+      prompt:'第 2（1）题。根据表中数据，一份早餐包含 60 克鸡蛋、200 克牛奶、100 克谷物，这份早餐的蛋白质总量是多少克？',
+      table:nutrition,steps:fields('克',[['蛋白质总量',25]]),correct:'25',
+      explanation:'表中数值是每 100 克食品所含蛋白质的克数。先按实际质量换算，再相加。',
+      solution:[
+        {title:'按实际质量分别换算',lines:['鸡蛋：60÷100×15=9（克）。','牛奶：200÷100×3=6（克）。','谷物：100÷100×10=10（克）。']},
+        {title:'合计蛋白质',lines:['9+6+10=25（克）。']}
+      ]
+    },
+    {
+      id:key+'-2-2',level:'standard',stage:'第 2 题 · 食品数据',
+      prompt:'第 2（2）题。根据表中数据，谷物和牛肉一共 550 克，其中蛋白质共 75 克。谷物和牛肉各有多少克？',
+      table:nutrition,steps:fields('克',[['谷物质量',350],['牛肉质量',200]]),correct:'350，200',
+      explanation:'先把每 100 克所含蛋白质换成比例 0.10 和 0.20，再用蛋白质总量 75 克列式。',
+      solution:[
+        {title:'用总质量表示两种食品',lines:['设谷物为 x 克，则牛肉为 (550−x) 克。','谷物和牛肉所含蛋白质分别为 0.10x 克与 0.20(550−x) 克。']},
+        {title:'按蛋白质总量列方程',lines:['0.10x+0.20(550−x)=75，化简得 110−0.10x=75。','x=350，牛肉质量为 550−350=200 克。']},
+        {title:'检验两项数据',lines:['350+200=550（克），350×0.10+200×0.20=35+40=75（克）。']}
+      ]
+    }
+  ];
+  return {
+    key,title:'4.4.2 小结与思考 · 数学学案 49A',
+    range:'第 1 页 · 第 1、2 题',
+    description:'按学案题号练习人数、配套和食品数据四个小问。第 3 题的活动报告待续页。',
+    notes:[
+      {label:'生产配套',text:'先比较每天生产的零件数量。用每人每天的产量乘人数得到总产量，再按一个螺丝配两个螺母列等量关系。'},
+      {label:'读懂每 100 克',text:'食品中某成分的实际质量＝食品质量÷100×每 100 克所含该成分的克数。'},
+      {label:'验算',text:'配套题核对总人数和零件比例。混合食品题核对总质量和成分质量。'}
+    ],
+    sections:[
+      {key:'workers',title:'第 1 题 · 人数与配套',ids:questions.slice(0,2).map(question=>question.id)},
+      {key:'nutrition',title:'第 2 题 · 食品数据',ids:questions.slice(2).map(question=>question.id)}
+    ],
+    questions
+  };
+})();
+equationApplicationModules.push(mathHandout49a);
+
 const equationApplicationByTopic = new Map(equationApplicationModules.map(module=>[module.key,module]));
 const equationApplicationSubject = subjects.find(subject=>subject.id==='math');
 for (const module of equationApplicationModules) {

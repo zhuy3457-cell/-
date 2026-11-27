@@ -120,6 +120,8 @@ const courseCatalog = (() => {
       fullGroup('math-equation-final-review'),
       fullGroup('math-bar-model-review')
     ], ['equation','web-math-models','math-equation-final-review','math-bar-model-review'], models.sources),
+    makeCourse(mathHandout49a.key,mathHandout49a.title,mathHandout49a.description,
+      moduleGroups(mathHandout49a),[mathHandout49a.key]),
     topicCourse('geometry')
   ];
 

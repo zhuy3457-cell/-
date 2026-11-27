@@ -393,6 +393,30 @@ test('civics growth guide includes five practice groups and retains the original
   assert.equal(grade.recorded,false);
 });
 
+test('math handout 49A shows the protein table before grading all four subproblems',async ()=>{
+  const key = 'equation-app-handout-49a';
+  const scope_id = 'course:'+key;
+  const course = await good('explain_topic',{subject:'math',scope_id});
+  assert.equal(course.question_count,4);
+  assert.deepEqual(course.practice_groups.map(group=>group.question_count),[2,2]);
+  const quiz = await good('draw_questions',{subject:'math',scope_id,group_id:key+'-nutrition',count:2});
+  assert.equal(quiz.questions.length,2);
+  for (const question of quiz.questions) {
+    assert.deepEqual(question.table.rows,[['谷物','10'],['牛奶','3'],['牛肉','20'],['鸡蛋','15']]);
+    assert.equal(question.solution,undefined);
+  }
+  const grade = await good('grade_homework',{record:false,submissions:[
+    {question_id:key+'-1-1',answer:[18,26]},
+    {question_id:key+'-1-2',answer:[24,20]},
+    {question_id:key+'-2-1',answer:[25]},
+    {question_id:key+'-2-2',answer:[350,200]}
+  ]});
+  assert.equal(grade.correct,4,JSON.stringify(grade.results));
+  assert.match(grade.results[1].solution.at(-1).lines.join(),/1200 套/);
+  assert.match(grade.results[3].solution.at(-1).lines.join(),/35\+40=75/);
+  assert.equal(grade.recorded,false);
+});
+
 test('civics midterm recitation covers four themes and distinguishes linking from applying knowledge',async ()=>{
   const scope_id = 'course:civics-midterm-recitation';
   const course = await good('explain_topic',{subject:'civics',scope_id});
