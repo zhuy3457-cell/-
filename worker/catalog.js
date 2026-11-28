@@ -1,4 +1,3 @@
-const SITE_URL = 'https://suxue-grade7-practice.myworkspace-8202.chatgpt.site/';
 const subjectNames = new Map(STUDY.subjects.map(({id,name})=>[id,name]));
 const questions = new Map(STUDY.questions.map(question=>[question.id,question]));
 const topics = new Map(STUDY.topics.map(topic=>[topic.key,topic]));
@@ -12,7 +11,6 @@ const scopes = new Map(scopeList.map(scope=>[scope.kind+':'+scope.key,scope]));
 const levels = ['basic','standard','challenge'];
 const levelNames = {basic:'基础',standard:'进阶',challenge:'挑战'};
 const normalizeCatalog = value=>value.normalize('NFKC').toLowerCase().replace(/[\p{P}\s]/gu,'');
-const publicLink = href=>href ? new URL(href,SITE_URL).href : null;
 const subjectPrefixes = [...STUDY.subjects.map(({id,name})=>[name,id]),
   ['道法','civics'],['生物','biology'],['政治','civics']].sort((a,b)=>b[0].length-a[0].length);
 const termPrefix = /^(?:(?:七年级|初一)([上下])(?:册|学期)?|七([上下])(?:册)?|([上下])(?:册|学期))/;
@@ -55,7 +53,7 @@ function scopeMatches(scope,subject,term) {
     return question.subject===subject && (!term || topics.get(question.topic).term===term);
   });
 }
-function scopeSummary(scope,subject,term) {
+function scopeSummary(scope,subject,term,origin) {
   return {
     scope_id:scope.kind+':'+scope.key,
     type:scope.kind,
@@ -66,7 +64,7 @@ function scopeSummary(scope,subject,term) {
       const question = questions.get(id);
       return question.subject===subject && (!term || topics.get(question.topic).term===term);
     }).length,
-    url:publicLink(scope.href ?? '#subject/'+subject)
+    url:new URL(scope.href ?? '#subject/'+subject,origin).href
   };
 }
 function courseRequest(args) {
@@ -97,12 +95,12 @@ function matchingScopes(subject,term,keyword) {
     return {scope,relevance};
   }).filter(item=>item.relevance).sort((a,b)=>b.relevance-a.relevance);
 }
-function queryCourses(args) {
+function queryCourses(args,origin) {
   const {subject,term,keyword} = courseRequest(args);
   const limit = validCount(args.limit,15,35);
   const matches = matchingScopes(subject,term,keyword);
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',total:matches.length,
-    results:matches.slice(0,limit).map(({scope})=>scopeSummary(scope,subject,term))};
+    results:matches.slice(0,limit).map(({scope})=>scopeSummary(scope,subject,term,origin))};
 }
 function getScope(id,subject,term,required = false) {
   if (id===undefined && !required) return null;
@@ -142,11 +140,11 @@ function lessonNotes(topic) {
   }
   return null;
 }
-function explainTopic(args) {
+function explainTopic(args,origin) {
   const {subject,term,scope} = courseSelection(args,true);
   const candidates = scope.kind==='topic' ? [scope] : (scope.studyKeys ?? []).map(key=>topics.get(key)).filter(Boolean);
   const teaching = candidates.map(lessonNotes).filter(Boolean).slice(0,4);
-  return {...scopeSummary(scope,subject,term),teaching,
+  return {...scopeSummary(scope,subject,term,origin),teaching,
     practice_groups:scope.groups?.map(group=>({group_id:group.key,title:group.title,question_count:group.ids.length})),
     ...(scope.shortAnswers?.length ? {short_answer_tasks:scope.shortAnswers} : {}),
     sources:scope.sources ?? [],
@@ -169,12 +167,12 @@ function poolFor(args,requireScope = false) {
   }
   return {subject,term,scope,group,pool,excluded:new Set(excluded)};
 }
-function publicDiagram(diagram) {
-  return {url:publicLink(diagram.src),alt:diagram.alt,
+function publicDiagram(diagram,origin) {
+  return {url:new URL(diagram.src,origin).href,alt:diagram.alt,
     ...(diagram.caption ? {caption:diagram.caption} : {}),
     ...(diagram.source ? {source_url:diagram.source,credit:diagram.credit} : {})};
 }
-function questionView(question) {
+function questionView(question,origin) {
   const topic = topics.get(question.topic);
   return {
     question_id:question.id,
@@ -189,7 +187,7 @@ function questionView(question) {
     material:question.material,
     table:question.table,
     number_line:question.numberLine,
-    ...(question.diagram ? {diagram:publicDiagram(question.diagram)} : {})
+    ...(question.diagram ? {diagram:publicDiagram(question.diagram,origin)} : {})
   };
 }
 function sample(pool,count) {
@@ -200,11 +198,11 @@ function sample(pool,count) {
   }
   return result.slice(0,count);
 }
-function makePractice(selection,count,mode,view = questionView) {
+function makePractice(selection,count,mode,origin,view = questionView) {
   const {scope,group,pool,subject,term,excluded} = selection;
   const eligible = excluded.size ? pool.filter(item=>!excluded.has(item.id)) : pool;
   const picked = sample(eligible,count);
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',scope:scope?.title ?? '全学科范围',
     group:group?.title,mode,available:eligible.length,remaining:eligible.length-picked.length,
-    questions:picked.map(view)};
+    questions:picked.map(question=>view(question,origin))};
 }

@@ -41,7 +41,7 @@ const env = {DB:{
 }};
 after(()=>database.close());
 
-const origin = 'https://suxue-grade7-practice.myworkspace-8202.chatgpt.site';
+const origin = 'https://practice.example.test';
 const attemptEndpoint = '/api/study-sync';
 const request = (path,{owner,...options} = {})=>worker.fetch(new Request(origin+path,{
   ...options,headers:{...options.headers,...(owner ? {'oai-authenticated-user-id':owner} : {})}
@@ -115,9 +115,10 @@ test('four lower-term supplements expose sourced lessons and five gradeable ques
   for (const [subject,key,query,answer] of supplements) {
     const scope_id = 'course:'+key;
     const {results} = await good('query_courses',{subject,term:'下',query});
-    assert.ok(results.some(result=>result.scope_id===scope_id));
+    assert.ok(results.some(result=>result.scope_id===scope_id && new URL(result.url).origin===origin));
     const lesson = await good('explain_topic',{scope_id});
     assert.equal(lesson.teaching[0].topic,query);
+    assert.equal(new URL(lesson.url).origin,origin);
     assert.ok(lesson.sources.length>=2 && lesson.sources.every(source=>source.url.startsWith('https://')));
     const {questions} = await good('draw_questions',{scope_id,count:5});
     assert.equal(new Set(questions.map(question=>question.question_id)).size,5);

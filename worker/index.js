@@ -109,7 +109,7 @@ async function homeworkKey(subject,term,prompt) {
   const hash = new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
   return 'homework-'+Array.from(hash.subarray(0,20),byte=>byte.toString(16).padStart(2,'0')).join('');
 }
-async function gradeHomework(env,request,args) {
+async function gradeHomework(env,request,args,origin) {
   const items = args.submissions;
   if (!Array.isArray(items) || !items.length || items.length>20) throw new StudyError('请提交 1 至 20 道作业。');
   if (args.record!==undefined && typeof args.record!=='boolean') throw new StudyError('record 应为布尔值。');
@@ -138,7 +138,7 @@ async function gradeHomework(env,request,args) {
     const grade = question ? gradeBankQuestion(question,answer) : gradeReference(answer,reference);
     return {
       result:{question_id:id,prompt,...grade,explanation,solution:question?.solution,
-        ...(question?.answerDiagram ? {answer_diagram:publicDiagram(question.answerDiagram)} : {})},
+        ...(question?.answerDiagram ? {answer_diagram:publicDiagram(question.answerDiagram,origin)} : {})},
       row:{ref:'chat:'+ref+':'+index,id,subject:itemSubject,term:itemTerm,ok:grade.correct,
         date:calendarDate.format(now),time:now.getTime(),prompt:question ? null : prompt,
         reference,explanation:question ? null : explanation}
@@ -168,7 +168,7 @@ async function recordReviewedHomework(env,request,args) {
   }));
   return {new_records:await insertAttempts(env,owner,rows),question_ids:rows.map(row=>row.id)};
 }
-async function specialPractice(env,request,args) {
+async function specialPractice(env,request,args,origin) {
   const mode = args.mode ?? 'all';
   if (!['all','unmastered','mistakes'].includes(mode)) throw new StudyError('请指定 all、unmastered 或 mistakes。');
   const selection = poolFor(args,mode!=='mistakes');
@@ -180,23 +180,23 @@ async function specialPractice(env,request,args) {
       const bankIds = new Set(selection.pool.map(question=>question.id));
       const includeHomework = !args.difficulty || args.difficulty==='all';
       selection.pool = [...latest.values()].filter(item=>!item.ok && (bankIds.has(item.id) || (item.prompt && includeHomework)));
-      return makePractice(selection,count,mode,mistakeQuestionView);
+      return makePractice(selection,count,mode,origin,mistakeQuestionView);
     }
     selection.pool = selection.pool.filter(question=>{
       const status = latest.get(question.id)?.ok;
       return mode==='mistakes' ? status===false : status!==true;
     });
   }
-  return makePractice(selection,count,mode);
+  return makePractice(selection,count,mode,origin);
 }
 const handlers = {
-  query_courses:args=>queryCourses(args),
-  explain_topic:args=>explainTopic(args),
-  draw_questions:args=>makePractice(poolFor(args),validCount(args.count,5,15),'random'),
-  grade_homework:(args,env,request)=>gradeHomework(env,request,args),
+  query_courses:(args,env,request,origin)=>queryCourses(args,origin),
+  explain_topic:(args,env,request,origin)=>explainTopic(args,origin),
+  draw_questions:(args,env,request,origin)=>makePractice(poolFor(args),validCount(args.count,5,15),'random',origin),
+  grade_homework:(args,env,request,origin)=>gradeHomework(env,request,args,origin),
   record_homework_review:(args,env,request)=>recordReviewedHomework(env,request,args),
-  get_mistakes:(args,env,request)=>mistakesFor(env,requireOwner(request),args),
-  special_practice:(args,env,request)=>specialPractice(env,request,args),
+  get_mistakes:(args,env,request,origin)=>mistakesFor(env,requireOwner(request),args,origin),
+  special_practice:(args,env,request,origin)=>specialPractice(env,request,args,origin),
   get_progress:(args,env,request)=>progressFor(env,requireOwner(request),args)
 };
 function json(body,status = 200) {
@@ -228,7 +228,7 @@ function toolResult(value,isError = false) {
   return {content:[{type:'text',text:isError ? value : JSON.stringify(value)}],
     ...(isError ? {isError:true} : {structuredContent:value})};
 }
-async function mcpResponse(request,env) {
+async function mcpResponse(request,env,origin) {
   if (request.method!=='POST') return new Response(null,{status:405,headers:{Allow:'POST'}});
   let message;
   try { message = await boundedJson(request,120000); }
@@ -255,7 +255,7 @@ async function mcpResponse(request,env) {
     const args = params.arguments ?? {};
     if (typeof args!=='object' || Array.isArray(args)) return rpcError(id,-32602,'工具参数必须是对象。');
     try {
-      result = toolResult(await handlers[params.name](args,env,request));
+      result = toolResult(await handlers[params.name](args,env,request,origin));
     } catch (error) {
       if (!(error instanceof StudyError)) console.error('Study tool '+params.name+': '+error.name+' '+error.message);
       result = toolResult(error instanceof StudyError ? error.message : '学习助手暂时无法完成此操作，请稍后重试。',true);
@@ -336,7 +336,7 @@ function staticResponse(request,path) {
 export default {
   fetch(request,env) {
     const url = new URL(request.url);
-    if (url.pathname==='/mcp') return mcpResponse(request,env);
+    if (url.pathname==='/mcp') return mcpResponse(request,env,url.origin);
     if (url.pathname==='/api/study-sync') return syncResponse(request,env,url);
     if (url.pathname==='/api/study-favorites') return favoritesSyncResponse(request,env,url);
     return staticResponse(request,url.pathname);
