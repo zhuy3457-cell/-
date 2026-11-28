@@ -538,6 +538,15 @@ function englishClassroomPage(key, done, current) {
     return '<section class="classroom-section"><h2 class="group-title">'+label+'</h2><div class="pack-grid">'+cards+'</div></section>';
   }).join('');
 }
+function shortAnswerDraftKey(scope, task) {
+  return scope && task.draftKey ? 'suxue-short-answer-'+scope+'-'+task.draftKey : '';
+}
+const shortAnswerDraftLimit = 4000;
+const shortAnswerDraftKeys = new Set([
+  ...courseByKey.values(),
+  ...[...reviewCollections.values()].flatMap(collection=>collection.modules)
+].flatMap(scope=>(scope.shortAnswers ?? (scope.shortAnswer ? [scope.shortAnswer] : []))
+  .map(task=>shortAnswerDraftKey(scope.key,task)).filter(Boolean)));
 function readShortAnswerDraft(key) {
   try { return localStorage.getItem(key) ?? ''; }
   catch { return ''; }
@@ -560,10 +569,10 @@ function shortAnswerSection(tasks,scope) {
   if (!tasks?.length) return '';
   const entries = tasks.map(task=>{
     const title = esc(task.title ?? '读材料作答');
-    const key = scope && task.draftKey ? 'suxue-short-answer-'+scope+'-'+task.draftKey : '';
+    const key = shortAnswerDraftKey(scope,task);
     const draft = key ? readShortAnswerDraft(key) : '';
     const input = key ? '<div class="short-answer-draft"><label for="'+esc(key)+'">我的作答</label>'+
-      '<textarea rows="4" maxlength="4000" class="answer-input" id="'+esc(key)+'" data-short-answer-draft="'+esc(key)+'" aria-label="我的作答 · '+title+'" aria-describedby="'+esc(key)+'-status">\n'+esc(draft)+'</textarea>'+
+      '<textarea rows="4" maxlength="'+shortAnswerDraftLimit+'" class="answer-input" id="'+esc(key)+'" data-short-answer-draft="'+esc(key)+'" aria-label="我的作答 · '+title+'" aria-describedby="'+esc(key)+'-status">\n'+esc(draft)+'</textarea>'+
       '<small id="'+esc(key)+'-status" role="status">'+(draft?'已保存在此浏览器':'草稿保存在此浏览器')+'</small></div>' : '';
     return '<article class="geo-note"><h3>'+title+'</h3>'+
       (task.material?'<p class="example-prompt">'+esc(task.material)+'</p>':'')+(task.table?materialTable(task.table):'')+
@@ -707,11 +716,19 @@ function attemptReferences(attempts) {
     return attempt.ref ? attempt : {...attempt, ref:key+':'+index};
   });
 }
-function backupPayload() {
-  return {format:backupSchema, version:1, attempts:attemptReferences(state.attempts), favorites:retainedFavoriteIds()};
+function backupPayload(includeDrafts = false) {
+  const data = {format:backupSchema, version:1, attempts:attemptReferences(state.attempts), favorites:retainedFavoriteIds()};
+  if (includeDrafts) {
+    data.shortAnswerDrafts = [];
+    for (const key of shortAnswerDraftKeys) {
+      const text = localStorage.getItem(key);
+      if (text) data.shortAnswerDrafts.push({key,text});
+    }
+  }
+  return data;
 }
-function exportBackup() {
-  const blob = new Blob([JSON.stringify(backupPayload())], {type:'application/json'});
+function exportBackup(includeDrafts) {
+  const blob = new Blob([JSON.stringify(backupPayload(includeDrafts))], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -727,7 +744,11 @@ function mergeBackup(data) {
     typeof item.ref==='string' && item.ref.length>0 && item.ref.length<=150 &&
     typeof item.ok==='boolean' && typeof item.date==='string' && /^\d{4}-\d{2}-\d{2}$/.test(item.date) &&
     (item.time===undefined || Number.isSafeInteger(item.time) && item.time>=0));
-  if (!valid || data.favorites.some(id=>typeof id!=='string')) {
+  const drafts = data.shortAnswerDrafts === undefined ? [] : data.shortAnswerDrafts;
+  const validDrafts = Array.isArray(drafts) && drafts.every(item=>item &&
+    typeof item.key==='string' && typeof item.text==='string' &&
+    item.text.length>0 && item.text.length<=shortAnswerDraftLimit);
+  if (!valid || data.favorites.some(id=>typeof id!=='string') || !validDrafts) {
     throw new Error('备份里的记录有误。请选择一份完整的备份文件。');
   }
   const attempts = attemptReferences(state.attempts);
@@ -763,12 +784,34 @@ function mergeBackup(data) {
   }
   state.favorites = [...bookmarks];
   save();
+  let restoredDrafts = 0;
+  let keptDrafts = 0;
+  let failedDrafts = 0;
+  for (const {key,text} of drafts) {
+    if (!shortAnswerDraftKeys.has(key)) { unknown++; continue; }
+    try {
+      const previous = localStorage.getItem(key);
+      if (previous) {
+        if (previous!==text) keptDrafts++;
+        continue;
+      }
+      localStorage.setItem(key,text);
+      restoredDrafts++;
+    } catch {
+      failedDrafts++;
+    }
+  }
   return '已合并 '+added+' 条答题记录、'+(bookmarks.size-initialBookmarks)+' 道收藏题。'+
+    ('shortAnswerDrafts' in data ? '已恢复 '+restoredDrafts+' 份简答草稿。' : '')+
+    (keptDrafts ? '有 '+keptDrafts+' 份草稿与本机内容不同，已保留本机版本。' : '')+
+    (failedDrafts ? '有 '+failedDrafts+' 份草稿无法写入浏览器。' : '')+
+    (storageFailed ? '学习记录无法写入浏览器，刷新前请保留备份文件。' : '')+
     (unknown ? '当前题库中找不到的 '+unknown+' 条记录已跳过。' : '');
 }
 function studyBackup() {
   return '<section class="backup-panel"><div><h2>学习记录备份</h2><p>导出答题记录、错题和收藏。换设备时导入文件，会合并已有记录。</p></div>'+
-    '<div class="saved-actions"><button class="btn secondary" type="button" data-backup="export">'+icon('download')+'导出备份</button>'+
+    '<div class="saved-actions"><label class="backup-drafts"><input type="checkbox" id="backupDrafts"> 包含简答草稿</label>'+
+    '<button class="btn secondary" type="button" data-backup="export">'+icon('download')+'导出备份</button>'+
     '<button class="btn secondary" type="button" data-backup="import">导入备份</button>'+
     '<input type="file" id="studyBackupInput" accept=".json,application/json" aria-label="选择学习记录备份" hidden></div>'+
     '<p class="backup-status" role="status">'+esc(backupNotice)+'</p></section>';
@@ -1392,7 +1435,13 @@ app.addEventListener('click',event => {
       button.querySelector('span').textContent = wasSelected ? '收藏' : '已收藏';
     }
   } else if (button.dataset.backup === 'export') {
-    exportBackup();
+    try {
+      exportBackup(document.querySelector('#backupDrafts').checked);
+      backupNotice = '';
+    } catch {
+      backupNotice = '无法导出备份，请检查浏览器的存储权限后重试。';
+    }
+    document.querySelector('.backup-status').textContent = backupNotice;
   } else if (button.dataset.backup === 'import') {
     document.querySelector('#studyBackupInput').click();
   } else if (button.dataset.studySync !== undefined) {
@@ -1491,7 +1540,7 @@ app.addEventListener('change',async event=>{
     catch (error) {
       backupNotice = error instanceof SyntaxError ? '无法读取这个 JSON 文件。请选择学习记录备份。' : error.message;
     }
-    if (location.hash==='#stats') {
+    if (/^#stats(?:\/|$)/.test(location.hash)) {
       render();
       app.querySelector('[data-backup="import"]')?.focus({preventScroll:true});
     }

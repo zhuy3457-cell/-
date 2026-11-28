@@ -170,6 +170,7 @@ dialog::backdrop{background:#23193968}
 .backup-panel{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:11px;background:white;border:1px solid var(--line);border-radius:13px;padding:16px;margin-bottom:23px}
 .backup-panel h2{font-size:1.05rem}
 .backup-panel p{margin-top:4px;font-size:.85rem;color:var(--muted);line-height:1.55}
+.backup-drafts{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--muted);cursor:pointer}
 .backup-panel .backup-status{flex-basis:100%;color:#5138a8}
 .backup-status:empty{display:none}
 @media(max-width:860px){.sidebar nav{grid-template-columns:repeat(5,minmax(0,1fr))}}

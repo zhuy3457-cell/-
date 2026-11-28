@@ -17,7 +17,7 @@ function browser(fetch) {
   const saved = new Map();
   const handlers = new Map();
   const node = {innerHTML:'',addEventListener(){}};
-  const app = {innerHTML:'',addEventListener:(type,handler)=>handlers.set(type,handler)};
+  const app = {innerHTML:'',querySelector:()=>null,addEventListener:(type,handler)=>handlers.set(type,handler)};
   const context = vm.createContext({
     document:{querySelectorAll:()=>[],querySelector:selector=>selector==='#app'?app:node,getElementById:()=>null},
     window:{addEventListener(){}},location:{hash:'#home',protocol:fetch?'https:':'file:'},
@@ -180,11 +180,33 @@ recitation.handlers.get('input')({target:draftField});
 assert.equal(recitation.saved.get(draftKey),draftField.value);
 assert.match(renderDrafts(),/先完成报告\n&lt;\/textarea&gt;再练演讲/);
 assert.doesNotMatch(recitation.run('JSON.stringify(backupPayload())'),/先完成报告/);
+assert.match(recitation.run('studyBackup()'),/<input type="checkbox" id="backupDrafts"> 包含简答草稿/);
+const draftBackup = JSON.parse(recitation.run('JSON.stringify(backupPayload(true))'));
+assert.deepEqual(draftBackup.shortAnswerDrafts,[{key:draftKey,text:draftField.value}]);
+const destination = browser();
+destination.context.backup = draftBackup;
+assert.match(destination.run('mergeBackup(backup)'),/已恢复 1 份简答草稿/);
+assert.equal(destination.saved.get(draftKey),draftField.value);
+assert.match(destination.run('mergeBackup(backup)'),/已恢复 0 份简答草稿/);
+destination.saved.set(draftKey,'本机新作答');
+assert.match(destination.run('mergeBackup(backup)'),/已保留本机版本/);
+assert.equal(destination.saved.get(draftKey),'本机新作答');
+destination.context.invalidBackup = {...draftBackup,shortAnswerDrafts:[{key:draftKey,text:'字'.repeat(4001)}]};
+assert.throws(()=>destination.run('mergeBackup(invalidBackup)'),/记录有误/);
+destination.context.unknownBackup = {...draftBackup,shortAnswerDrafts:[{key:'suxue-study-v1',text:'unexpected'}]};
+assert.match(destination.run('mergeBackup(unknownBackup)'),/找不到的 1 条记录已跳过/);
+assert.doesNotMatch(destination.saved.get('suxue-study-v1'),/unexpected/);
+const filteredStats = browser();
+filteredStats.run('location.hash="#stats/civics/1"');
+await filteredStats.handlers.get('change')({
+  target:{id:'studyBackupInput',files:[{text:async()=>JSON.stringify(draftBackup)}]}
+});
+assert.match(filteredStats.run('app.innerHTML'),/已恢复 1 份简答草稿/);
 draftField.value = '';
 recitation.handlers.get('input')({target:draftField});
 assert.equal(recitation.saved.has(draftKey),false);
 assert.doesNotMatch(renderDrafts(),/先完成报告/);
-console.log('道法简答案例可独立保存、重读和清空草稿，参考要点和学习备份正常。');
+console.log('道法简答草稿可保存、清空、选入备份和恢复。重复导入保留本机草稿，分科记录页显示结果。');
 
 const morning = browser();
 const morningKey = 'classroom-u5-health-morning';
