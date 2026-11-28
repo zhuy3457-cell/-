@@ -105,6 +105,27 @@ test('lookup, explanations and random questions are constrained to the selected 
   const unit = await good('special_practice',{subject:'english',scope_id:'course:unit-3',group_id:group.group_id,count:4});
   assert.ok(unit.questions.every(question=>question.question_id.startsWith('unit-check-3-')));
 });
+test('four lower-term supplements expose sourced lessons and five gradeable questions each', async ()=>{
+  const supplements = [
+    ['civics','civics-online-protection','未成年人网络保护','只统计总人数，不公开成员的家庭信息'],
+    ['history','history-sui-unification-canal','隋朝统一与大运河史料','隋建立 → 隋灭陈 → 开通济渠'],
+    ['geography','geo-asia-water-monsoon','亚洲水系与季风','平原位于更低的东侧，地势总体向东降低'],
+    ['biology','bio-digestion-absorption','消化、吸收与小肠结构','吸收']
+  ];
+  for (const [subject,key,query,answer] of supplements) {
+    const scope_id = 'course:'+key;
+    const {results} = await good('query_courses',{subject,term:'下',query});
+    assert.ok(results.some(result=>result.scope_id===scope_id));
+    const lesson = await good('explain_topic',{scope_id});
+    assert.equal(lesson.teaching[0].topic,query);
+    assert.ok(lesson.sources.length>=2 && lesson.sources.every(source=>source.url.startsWith('https://')));
+    const {questions} = await good('draw_questions',{scope_id,count:5});
+    assert.equal(new Set(questions.map(question=>question.question_id)).size,5);
+    assert.ok(questions.every(question=>question.term==='下' && question.question_id.startsWith(key+'-')));
+    const graded = await good('grade_homework',{record:false,submissions:[{question_id:key+'-1',answer}]});
+    assert.equal(graded.correct,1);
+  }
+});
 test('chat resolves Chinese course phrases and respects explicit subject and term',async ()=>{
   const algebra = await good('query_courses',{query:'七上 数学 方程'});
   assert.equal(algebra.subject,'数学');

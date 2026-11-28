@@ -1,4 +1,4 @@
-function addCourseQuestions(subjectId, key, title, description, items) {
+function addCourseQuestions(subjectId, key, title, description, items, {term = '上', sources = []} = {}) {
   const questions = items.map(([prompt, options, answer, explanation], index) => ({
     id: key + '-' + (index + 1),
     topic: key,
@@ -10,7 +10,7 @@ function addCourseQuestions(subjectId, key, title, description, items) {
     explanation
   }));
   subjects.find(subject => subject.id === subjectId).topics.push({
-    key, title, term: '上', description, questions
+    key, title, term, description, questions, sources
   });
   return key;
 }
