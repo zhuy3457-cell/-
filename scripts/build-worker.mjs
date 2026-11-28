@@ -27,6 +27,7 @@ for (const name of inputs) {
   vm.runInContext(await readFile(join(webRoot,name),'utf8'),context,{filename:name});
 }
 const studyJson = vm.runInContext(`JSON.stringify({
+  enabledTerms:enabledStudyTerms,
   subjects:activeSubjects.map(({id,name})=>({id,name})),
   topics:allTopics.map(({key,title,term,description,subject,questions,sources})=>({
     key,title,term,description,subject:subject.id,ids:questions.map(q=>q.id),sources,

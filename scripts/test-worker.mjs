@@ -18,7 +18,7 @@ applyMigration(migrations[0]);
 const legacyQuestionId = 'homework-'+'a'.repeat(40);
 database.prepare(`INSERT INTO study_attempts
   (owner_id,attempt_ref,question_id,subject_id,term,correct,study_date,submitted_at,homework_prompt)
-  VALUES ('legacy-owner','old-review',?,'math','下',0,'2026-11-23',0,'旧作业：说明等式的性质。')`).run(legacyQuestionId);
+  VALUES ('legacy-owner','old-review',?,'math','上',0,'2026-11-23',0,'旧作业：说明等式的性质。')`).run(legacyQuestionId);
 migrations.slice(1).forEach(applyMigration);
 const env = {DB:{
   prepare(sql) {
@@ -105,27 +105,48 @@ test('lookup, explanations and random questions are constrained to the selected 
   const unit = await good('special_practice',{subject:'english',scope_id:'course:unit-3',group_id:group.group_id,count:4});
   assert.ok(unit.questions.every(question=>question.question_id.startsWith('unit-check-3-')));
 });
-test('four lower-term supplements expose sourced lessons and five gradeable questions each', async ()=>{
+test('four upper-term supplements expose sourced lessons and three gradeable questions each', async ()=>{
   const supplements = [
-    ['civics','civics-online-protection','未成年人网络保护','只统计总人数，不公开成员的家庭信息'],
-    ['history','history-sui-unification-canal','隋朝统一与大运河史料','隋建立 → 隋灭陈 → 开通济渠'],
-    ['geography','geo-asia-water-monsoon','亚洲水系与季风','平原位于更低的东侧，地势总体向东降低'],
-    ['biology','bio-digestion-absorption','消化、吸收与小肠结构','吸收']
+    ['civics','civics-life-responsibility','珍爱生命与责任担当','A'],
+    ['history','history-north-south-evidence','北方民族交融与史料互证','B'],
+    ['geography','geo-temperature-year-range','气温变化与年较差','C'],
+    ['biology','bio-leaf-transpiration','叶片蒸腾与对照实验','C']
   ];
   for (const [subject,key,query,answer] of supplements) {
     const scope_id = 'course:'+key;
-    const {results} = await good('query_courses',{subject,term:'下',query});
+    const {results} = await good('query_courses',{subject,term:'上',query});
     assert.ok(results.some(result=>result.scope_id===scope_id && new URL(result.url).origin===origin));
     const lesson = await good('explain_topic',{scope_id});
     assert.equal(lesson.teaching[0].topic,query);
     assert.equal(new URL(lesson.url).origin,origin);
     assert.ok(lesson.sources.length>=2 && lesson.sources.every(source=>source.url.startsWith('https://')));
     const {questions} = await good('draw_questions',{scope_id,count:5});
-    assert.equal(new Set(questions.map(question=>question.question_id)).size,5);
-    assert.ok(questions.every(question=>question.term==='下' && question.question_id.startsWith(key+'-')));
+    assert.equal(new Set(questions.map(question=>question.question_id)).size,3);
+    assert.ok(questions.every(question=>question.term==='上' && question.question_id.startsWith(key+'-')));
     const graded = await good('grade_homework',{record:false,submissions:[{question_id:key+'-1',answer}]});
     assert.equal(graded.correct,1);
   }
+});
+test('hidden lower-term questions cannot be found or graded and their old attempts still sync',async ()=>{
+  const scope_id = 'course:civics-online-protection';
+  const id = 'civics-online-protection-1';
+  const owner = 'lower-term-archive';
+  for (const [tool,args] of [
+    ['query_courses',{subject:'civics',term:'下'}],
+    ['explain_topic',{scope_id}],
+    ['draw_questions',{scope_id}],
+    ['grade_homework',{record:false,submissions:[{question_id:id,answer:'B'}]}],
+    ['get_mistakes',{subject:'civics',term:'下'}],
+    ['get_progress',{subject:'civics',term:'下'}]
+  ]) assert.equal((await call(tool,args,owner)).isError,true);
+  const {questions} = await good('draw_questions',{subject:'civics',term:'all',count:15});
+  assert.ok(questions.length>0 && questions.every(question=>question.term==='上'));
+  const attempts = [{id,ref:'archive-lower',date:'2026-11-28',ok:false}];
+  const saved = await request(attemptEndpoint,{owner,method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({attempts})});
+  assert.equal((await saved.json()).added,1);
+  const restored = await (await request(attemptEndpoint,{owner})).json();
+  assert.equal(restored.attempts[0]?.id,id);
+  assert.equal((await good('get_mistakes',{subject:'civics'},owner)).total,0);
 });
 test('chat resolves Chinese course phrases and respects explicit subject and term',async ()=>{
   const algebra = await good('query_courses',{query:'七上 数学 方程'});
@@ -970,14 +991,13 @@ test('new English, Analects and civics worksheets expose objective questions and
   ]});
   assert.equal(graded.correct,7);
 });
-test('specialty packs report the same term as their questions and respect the requested term',async ()=>{
+test('upper specialty packs expose their questions and lower packs stay hidden',async ()=>{
   const upper = await good('explain_topic',{scope_id:'pack:equation-modeling'});
-  const lower = await good('explain_topic',{subject:'english',scope_id:'pack:english'});
   assert.equal(upper.term,'上');
-  assert.equal(lower.term,'下');
-  const fromPack = await good('draw_questions',{subject:'english',scope_id:'pack:english',count:6});
-  assert.equal(fromPack.term,'下');
-  assert.ok(fromPack.questions.every(question=>question.term==='下'));
+  const fromPack = await good('draw_questions',{scope_id:upper.scope_id,count:6});
+  assert.ok(fromPack.questions.length>0 && fromPack.questions.every(question=>question.term==='上'));
+  assert.ok((await call('explain_topic',{subject:'english',scope_id:'pack:english'})).isError);
+  assert.ok((await call('draw_questions',{subject:'english',scope_id:'pack:english',count:6})).isError);
   const filtered = await good('query_courses',{subject:'english',term:'上',query:'语篇理解'});
   assert.ok(filtered.results.every(scope=>scope.scope_id!=='pack:english'));
 });
@@ -1042,15 +1062,15 @@ test('browser sync requires account identity and same origin, and merges both wa
 test('chat retakes saved homework without repeating the prompt or answer key',async ()=>{
   const owner = 'chat-retake-user';
   const prompt = '解方程 3x+5=17。';
-  const submission = await good('grade_homework',{term:'下',batch_id:'homework-first',
+  const submission = await good('grade_homework',{term:'上',batch_id:'homework-first',
     submissions:[{prompt,answer:5,reference_answer:4,explanation:'两边减 5，再除以 3。'}]},owner);
   const id = submission.results[0].question_id;
   assert.equal(submission.correct,0);
-  const list = await good('special_practice',{term:'下',mode:'mistakes'},owner);
+  const list = await good('special_practice',{term:'上',mode:'mistakes'},owner);
   assert.equal(list.available,1);
   assert.equal(list.questions[0].question_id,id);
   assert.equal(list.questions[0].grading_method,'stored_reference');
-  const alreadyShown = await good('special_practice',{term:'下',mode:'mistakes',exclude_question_ids:[id]},owner);
+  const alreadyShown = await good('special_practice',{term:'上',mode:'mistakes',exclude_question_ids:[id]},owner);
   assert.deepEqual(alreadyShown.questions,[]);
   assert.doesNotMatch(JSON.stringify(list),/reference_answer|两边减/);
   const resubmit = {batch_id:'homework-retake',submissions:[{question_id:id,answer:'8/2'}]};
@@ -1060,21 +1080,20 @@ test('chat retakes saved homework without repeating the prompt or answer key',as
   assert.equal(corrected.correct,1);
   assert.equal(corrected.results[0].explanation,'两边减 5，再除以 3。');
   assert.equal((await good('grade_homework',resubmit,owner)).new_records,0);
-  assert.equal((await good('get_mistakes',{term:'下'},owner)).total,0);
-  assert.equal((await good('get_progress',{term:'下'},owner)).mastered_questions,1);
-  assert.equal((await good('get_progress',{term:'上'},owner)).attempts,0);
+  assert.equal((await good('get_mistakes',{term:'上'},owner)).total,0);
+  assert.equal((await good('get_progress',{term:'上'},owner)).mastered_questions,1);
   const sync = await (await request(attemptEndpoint,{owner})).json();
   assert.deepEqual(sync.attempts,[]);
 });
 test('existing homework without a key keeps its original identity when reviewed again',async ()=>{
   const owner = 'legacy-owner';
-  const old = await good('get_mistakes',{term:'下'},owner);
+  const old = await good('get_mistakes',{term:'上'},owner);
   assert.equal(old.results[0].question_id,legacyQuestionId);
   assert.equal(old.results[0].grading_method,'review_or_reference');
   assert.match((await call('grade_homework',{batch_id:'missing',submissions:[{question_id:legacyQuestionId,answer:'测试'}]},owner)).content[0].text,/没有参考答案/);
   const checked = await good('record_homework_review',{batch_id:'redo-old',items:[{question_id:legacyQuestionId,correct:true}]},owner);
   assert.deepEqual(checked.question_ids,[legacyQuestionId]);
-  assert.equal((await good('get_mistakes',{term:'下'},owner)).total,0);
+  assert.equal((await good('get_mistakes',{term:'上'},owner)).total,0);
 });
 test('retired subjects are unavailable for practice and their old records still sync',async ()=>{
   const owner = 'old-electives';

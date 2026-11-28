@@ -124,6 +124,7 @@ async function gradeHomework(env,request,args,origin) {
     const answer = asAnswer(item.answer);
     const questionId = textValue(item.question_id,'题目编号',120);
     const question = questions.get(questionId);
+    if (question && !visibleQuestion(question)) throw new StudyError('这道题所属册次暂未开放。');
     const saved = questionId && !question ? await savedHomework(env,owner ?? requireOwner(request),questionId) : null;
     const prompt = question?.prompt ?? saved?.prompt ?? textValue(item.prompt,'外部作业题干',1500,true);
     const itemSubject = question?.subject ?? saved?.subject ?? subject;

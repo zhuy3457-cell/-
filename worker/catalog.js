@@ -1,4 +1,5 @@
 const subjectNames = new Map(STUDY.subjects.map(({id,name})=>[id,name]));
+const enabledTerms = STUDY.enabledTerms;
 const questions = new Map(STUDY.questions.map(question=>[question.id,question]));
 const topics = new Map(STUDY.topics.map(topic=>[topic.key,topic]));
 const courseTopics = new Map(STUDY.courses.map(course=>[course.key,course]));
@@ -41,16 +42,22 @@ function validTerm(value) {
   if (value==='上' || value==='下') return value;
   throw new StudyError('册次应为「上」「下」或 all。');
 }
+function visibleTerm(term) {
+  if (term && !enabledTerms.includes(term)) throw new StudyError('当前只开放七年级上册练习。');
+  return term ?? (enabledTerms.length===1 ? enabledTerms[0] : null);
+}
+const visibleQuestion = question=>enabledTerms.includes(topics.get(question.topic).term);
 function validCount(value, fallback, maximum) {
   if (value===undefined) return fallback;
   if (!Number.isInteger(value) || value<1 || value>maximum) throw new StudyError('题量应在 1 到 '+maximum+' 之间。');
   return value;
 }
 function scopeMatches(scope,subject,term) {
+  if (scope.term && !enabledTerms.includes(scope.term)) return false;
   if (scope.subject) return scope.subject===subject && (!term || scope.term===term);
   return scope.ids.some(id=>{
     const question = questions.get(id);
-    return question.subject===subject && (!term || topics.get(question.topic).term===term);
+    return question.subject===subject && visibleQuestion(question) && (!term || topics.get(question.topic).term===term);
   });
 }
 function scopeSummary(scope,subject,term,origin) {
@@ -62,7 +69,7 @@ function scopeSummary(scope,subject,term,origin) {
     description:scope.description ?? '',
     question_count:scope.ids.filter(id=>{
       const question = questions.get(id);
-      return question.subject===subject && (!term || topics.get(question.topic).term===term);
+      return question.subject===subject && visibleQuestion(question) && (!term || topics.get(question.topic).term===term);
     }).length,
     url:new URL(scope.href ?? '#subject/'+subject,origin).href
   };
@@ -83,7 +90,7 @@ function courseRequest(args) {
   const subject = explicitSubject ?? named?.[1] ?? scopes.get(args.scope_id)?.subject ?? 'math';
   const unit = subject==='english' && englishUnit.exec(keyword);
   if (unit) keyword = 'unit'+(Number(unit[1]) || ('一二三四五六七八'.indexOf(unit[1])+1));
-  return {subject,term:term ?? inferredTerm ?? null,keyword};
+  return {subject,term:visibleTerm(term ?? inferredTerm),keyword};
 }
 function matchingScopes(subject,term,keyword) {
   return scopeList.filter(scope=>scopeMatches(scope,subject,term) &&
@@ -158,7 +165,7 @@ function poolFor(args,requireScope = false) {
   const group = groupKey && scope?.groups?.find(item=>item.key===groupKey);
   if (groupKey && !group) throw new StudyError('找不到该题组。可先用 explain_topic 查询题组编号。');
   const pool = (group?.ids ?? scope?.ids ?? STUDY.questions.map(item=>item.id)).map(id=>questions.get(id))
-    .filter(question=>question.subject===subject && (!term || topics.get(question.topic).term===term) &&
+    .filter(question=>question.subject===subject && visibleQuestion(question) && (!term || topics.get(question.topic).term===term) &&
       (level==='all' || (question.level ?? 'basic')===level));
   const excluded = args.exclude_question_ids ?? [];
   if (!Array.isArray(excluded) || excluded.length>maxExcludedQuestions ||

@@ -93,7 +93,7 @@ function studySummary(attempts) {
 }
 async function progressFor(env,owner,args) {
   const subject = validSubject(args.subject);
-  const term = validTerm(args.term);
+  const term = visibleTerm(validTerm(args.term));
   const scope = getScope(args.scope_id,subject,term);
   const ids = scope && new Set(scope.ids);
   const attempts = (await studyAttempts(env,owner,subject,term)).filter(item=>!ids || ids.has(item.id));
@@ -114,7 +114,7 @@ function mistakeQuestionView(item,origin) {
 }
 async function mistakesFor(env,owner,args,origin) {
   const subject = validSubject(args.subject);
-  const term = validTerm(args.term);
+  const term = visibleTerm(validTerm(args.term));
   const scope = getScope(args.scope_id,subject,term);
   const limit = validCount(args.limit,10,30);
   const ids = scope && new Set(scope.ids);
