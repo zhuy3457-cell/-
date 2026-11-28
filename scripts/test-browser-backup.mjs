@@ -220,3 +220,39 @@ assert.doesNotMatch(morning.run('quizPage()'),/完整参考句/);
 morning.run("state.session.answers[7]={ok:true,fields:['How many bottles'],raw:'How many bottles'}");
 assert.match(morning.run('quizPage()'),/完整参考句.*How many bottles of juice does Amy buy\?/s);
 console.log('Unit 5 明早默写按原题顺序呈现，完整参考句在答后显示。');
+
+const daily = browser();
+daily.run(`
+  const practiceDate = '2026-11-28';
+  const priorDate = '2026-11-27';
+  const termIds = term => activeSubjects.flatMap(subject=>topicsIn(subject,term)
+    .flatMap(topic=>topic.questions.map(question=>question.id)));
+  const subjectOf = id => questionById.get(id).subject;
+  const [wrong, recovered, anotherWrong] = activeSubjects
+    .map(subject=>topicsIn(subject,'上').flatMap(topic=>topic.questions)[0]?.id).filter(Boolean);
+  state.attempts = [
+    {id:wrong,ok:false,date:priorDate,time:1},
+    {id:recovered,ok:true,date:priorDate,time:2},
+    {id:recovered,ok:false,date:priorDate,time:1},
+    {id:anotherWrong,ok:false,date:priorDate,time:1}
+  ];
+  const scheduled = dailyQuestions('上',practiceDate);
+`);
+assert.equal(daily.run('scheduled.length'),5);
+assert.equal(daily.run('new Set(scheduled.map(subjectOf)).size'),5);
+assert.equal(daily.run('scheduled.slice(0,2).includes(wrong) && scheduled.slice(0,2).includes(anotherWrong)'),true);
+assert.equal(daily.run('scheduled.includes(recovered)'),false);
+daily.run('state.attempts.push({id:wrong,ok:true,date:practiceDate,time:3});');
+assert.equal(daily.run('JSON.stringify(dailyQuestions("上",practiceDate))===JSON.stringify(scheduled)'),true);
+assert.equal(daily.run('dailyQuestions("下",practiceDate).every(id=>termIds("下").includes(id))'),true);
+daily.run('state.attempts=termIds("下").map(id=>({id,ok:true,date:priorDate}));');
+assert.equal(daily.run('new Set(dailyQuestions("下",practiceDate)).size'),5);
+daily.run('start("daily"); state.session.index=1; start("daily");');
+assert.equal(daily.run('state.session.index'),1);
+daily.run('state.term="下"; start("daily");');
+assert.equal(daily.run('state.session.index'),0);
+assert.equal(daily.run('state.session.dailyTerm'), '下');
+daily.run('state.session.index=1; state.session.dailyDate="2000-01-01"; start("daily");');
+assert.equal(daily.run('state.session.index'),0);
+assert.equal(daily.run('state.session.dailyDate'),daily.run('dateKey()'));
+console.log('每日练习优先选取旧错题和新题，覆盖不同学科，并正确处理续练、跨日和切换册次。');

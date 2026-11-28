@@ -362,7 +362,7 @@ function home() {
   const continuation = canResume
     ? '<a class="btn secondary" href="#quiz">'+icon('book')+'继续上次练习</a>'
     : mixedLink();
-  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 七年级</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+
+  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 七年级</span><h1>今天想练哪一科？</h1><p>每天练 5 道题，优先复练旧错题和尝试新题。<br>提交后即可查看解析。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+
     '<a class="btn secondary" href="#course">'+icon('book')+'按课练习</a>'+continuation+
     (canResume ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+
     '</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+publicStudyShortcuts()+subjectGrid();
@@ -961,19 +961,62 @@ function statsPage(subject, page) {
         (tried.length?'<a class="btn secondary" href="'+historyLink(subject.id)+'">查看记录</a>':'')+'</div></div>';
     }).join('')+'</div>';
 }
-function dailyQuestions() {
-  const day = Number(dateKey().replaceAll('-',''));
-  return Array.from({length:5},(_,i)=>{
-    const subject = activeSubjects[(day+i)%activeSubjects.length];
-    const topics = topicsIn(subject);
-    const topic = topics[(day+i*3)%topics.length];
-    return topic.questions[Math.floor(day*(i+3)/7)%topic.questions.length].id;
+function dailyQuestions(term = state.term, date = dateKey()) {
+  const seed = Number(date.replaceAll('-',''));
+  const latest = new Map();
+  for (const attempt of state.attempts) {
+    if (attempt.date >= date) continue;
+    const previous = latest.get(attempt.id);
+    if (!previous || attempt.date > previous.date ||
+        (attempt.date === previous.date && (attempt.time ?? 0) >= (previous.time ?? 0))) {
+      latest.set(attempt.id,attempt);
+    }
+  }
+  const rotate = (items, offset) => {
+    const start = items.length ? offset % items.length : 0;
+    return [...items.slice(start), ...items.slice(0,start)];
+  };
+  const subjects = rotate(activeSubjects,seed).map((subject,index)=>{
+    const ids = topicsIn(subject,term).flatMap(topic=>topic.questions.map(question=>question.id));
+    const queue = {wrong:[],fresh:[],correct:[]};
+    for (const id of rotate(ids,Math.floor(seed*(index+3)/7))) {
+      const attempt = latest.get(id);
+      queue[attempt ? (attempt.ok ? 'correct' : 'wrong') : 'fresh'].push(id);
+    }
+    return queue;
   });
+  const selected = new Set();
+  const usedSubjects = new Set();
+  for (const subject of subjects) {
+    if (selected.size === 2) break;
+    if (!subject.wrong.length) continue;
+    selected.add(subject.wrong[0]);
+    usedSubjects.add(subject);
+  }
+  for (const subject of subjects) {
+    if (selected.size === 5) break;
+    if (usedSubjects.has(subject)) continue;
+    const id = subject.fresh[0] ?? subject.correct[0] ?? subject.wrong[0];
+    if (id) selected.add(id);
+  }
+  for (const kind of ['fresh','correct','wrong']) {
+    for (const subject of subjects) {
+      for (const id of subject[kind]) {
+        if (selected.size === 5) return [...selected];
+        selected.add(id);
+      }
+    }
+  }
+  return [...selected];
 }
 function start(key, backTarget) {
   let ids, label, back, worksheet;
   const [kind, id, term, count, difficulty] = key.split('/');
-  if (state.session?.key===key && isActiveSession(state.session) && !endOfSession(state.session)) {
+  const current = state.session;
+  const dailyDate = kind==='daily' ? dateKey() : null;
+  const currentDailyTerm = current?.dailyTerm ?? topicByKey.get(questionById.get(current?.ids[0])?.topic)?.term;
+  const sameDaily = !dailyDate || (currentDailyTerm===state.term && (current.dailyDate ?? dailyDate)===dailyDate);
+  if (current?.key===key && sameDaily && isActiveSession(current) && !endOfSession(current)) {
     location.hash = 'quiz';
     return;
   }
@@ -1050,7 +1093,7 @@ function start(key, backTarget) {
     back = session.back;
     worksheet = worksheetModule(session)?.key;
   } else if (kind === 'daily') {
-    ids = dailyQuestions(); label = '每日练习'; back = '#home';
+    ids = dailyQuestions(state.term,dailyDate); label = '每日练习 · '+termName(); back = '#home';
   } else if (kind === 'topic') {
     const topic = topicByKey.get(id);
     if (!activeSubjectById.has(topic?.subject.id)) return;
@@ -1073,7 +1116,8 @@ function start(key, backTarget) {
     label = '错题复练'; back = '#mistakes';
   }
   if (!ids.length || !ids.every(isActiveQuestion)) return;
-  state.session = {key, ids, label, back, index:0, answers:[], selected:'', ...(worksheet ? {worksheet} : {})};
+  state.session = {key, ids, label, back, index:0, answers:[], selected:'',
+    ...(worksheet ? {worksheet} : {}), ...(dailyDate ? {dailyDate,dailyTerm:state.term} : {})};
   save();
   if (location.hash === '#quiz') render(true);
   else location.hash = 'quiz';
