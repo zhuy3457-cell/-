@@ -93,7 +93,7 @@ function studySummary(attempts) {
 }
 async function progressFor(env,owner,args) {
   const subject = validSubject(args.subject);
-  const term = validTerm(args.term);
+  const term = visibleTerm(validTerm(args.term));
   const scope = getScope(args.scope_id,subject,term);
   const ids = scope && new Set(scope.ids);
   const attempts = (await studyAttempts(env,owner,subject,term)).filter(item=>!ids || ids.has(item.id));
@@ -105,23 +105,23 @@ async function progressFor(env,owner,args) {
     last_study_day:attempts.at(-1)?.date ?? null,
     ...(attempts.length ? {} : {note:'这个范围暂无同步记录。可在练习室「学习记录」中同步，或在聊天里完成一组并批改。'})};
 }
-function mistakeQuestionView(item) {
+function mistakeQuestionView(item,origin) {
   const question = questions.get(item.id);
-  const prompt = question ? questionView(question) :
+  const prompt = question ? questionView(question,origin) :
     {question_id:item.id,prompt:item.prompt,subject:subjectNames.get(item.subject),term:item.term,
       external_homework:true,grading_method:item.hasReference ? 'stored_reference' : 'review_or_reference'};
   return {...prompt,wrong_count:item.wrongCount,last_wrong_day:item.date};
 }
-async function mistakesFor(env,owner,args) {
+async function mistakesFor(env,owner,args,origin) {
   const subject = validSubject(args.subject);
-  const term = validTerm(args.term);
+  const term = visibleTerm(validTerm(args.term));
   const scope = getScope(args.scope_id,subject,term);
   const limit = validCount(args.limit,10,30);
   const ids = scope && new Set(scope.ids);
   const {latest} = studySummary(await studyAttempts(env,owner,subject,term));
   const open = [...latest.values()].filter(item=>!item.ok && (!ids || ids.has(item.id)))
     .sort((a,b)=>b.date.localeCompare(a.date)||b.time-a.time||b.cursor-a.cursor);
-  return {total:open.length,results:open.slice(0,limit).map(mistakeQuestionView)};
+  return {total:open.length,results:open.slice(0,limit).map(item=>mistakeQuestionView(item,origin))};
 }
 
 async function favoriteSnapshot(env,owner) {

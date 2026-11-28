@@ -1,5 +1,5 @@
-const SITE_URL = 'https://suxue-grade7-practice.myworkspace-8202.chatgpt.site/';
 const subjectNames = new Map(STUDY.subjects.map(({id,name})=>[id,name]));
+const enabledTerms = STUDY.enabledTerms;
 const questions = new Map(STUDY.questions.map(question=>[question.id,question]));
 const topics = new Map(STUDY.topics.map(topic=>[topic.key,topic]));
 const courseTopics = new Map(STUDY.courses.map(course=>[course.key,course]));
@@ -12,7 +12,6 @@ const scopes = new Map(scopeList.map(scope=>[scope.kind+':'+scope.key,scope]));
 const levels = ['basic','standard','challenge'];
 const levelNames = {basic:'基础',standard:'进阶',challenge:'挑战'};
 const normalizeCatalog = value=>value.normalize('NFKC').toLowerCase().replace(/[\p{P}\s]/gu,'');
-const publicLink = href=>href ? new URL(href,SITE_URL).href : null;
 const subjectPrefixes = [...STUDY.subjects.map(({id,name})=>[name,id]),
   ['道法','civics'],['生物','biology'],['政治','civics']].sort((a,b)=>b[0].length-a[0].length);
 const termPrefix = /^(?:(?:七年级|初一)([上下])(?:册|学期)?|七([上下])(?:册)?|([上下])(?:册|学期))/;
@@ -43,19 +42,25 @@ function validTerm(value) {
   if (value==='上' || value==='下') return value;
   throw new StudyError('册次应为「上」「下」或 all。');
 }
+function visibleTerm(term) {
+  if (term && !enabledTerms.includes(term)) throw new StudyError('当前只开放七年级上册练习。');
+  return term ?? (enabledTerms.length===1 ? enabledTerms[0] : null);
+}
+const visibleQuestion = question=>enabledTerms.includes(topics.get(question.topic).term);
 function validCount(value, fallback, maximum) {
   if (value===undefined) return fallback;
   if (!Number.isInteger(value) || value<1 || value>maximum) throw new StudyError('题量应在 1 到 '+maximum+' 之间。');
   return value;
 }
 function scopeMatches(scope,subject,term) {
+  if (scope.term && !enabledTerms.includes(scope.term)) return false;
   if (scope.subject) return scope.subject===subject && (!term || scope.term===term);
   return scope.ids.some(id=>{
     const question = questions.get(id);
-    return question.subject===subject && (!term || topics.get(question.topic).term===term);
+    return question.subject===subject && visibleQuestion(question) && (!term || topics.get(question.topic).term===term);
   });
 }
-function scopeSummary(scope,subject,term) {
+function scopeSummary(scope,subject,term,origin) {
   return {
     scope_id:scope.kind+':'+scope.key,
     type:scope.kind,
@@ -64,9 +69,9 @@ function scopeSummary(scope,subject,term) {
     description:scope.description ?? '',
     question_count:scope.ids.filter(id=>{
       const question = questions.get(id);
-      return question.subject===subject && (!term || topics.get(question.topic).term===term);
+      return question.subject===subject && visibleQuestion(question) && (!term || topics.get(question.topic).term===term);
     }).length,
-    url:publicLink(scope.href ?? '#subject/'+subject)
+    url:new URL(scope.href ?? '#subject/'+subject,origin).href
   };
 }
 function courseRequest(args) {
@@ -85,7 +90,7 @@ function courseRequest(args) {
   const subject = explicitSubject ?? named?.[1] ?? scopes.get(args.scope_id)?.subject ?? 'math';
   const unit = subject==='english' && englishUnit.exec(keyword);
   if (unit) keyword = 'unit'+(Number(unit[1]) || ('一二三四五六七八'.indexOf(unit[1])+1));
-  return {subject,term:term ?? inferredTerm ?? null,keyword};
+  return {subject,term:visibleTerm(term ?? inferredTerm),keyword};
 }
 function matchingScopes(subject,term,keyword) {
   return scopeList.filter(scope=>scopeMatches(scope,subject,term) &&
@@ -97,12 +102,12 @@ function matchingScopes(subject,term,keyword) {
     return {scope,relevance};
   }).filter(item=>item.relevance).sort((a,b)=>b.relevance-a.relevance);
 }
-function queryCourses(args) {
+function queryCourses(args,origin) {
   const {subject,term,keyword} = courseRequest(args);
   const limit = validCount(args.limit,15,35);
   const matches = matchingScopes(subject,term,keyword);
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',total:matches.length,
-    results:matches.slice(0,limit).map(({scope})=>scopeSummary(scope,subject,term))};
+    results:matches.slice(0,limit).map(({scope})=>scopeSummary(scope,subject,term,origin))};
 }
 function getScope(id,subject,term,required = false) {
   if (id===undefined && !required) return null;
@@ -142,11 +147,11 @@ function lessonNotes(topic) {
   }
   return null;
 }
-function explainTopic(args) {
+function explainTopic(args,origin) {
   const {subject,term,scope} = courseSelection(args,true);
   const candidates = scope.kind==='topic' ? [scope] : (scope.studyKeys ?? []).map(key=>topics.get(key)).filter(Boolean);
   const teaching = candidates.map(lessonNotes).filter(Boolean).slice(0,4);
-  return {...scopeSummary(scope,subject,term),teaching,
+  return {...scopeSummary(scope,subject,term,origin),teaching,
     practice_groups:scope.groups?.map(group=>({group_id:group.key,title:group.title,question_count:group.ids.length})),
     ...(scope.shortAnswers?.length ? {short_answer_tasks:scope.shortAnswers} : {}),
     sources:scope.sources ?? [],
@@ -160,7 +165,7 @@ function poolFor(args,requireScope = false) {
   const group = groupKey && scope?.groups?.find(item=>item.key===groupKey);
   if (groupKey && !group) throw new StudyError('找不到该题组。可先用 explain_topic 查询题组编号。');
   const pool = (group?.ids ?? scope?.ids ?? STUDY.questions.map(item=>item.id)).map(id=>questions.get(id))
-    .filter(question=>question.subject===subject && (!term || topics.get(question.topic).term===term) &&
+    .filter(question=>question.subject===subject && visibleQuestion(question) && (!term || topics.get(question.topic).term===term) &&
       (level==='all' || (question.level ?? 'basic')===level));
   const excluded = args.exclude_question_ids ?? [];
   if (!Array.isArray(excluded) || excluded.length>maxExcludedQuestions ||
@@ -169,12 +174,12 @@ function poolFor(args,requireScope = false) {
   }
   return {subject,term,scope,group,pool,excluded:new Set(excluded)};
 }
-function publicDiagram(diagram) {
-  return {url:publicLink(diagram.src),alt:diagram.alt,
+function publicDiagram(diagram,origin) {
+  return {url:new URL(diagram.src,origin).href,alt:diagram.alt,
     ...(diagram.caption ? {caption:diagram.caption} : {}),
     ...(diagram.source ? {source_url:diagram.source,credit:diagram.credit} : {})};
 }
-function questionView(question) {
+function questionView(question,origin) {
   const topic = topics.get(question.topic);
   return {
     question_id:question.id,
@@ -189,7 +194,7 @@ function questionView(question) {
     material:question.material,
     table:question.table,
     number_line:question.numberLine,
-    ...(question.diagram ? {diagram:publicDiagram(question.diagram)} : {})
+    ...(question.diagram ? {diagram:publicDiagram(question.diagram,origin)} : {})
   };
 }
 function sample(pool,count) {
@@ -200,11 +205,11 @@ function sample(pool,count) {
   }
   return result.slice(0,count);
 }
-function makePractice(selection,count,mode,view = questionView) {
+function makePractice(selection,count,mode,origin,view = questionView) {
   const {scope,group,pool,subject,term,excluded} = selection;
   const eligible = excluded.size ? pool.filter(item=>!excluded.has(item.id)) : pool;
   const picked = sample(eligible,count);
   return {subject:subjectNames.get(subject),term:term ?? '上、下册',scope:scope?.title ?? '全学科范围',
     group:group?.title,mode,available:eligible.length,remaining:eligible.length-picked.length,
-    questions:picked.map(view)};
+    questions:picked.map(question=>view(question,origin))};
 }

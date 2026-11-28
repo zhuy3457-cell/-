@@ -220,3 +220,61 @@ assert.doesNotMatch(morning.run('quizPage()'),/完整参考句/);
 morning.run("state.session.answers[7]={ok:true,fields:['How many bottles'],raw:'How many bottles'}");
 assert.match(morning.run('quizPage()'),/完整参考句.*How many bottles of juice does Amy buy\?/s);
 console.log('Unit 5 明早默写按原题顺序呈现，完整参考句在答后显示。');
+
+const daily = browser();
+daily.run(`
+  const practiceDate = '2026-11-28';
+  const priorDate = '2026-11-27';
+  const termIds = term => activeSubjects.flatMap(subject=>topicsIn(subject,term)
+    .flatMap(topic=>topic.questions.map(question=>question.id)));
+  const subjectOf = id => questionById.get(id).subject;
+  const [wrong, recovered, anotherWrong] = activeSubjects
+    .map(subject=>topicsIn(subject,'上').flatMap(topic=>topic.questions)[0]?.id).filter(Boolean);
+  state.attempts = [
+    {id:wrong,ok:false,date:priorDate,time:1},
+    {id:recovered,ok:true,date:priorDate,time:2},
+    {id:recovered,ok:false,date:priorDate,time:1},
+    {id:anotherWrong,ok:false,date:priorDate,time:1}
+  ];
+  const scheduled = dailyQuestions('上',practiceDate);
+`);
+assert.equal(daily.run('scheduled.length'),5);
+assert.equal(daily.run('new Set(scheduled.map(subjectOf)).size'),5);
+assert.equal(daily.run('scheduled.slice(0,2).includes(wrong) && scheduled.slice(0,2).includes(anotherWrong)'),true);
+assert.equal(daily.run('scheduled.includes(recovered)'),false);
+daily.run('state.attempts.push({id:wrong,ok:true,date:practiceDate,time:3});');
+assert.equal(daily.run('JSON.stringify(dailyQuestions("上",practiceDate))===JSON.stringify(scheduled)'),true);
+assert.equal(daily.run('dailyQuestions("下",practiceDate).length'),0);
+daily.run('state.attempts=termIds("上").map(id=>({id,ok:true,date:priorDate}));');
+assert.equal(daily.run('new Set(dailyQuestions("上",practiceDate)).size'),5);
+daily.run('start("daily"); state.session.index=1; start("daily");');
+assert.equal(daily.run('state.session.index'),1);
+assert.equal(daily.run('state.session.dailyTerm'), '上');
+daily.run('state.session.index=1; state.session.dailyDate="2000-01-01"; start("daily");');
+assert.equal(daily.run('state.session.index'),0);
+assert.equal(daily.run('state.session.dailyDate'),daily.run('dateKey()'));
+console.log('七上每日练习优先选取旧错题和新题，覆盖不同学科，并正确处理续练和跨日。');
+
+const upperOnly = browser();
+upperOnly.run(`
+  const hiddenTopic = 'civics-online-protection';
+  const hiddenId = hiddenTopic+'-1';
+  state.attempts = [{id:hiddenId,ref:'hidden-old',ok:false,date:'2026-11-27',time:1}];
+  state.mistakes = {[hiddenId]:{count:1,time:1}};
+  state.favorites = [hiddenId];
+`);
+assert.match(upperOnly.run("coursePage(activeSubjectById.get('civics'),'civics-life-responsibility')"),/珍爱生命与责任担当/);
+assert.match(upperOnly.run("coursePage(activeSubjectById.get('civics'),hiddenTopic)"),/当前未开放/);
+assert.equal(upperOnly.run('studyHref(hiddenTopic)'), '');
+assert.equal(upperOnly.run('topicSearchIndex.some(entry=>entry.topic.term==="下")'),false);
+assert.equal(upperOnly.run('courseSearchIndex.some(entry=>entry.course.term==="下")'),false);
+assert.equal(upperOnly.run('questionSearchIndex.some(entry=>entry.question.id===hiddenId)'),false);
+assert.doesNotMatch(upperOnly.run('mixedPage()'),/下册|data-term=/);
+assert.doesNotMatch(upperOnly.run('historyList("",1)'),/hidden-old/);
+assert.match(upperOnly.run('recordPage("hidden-old","all",1)'),/所属册次暂未开放/);
+assert.doesNotMatch(upperOnly.run('favoritePage()+mistakePage()'),/参加活动的人数/);
+upperOnly.run('start("search-question/"+hiddenId); start("mixed/all/下/5")');
+assert.equal(upperOnly.run('state.session'),null);
+assert.match(upperOnly.run('JSON.stringify(backupPayload())'),/hidden-old/);
+assert.equal(upperOnly.run('backupPayload().favorites[0]'), 'civics-online-protection-1');
+console.log('七下在课程、搜索、组卷、错题、收藏和历史明细中隐藏，已有作答和收藏仍随备份保留。');

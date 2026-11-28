@@ -11,7 +11,7 @@ const courseCatalog = (() => {
     ({key, title, description, groups, studyKeys, sources, ids: [...new Set(groups.flatMap(group => group.ids))]});
   const topicCourse = (key, practiceTitle = '本课练习') => {
     const topic = topics.get(key);
-    return makeCourse(key, topic.title, topic.description, [fullGroup(key, practiceTitle)], [key]);
+    return makeCourse(key, topic.title, topic.description, [fullGroup(key, practiceTitle)], [key], topic.sources);
   };
 
   const grammarByUnit = [

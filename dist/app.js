@@ -38,7 +38,9 @@ const allQuestions = allTopics.flatMap(topic => topic.questions);
 const topicByKey = new Map(allTopics.map(topic => [topic.key, topic]));
 const questionById = new Map(allQuestions.map(question => [question.id, question]));
 const activeSubjectById = new Map(activeSubjects.map(subject=>[subject.id,subject]));
-const isActiveQuestion = id => activeSubjectById.has(questionById.get(id)?.subject);
+const enabledStudyTerms = ['上'];
+const visibleTopic = topic => activeSubjectById.has(topic?.subject.id) && enabledStudyTerms.includes(topic.term);
+const isActiveQuestion = id => visibleTopic(topicByKey.get(questionById.get(id)?.topic));
 const storageKey = 'suxue-study-v1';
 const difficultyLevels = new Map([
   ['basic', ['基础','识记概念、直接代入或做一步运算。']],
@@ -51,7 +53,7 @@ try {
   const saved = JSON.parse(localStorage.getItem(storageKey));
   if (saved) state = {...state, ...saved};
 } catch {}
-if (!['上','下'].includes(state.term)) state.term = '上';
+if (!enabledStudyTerms.includes(state.term)) state.term = enabledStudyTerms[0];
 state.difficulty = cleanLevel(state.difficulty);
 let storageFailed = false;
 let backupNotice = '';
@@ -231,12 +233,14 @@ for (const id of new Set(sevenUpperReview.map(module=>module.subject))) {
 }
 const reviewRouteByTopic = new Map([...reviewCollections].flatMap(([route,collection])=>collection.modules.map(module=>[module.key,route])));
 const reviewRouteByStart = new Map([...reviewCollections].map(([route,collection])=>[collection.start,route]));
-const studyHref = key => reviewRouteByTopic.has(key) ? '#'+reviewRouteByTopic.get(key)+'/'+key : lessonByTopic.has(key) ? '#learn/'+key : '';
+const studyHref = key => visibleTopic(topicByKey.get(key))
+  ? reviewRouteByTopic.has(key) ? '#'+reviewRouteByTopic.get(key)+'/'+key : lessonByTopic.has(key) ? '#learn/'+key : ''
+  : '';
 const normalizeSearch = text => text.normalize('NFKC').toLowerCase()
   .replace(/\b(day|unit)[\s-]*(?=\d)/g,'$1')
   .replace(/(\p{Script=Han})(?=[a-z0-9])/gu,'$1 ').replace(/([a-z0-9])(?=\p{Script=Han})/gu,'$1 ')
   .replace(/[·、，,]/g,' ').trim();
-const topicSearchIndex = allTopics.filter(topic=>activeSubjectById.has(topic.subject.id)).map(topic=>{
+const topicSearchIndex = allTopics.filter(visibleTopic).map(topic=>{
   const collection = reviewCollections.get(reviewRouteByTopic.get(topic.key));
   const module = collection?.byTopic.get(topic.key);
   const name = topic.subject.name;
@@ -253,13 +257,12 @@ const questionSearchIndex = topicSearchIndex.flatMap(({topic,title,scope})=>topi
   question, topic, title:normalizeSearch(question.prompt), scope:title+' '+scope, detail:''
 })));
 searchSubject.innerHTML += activeSubjects.map(({id,name})=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
-const courseSearchIndex = [...courseCatalog.values()].flatMap(({lessons})=>lessons.map(({key})=>{
-  const course = courseByKey.get(key);
+const courseSearchIndex = [...courseByKey.values()].filter(course=>enabledStudyTerms.includes(course.term)).map(course=>{
   const {name} = activeSubjectById.get(course.subjectId);
   const volume = course.term+'册';
   return {course, name, title:normalizeSearch(course.title),
     scope:normalizeSearch([name,volume,'七年级'+volume,'七'+course.term+name,name+volume].join(' ')),detail:''};
-}));
+});
 const phraseSearchKey = text => normalizeSearch(text).replace(/[’‘ʼ]/g,"'")
   .replace(/[^\p{L}\p{N}']+/gu,' ').trim();
 const phraseSearchIndex = englishPhraseCollections.flatMap(unit=>unit.questions.map(question=>{
@@ -274,8 +277,8 @@ function lessonLink(key, style = 'btn secondary') {
   const href = studyHref(key);
   return href ? '<a class="'+style+'" href="'+href+'">'+(reviewRouteByTopic.has(key)?'看复习卡':'看讲解')+'</a>' : '';
 }
-const termTabs = () => '<div class="segmented" role="group" aria-label="选择册次">'+['上','下'].map(term => '<button type="button" data-term="'+term+'" aria-pressed="'+(state.term === term)+'">'+term+'册</button>').join('')+'</div>';
-function topicsIn(subject, term = state.term) { return subject.topics.filter(topic => topic.term === term); }
+const termTabs = () => enabledStudyTerms.length<2 ? '' : '<div class="segmented" role="group" aria-label="选择册次">'+enabledStudyTerms.map(term => '<button type="button" data-term="'+term+'" aria-pressed="'+(state.term === term)+'">'+term+'册</button>').join('')+'</div>';
+function topicsIn(subject, term = state.term) { return subject.topics.filter(topic => topic.term === term && enabledStudyTerms.includes(topic.term)); }
 const questionLevel = question => question.level ?? 'basic';
 const difficultyName = level => difficultyLevels.get(level)?.[0] ?? '不限难度';
 const questionsAt = (topic, level) => level === 'all' ? topic.questions : topic.questions.filter(question=>questionLevel(question)===level);
@@ -327,10 +330,11 @@ function mixedOptions(id, term, desired = 10, level = 'all') {
 function mixedPage(subject) {
   const id = subject?.id ?? 'all';
   const {total, options, description} = mixedOptions(id,state.term,10,state.difficulty);
-  return pageHead('自选组卷','选择学科、册次、难度和题量。',bankLink)+
+  return pageHead('自选组卷',termName()+' · 选择学科、难度和题量。',bankLink)+
     '<form class="mix-form" id="mixedForm"><div class="mix-fields">'+
     '<label>学科<select name="subject"><option value="all">核心学科混合</option>'+activeSubjects.map(item=>'<option value="'+item.id+'" '+(item.id===id?'selected':'')+'>'+item.name+'</option>').join('')+'</select></label>'+
-    '<label>册次<select name="term">'+['上','下'].map(term=>'<option value="'+term+'" '+(term===state.term?'selected':'')+'>七年级'+term+'册</option>').join('')+'</select></label>'+
+    (enabledStudyTerms.length<2 ? '<input type="hidden" name="term" value="'+state.term+'">' :
+      '<label>册次<select name="term">'+enabledStudyTerms.map(term=>'<option value="'+term+'" '+(term===state.term?'selected':'')+'>七年级'+term+'册</option>').join('')+'</select></label>')+
     '<label>难度<select name="difficulty">'+difficultyOptions(state.difficulty)+'</select></label>'+
     '<label>题量<select name="count" '+(total?'':'disabled')+'>'+options+'</select></label></div>'+
     '<p id="mixDescription" class="scope" aria-live="polite">'+description+'</p><div class="actions"><a class="crumb mix-guide" href="#difficulty">难度说明</a><button class="btn primary" type="submit" '+(total?'':'disabled')+'>'+icon('pencil')+'开始做题</button></div></form>';
@@ -362,7 +366,7 @@ function home() {
   const continuation = canResume
     ? '<a class="btn secondary" href="#quiz">'+icon('book')+'继续上次练习</a>'
     : mixedLink();
-  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 七年级</span><h1>今天想练哪一科？</h1><p>同步练知识点，做完就看解析。<br>从每天 5 道题开始。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+
+  return '<section class="hero"><img class="hero-art" src="workbook.webp" alt="" fetchpriority="high"><div class="hero-content"><span class="pill">'+icon('book')+'江苏 · 七年级</span><h1>今天想练哪一科？</h1><p>每天练 5 道题，优先复练旧错题和尝试新题。<br>提交后即可查看解析。</p><div class="hero-actions">'+startButton('daily','每日练习','primary','bolt')+
     '<a class="btn secondary" href="#course">'+icon('book')+'按课练习</a>'+continuation+
     (canResume ? '<a class="quick-link" href="#mixed">自选组卷</a>' : '')+
     '</div></div></section><div class="metrics" aria-label="今日学习概况">'+metric('今日已练',daily.length+' 题','violet','pencil')+metric('今日正确率',percent(daily.filter(x=>x.ok).length,daily.length),'green','target')+metric('待复练错题',mistakeIds().length+' 题','orange','notebook')+'</div>'+publicStudyShortcuts()+subjectGrid();
@@ -398,12 +402,12 @@ function coursePage(subject, key) {
       return '<a class="subject-card" href="#course/'+item.id+'"><div class="subject-head"><span class="subject-icon '+item.tone+'">'+
         icon(item.icon)+'</span><h3>'+item.name+'</h3></div><div class="subject-foot"><span>'+summary+'</span><strong>选课</strong></div></a>';
     }).join('');
-    return pageHead('按课练习','选择学科和册次，查看已收录的课次与单元。',bankLink)+
+    return pageHead('按课练习',termName()+' · 按学科查看已收录的课次与单元。',bankLink)+
       '<div class="section-head"><h2 class="group-title">学科目录</h2>'+termTabs()+'</div><div class="subject-grid">'+cards+'</div>';
   }
   if (key) {
     const course = courseByKey.get(key);
-    if (!course || course.subjectId!==subject.id) return empty('找不到这组练习','可以从学科目录重新选课。','book');
+    if (!course || course.subjectId!==subject.id || !enabledStudyTerms.includes(course.term)) return empty('当前未开放这组练习','可以从学科目录重新选课。','book');
     if (state.term!==course.term) {
       state.term = course.term;
       save();
@@ -647,6 +651,7 @@ function advancedPage(selected) {
 }
 function packPage(selectedId) {
   const selected = practicePacks.get(selectedId);
+  if (selected && !enabledStudyTerms.includes(selected.term)) return empty('当前未开放这组练习','可以从学科题库选择七年级上册练习。','book');
   if (selected && selected.term!==state.term) {
     state.term = selected.term;
     save();
@@ -903,7 +908,7 @@ function historyScope(subject) {
 function historyList(subject, page) {
   const records = attemptReferences(state.attempts).filter(item=>{
     const question = questionById.get(item.id);
-    return question && (!subject || question.subject===subject);
+    return isActiveQuestion(item.id) && (!subject || question.subject===subject);
   }).sort((a,b)=>a.date.localeCompare(b.date) || (a.time??0)-(b.time??0)).reverse();
   const lastPage = Math.max(1,Math.ceil(records.length/historyPageSize));
   const current = Math.min(lastPage,Math.max(1,Number.isSafeInteger(page) ? page : 1));
@@ -934,6 +939,7 @@ function recordPage(encodedRef, subject, page) {
   const returnTo = historyLink(historyScope(subject),Number.isSafeInteger(page) && page>0 ? page : 1);
   const back = '<a class="crumb" href="'+returnTo+'">返回答题明细</a>';
   if (!question) return back+empty('找不到这条答题记录','如果是在其他设备上作答，请先同步学习记录。','book');
+  if (!enabledStudyTerms.includes(topicByKey.get(question.topic).term)) return back+empty('这条记录所属册次暂未开放','作答记录仍可随学习备份导出。','book');
   const topic = topicByKey.get(question.topic);
   const options = question.options ? '<ol class="record-options" type="A">'+question.options.map(option=>'<li>'+esc(option)+'</li>').join('')+'</ol>' : '';
   const actions = isActiveQuestion(question.id) ?
@@ -956,28 +962,72 @@ function statsPage(subject, page) {
       const tried = attempts.filter(a=>questionById.get(a.id)?.subject===subject.id);
       const success = tried.filter(a=>a.ok);
       const distinct = new Set(success.map(a=>a.id)).size;
-      const total = subject.topics.reduce((n,t)=>n+t.questions.length,0);
+      const total = topicsIn(subject).reduce((n,t)=>n+t.questions.length,0);
       return '<div class="row"><div class="subject-head"><span class="subject-icon '+subject.tone+'">'+icon(subject.icon)+'</span><div><h3>'+subject.name+'</h3><p>已答对 '+distinct+' / '+total+' 道不同的题</p></div></div><div class="saved-actions">'+percent(success.length,tried.length)+
         (tried.length?'<a class="btn secondary" href="'+historyLink(subject.id)+'">查看记录</a>':'')+'</div></div>';
     }).join('')+'</div>';
 }
-function dailyQuestions() {
-  const day = Number(dateKey().replaceAll('-',''));
-  return Array.from({length:5},(_,i)=>{
-    const subject = activeSubjects[(day+i)%activeSubjects.length];
-    const topics = topicsIn(subject);
-    const topic = topics[(day+i*3)%topics.length];
-    return topic.questions[Math.floor(day*(i+3)/7)%topic.questions.length].id;
+function dailyQuestions(term = state.term, date = dateKey()) {
+  const seed = Number(date.replaceAll('-',''));
+  const latest = new Map();
+  for (const attempt of state.attempts) {
+    if (attempt.date >= date) continue;
+    const previous = latest.get(attempt.id);
+    if (!previous || attempt.date > previous.date ||
+        (attempt.date === previous.date && (attempt.time ?? 0) >= (previous.time ?? 0))) {
+      latest.set(attempt.id,attempt);
+    }
+  }
+  const rotate = (items, offset) => {
+    const start = items.length ? offset % items.length : 0;
+    return [...items.slice(start), ...items.slice(0,start)];
+  };
+  const subjects = rotate(activeSubjects,seed).map((subject,index)=>{
+    const ids = topicsIn(subject,term).flatMap(topic=>topic.questions.map(question=>question.id));
+    const queue = {wrong:[],fresh:[],correct:[]};
+    for (const id of rotate(ids,Math.floor(seed*(index+3)/7))) {
+      const attempt = latest.get(id);
+      queue[attempt ? (attempt.ok ? 'correct' : 'wrong') : 'fresh'].push(id);
+    }
+    return queue;
   });
+  const selected = new Set();
+  const usedSubjects = new Set();
+  for (const subject of subjects) {
+    if (selected.size === 2) break;
+    if (!subject.wrong.length) continue;
+    selected.add(subject.wrong[0]);
+    usedSubjects.add(subject);
+  }
+  for (const subject of subjects) {
+    if (selected.size === 5) break;
+    if (usedSubjects.has(subject)) continue;
+    const id = subject.fresh[0] ?? subject.correct[0] ?? subject.wrong[0];
+    if (id) selected.add(id);
+  }
+  for (const kind of ['fresh','correct','wrong']) {
+    for (const subject of subjects) {
+      for (const id of subject[kind]) {
+        if (selected.size === 5) return [...selected];
+        selected.add(id);
+      }
+    }
+  }
+  return [...selected];
 }
 function start(key, backTarget) {
   let ids, label, back, worksheet;
   const [kind, id, term, count, difficulty] = key.split('/');
-  if (state.session?.key===key && isActiveSession(state.session) && !endOfSession(state.session)) {
+  const current = state.session;
+  const dailyDate = kind==='daily' ? dateKey() : null;
+  const currentDailyTerm = current?.dailyTerm ?? topicByKey.get(questionById.get(current?.ids[0])?.topic)?.term;
+  const sameDaily = !dailyDate || (currentDailyTerm===state.term && (current.dailyDate ?? dailyDate)===dailyDate);
+  if (current?.key===key && sameDaily && isActiveSession(current) && !endOfSession(current)) {
     location.hash = 'quiz';
     return;
   }
   if (kind === 'mixed') {
+    if (!enabledStudyTerms.includes(term)) return;
     if (id!=='all' && !activeSubjectById.has(id)) return;
     const level = cleanLevel(difficulty);
     ids = mixedQuestions(id,term,Number(count),level);
@@ -985,16 +1035,16 @@ function start(key, backTarget) {
     label = name+' · '+term+'册组卷'+(level==='all'?'':' · '+difficultyName(level)); back = '#mixed'+(id==='all'?'':'/'+id);
   } else if (kind === 'pack') {
     const pack = practicePacks.get(id);
-    if (!pack) return;
+    if (!pack || !enabledStudyTerms.includes(pack.term)) return;
     state.term = pack.term;
     ids = pack.ids; label = pack.title; back = pack.stages ? '#packs/'+id : '#packs';
   } else if (kind === 'advanced') {
     const set = advancedSets.get(id+'/'+term);
-    if (!set) return;
+    if (!set || !enabledStudyTerms.includes(term)) return;
     ids = set.ids; label = set.name+' · '+term+'册综合提升'; back = '#advanced/'+id;
   } else if (kind === 'course') {
     const course = courseByKey.get(id);
-    if (!course) return;
+    if (!course || !enabledStudyTerms.includes(course.term)) return;
     if (term === 'remaining') {
       const done = correctQuestionIds();
       ids = course.ids.filter(questionId=>!done.has(questionId));
@@ -1050,10 +1100,10 @@ function start(key, backTarget) {
     back = session.back;
     worksheet = worksheetModule(session)?.key;
   } else if (kind === 'daily') {
-    ids = dailyQuestions(); label = '每日练习'; back = '#home';
+    ids = dailyQuestions(state.term,dailyDate); label = '每日练习 · '+termName(); back = '#home';
   } else if (kind === 'topic') {
     const topic = topicByKey.get(id);
-    if (!activeSubjectById.has(topic?.subject.id)) return;
+    if (!visibleTopic(topic)) return;
     const level = cleanLevel(term);
     const unit = reviewCollections.get(reviewRouteByTopic.get(id))?.byTopic.get(id);
     ids = level==='all' && unit?.practiceIds ? unit.practiceIds : questionsAt(topic,level).map(q=>q.id);
@@ -1073,7 +1123,8 @@ function start(key, backTarget) {
     label = '错题复练'; back = '#mistakes';
   }
   if (!ids.length || !ids.every(isActiveQuestion)) return;
-  state.session = {key, ids, label, back, index:0, answers:[], selected:'', ...(worksheet ? {worksheet} : {})};
+  state.session = {key, ids, label, back, index:0, answers:[], selected:'',
+    ...(worksheet ? {worksheet} : {}), ...(dailyDate ? {dailyDate,dailyTerm:state.term} : {})};
   save();
   if (location.hash === '#quiz') render(true);
   else location.hash = 'quiz';
@@ -1381,7 +1432,7 @@ function render(moveFocus = false) {
   else if (page==='subject' && subject) app.innerHTML = subjectPage(subject);
   else if (page==='learn') {
     const item = topicByKey.get(subjectId);
-    const topic = activeSubjectById.has(item?.subject.id) ? item : null;
+    const topic = visibleTopic(item) ? item : null;
     if (topic && state.term !== topic.term) {
       state.term = topic.term;
       save();
@@ -1406,6 +1457,7 @@ app.addEventListener('click',event => {
   if (button.dataset.animation) {
     controlAnswerAnimation(button);
   } else if (button.dataset.term) {
+    if (!enabledStudyTerms.includes(button.dataset.term)) return;
     state.term = button.dataset.term;
     save(); render();
     app.querySelector('[data-term="'+state.term+'"]')?.focus({preventScroll:true});
@@ -1559,7 +1611,7 @@ app.addEventListener('submit',event=>{
   if (event.target.id==='mixedForm') {
     event.preventDefault();
     const {subject,term,count,difficulty} = event.target.elements;
-    if (!count.value) return;
+    if (!count.value || !enabledStudyTerms.includes(term.value)) return;
     state.term = term.value;
     state.difficulty = cleanLevel(difficulty.value);
     start('mixed/'+subject.value+'/'+term.value+'/'+count.value+(state.difficulty==='all'?'':'/'+state.difficulty));
@@ -1698,7 +1750,7 @@ dialog.addEventListener('click',event=>{
   }
   const key = button.dataset.key;
   if (button.dataset.searchAction === 'learn') location.hash = studyHref(key);
-  else {
+  else if (visibleTopic(topicByKey.get(key))) {
     state.term = topicByKey.get(key).term;
     start('topic/'+key,studyHref(key));
   }
